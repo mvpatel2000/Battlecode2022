@@ -42,7 +42,7 @@ public strictfp class RobotPlayer {
                 robot = new Watchtower(rc);
                 break;
             default:
-                rc.setIndicatorString(rc.getType() + " is not supported.");
+                System.out.println(rc.getType() + " is not supported.");
                 return;
         }
 

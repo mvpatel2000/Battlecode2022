@@ -8,7 +8,8 @@ public class Miner extends Robot {
         super(rc);
     }
 
-    public static void run(RobotController rc) throws GameActionException {
+    @Override
+    public void runUnit(RobotController rc) throws GameActionException { 
         // Try to mine on squares around us.
         MapLocation me = rc.getLocation();
         for (int dx = -1; dx <= 1; dx++) {

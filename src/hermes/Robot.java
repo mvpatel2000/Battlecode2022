@@ -6,15 +6,15 @@ import java.util.Random;
 
 public class Robot {
 
-    static RobotController rc;
-    static int turnCount = 0;
-    static int currentRound;
-    static int myID;
-    static Team allyTeam;
-    static Team enemyTeam;
+    RobotController rc;
+    int turnCount = 0;
+    int currentRound;
+    int myID;
+    Team allyTeam;
+    Team enemyTeam;
 
     /** Array containing all the possible movement directions. */
-    static final Direction[] directions = {
+    final Direction[] directions = {
         Direction.NORTH,
         Direction.NORTHEAST,
         Direction.EAST,
@@ -31,7 +31,7 @@ public class Robot {
      * import at the top of this file. Here, we *seed* the RNG with a constant number (6147); this makes sure
      * we get the same sequence of numbers every time this code is run. This is very useful for debugging!
      */
-    static final Random rng = new Random(6147);
+    final Random rng = new Random(6147);
 
     public Robot(RobotController robotController) throws GameActionException {
         rc = robotController;
@@ -43,7 +43,20 @@ public class Robot {
     }
 
     public void run() throws GameActionException {
+        // Before unit runs
         turnCount++;
         currentRound = rc.getRoundNum();
+
+        // Does turn
+        runUnit(rc);
+
+        // After unit runs
+    }
+
+    /**
+     * Function to be overridden by the unit classes. This is where
+     * all unit-specific run stuff happens.
+     */
+    public void runUnit(RobotController rc) throws GameActionException {
     }
 }

@@ -8,7 +8,8 @@ public class Archon extends Robot {
         super(rc);
     }
 
-    public static void run(RobotController rc) throws GameActionException {
+    @Override
+    public void runUnit(RobotController rc) throws GameActionException {
         // Pick a direction to build in.
         Direction dir = directions[rng.nextInt(directions.length)];
         if (rng.nextBoolean()) {

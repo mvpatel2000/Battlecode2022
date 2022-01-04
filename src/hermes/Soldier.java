@@ -8,7 +8,8 @@ public class Soldier extends Robot {
         super(rc);
     }
 
-    public static void run(RobotController rc) throws GameActionException {
+    @Override
+    public void runUnit(RobotController rc) throws GameActionException { 
         // Try to attack someone
         int radius = rc.getType().actionRadiusSquared;
         Team opponent = rc.getTeam().opponent();
