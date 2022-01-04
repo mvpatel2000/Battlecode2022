@@ -1,4 +1,8 @@
+# Build output
 .gradle*
 client/*
 build/*
 bin*
+
+# Games
+matches/*
