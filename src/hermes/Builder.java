@@ -9,6 +9,6 @@ public class Builder extends Robot {
     }
 
     @Override
-    public void runUnit(RobotController rc) throws GameActionException { 
+    public void runUnit() throws GameActionException { 
     }
 }

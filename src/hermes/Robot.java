@@ -3,15 +3,23 @@ package hermes;
 import battlecode.common.*;
 
 import java.util.Random;
+import java.util.ArrayList;
 
 public class Robot {
 
     RobotController rc;
-    int turnCount = 0;
+    int turnCount;
     int currentRound;
     int myID;
     Team allyTeam;
     Team enemyTeam;
+    MapLocation myLocation;
+
+    // Pathing
+    MapLocation baseLocation;
+    MapLocation destination;
+    boolean exploreMode;
+    ArrayList<MapLocation> priorDestinations;
 
     /** Array containing all the possible movement directions. */
     final Direction[] directions = {
@@ -40,6 +48,24 @@ public class Robot {
         allyTeam = rc.getTeam();
         enemyTeam = allyTeam.opponent();
         myID = rc.getID();
+        myLocation = rc.getLocation();
+        destination = null;
+        exploreMode = true; // TODO: This should be set to false if given instructions
+        priorDestinations = new ArrayList<MapLocation>();
+
+        // Buildings are their own base
+        if (rc.getType() == RobotType.LABORATORY || rc.getType() == RobotType.WATCHTOWER || rc.getType() == RobotType.ARCHON) {
+            baseLocation = myLocation;
+        }
+        // Units treat archon as base location
+        else {
+            RobotInfo[] adjacentRobots = rc.senseNearbyRobots(2, allyTeam);
+            for (RobotInfo robot : adjacentRobots) {
+                if (robot.type == RobotType.ARCHON) {
+                    baseLocation = robot.location;
+                }
+            }
+        }
     }
 
     public void run() throws GameActionException {
@@ -48,7 +74,7 @@ public class Robot {
         currentRound = rc.getRoundNum();
 
         // Does turn
-        runUnit(rc);
+        runUnit();
 
         // After unit runs
     }
@@ -57,6 +83,100 @@ public class Robot {
      * Function to be overridden by the unit classes. This is where
      * all unit-specific run stuff happens.
      */
-    public void runUnit(RobotController rc) throws GameActionException {
+    public void runUnit() throws GameActionException {
+    }
+
+    /**
+     * Use this function instead of rc.move(). Still need
+     * to verify canMove before calling this.
+     */
+    void move(Direction dir) throws GameActionException {
+        rc.move(dir);
+        myLocation = myLocation.add(dir);
+    }
+
+    /**
+     * Moves towards destination, in the optimal direction or diagonal offsets based on which is
+     * cheaper to move through. Assumes rc.isReady() == true, or otherwise wastes bytecode on
+     * unnecessary computation. Allows orthogonal moves to unlodge.
+     */
+    void fuzzyMove(MapLocation destination) throws GameActionException {
+        // TODO: This is not optimal! Sometimes taking a slower move is better if its diagonal.
+        MapLocation myLocation = rc.getLocation();
+        Direction toDest = myLocation.directionTo(destination);
+        Direction[] dirs = {toDest, toDest.rotateLeft(), toDest.rotateRight(), toDest.rotateLeft().rotateLeft(), toDest.rotateRight().rotateRight()};
+        double cost = -1;
+        Direction optimalDir = null;
+        for (int i = 0; i < dirs.length; i++) {
+            // Prefer forward moving steps over horizontal shifts
+            if (i > 2 && cost > 0) {
+                break;
+            }
+            Direction dir = dirs[i];
+            if (rc.canMove(dir)) {
+                double newCost = rc.senseRubble(myLocation.add(dir));
+                // add epsilon boost to forward direction
+                if (dir == toDest) {
+                    newCost += 0.001;
+                }
+                if (newCost > cost) {
+                    cost = newCost;
+                    optimalDir = dir;
+                }
+            }
+        }
+        if (optimalDir != null) {
+            move(optimalDir);
+        }
+    }
+
+    /**
+     * Update destination to encourage exploration if destination is off map or destination is not
+     * an enemy target. Uses rejection sampling to avoid destinations near already explored areas.
+     * @throws GameActionException.
+     */
+    void updateDestinationForExploration() throws GameActionException {
+        MapLocation nearDestination = myLocation;
+        if (destination != null) {
+            for (int i = 0; i < 3; i++) {
+                nearDestination = nearDestination.add(nearDestination.directionTo(destination));
+            }
+        }
+        // Reroute if 1) nearDestination not on map or 2) can sense destination and it's not on the map
+        // or it's not occupied (so no Archon)
+        if (destination == null || !rc.onTheMap(nearDestination) ||
+            (rc.canSenseLocation(destination)
+            && (!rc.onTheMap(destination)
+                || !rc.isLocationOccupied(destination)
+                || rc.senseRobotAtLocation(destination).team == allyTeam))) {
+            // Rerouting
+            if (destination != null) {
+                priorDestinations.add(destination);
+            }
+            boolean valid = true;
+            int dxexplore = (int)(Math.random()*80);
+            int dyexplore = 120 - dxexplore;
+            dxexplore = Math.random() < .5 ? dxexplore : -dxexplore;
+            dyexplore = Math.random() < .5 ? dyexplore : -dyexplore;
+            destination = new MapLocation(baseLocation.x + dxexplore, baseLocation.y + dyexplore);
+            exploreMode = true;
+            for (int i = 0; i < priorDestinations.size(); i++) {
+                if (destination.distanceSquaredTo(priorDestinations.get(i)) < 40) {
+                    valid = false;
+                    break;
+                }
+            }
+            while (!valid) {
+                valid = true;
+                destination = new MapLocation(baseLocation.x + (int)(Math.random()*80 - 40),
+                                                baseLocation.y + (int)(Math.random()*80 - 40));
+                for (int i = 0; i < priorDestinations.size(); i++) {
+                    if (destination.distanceSquaredTo(priorDestinations.get(i)) < 40) {
+                        valid = false;
+                        break;
+                    }
+                }
+            }
+        }
     }
 }

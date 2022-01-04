@@ -4,12 +4,17 @@ import battlecode.common.*;
 
 public class Archon extends Robot {
 
+    boolean builtUnit = false; // TODO: Delete
+
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
     }
 
     @Override
-    public void runUnit(RobotController rc) throws GameActionException {
+    public void runUnit() throws GameActionException {
+        // if (currentRound > 1000) {
+        //     rc.disintegrate();
+        // }
         // Pick a direction to build in.
         Direction dir = directions[rng.nextInt(directions.length)];
         if (rng.nextBoolean()) {
@@ -25,5 +30,9 @@ public class Archon extends Robot {
                 rc.buildRobot(RobotType.SOLDIER, dir);
             }
         }
+        // if (!builtUnit && rc.canBuildRobot(RobotType.MINER, dir)) {
+        //     builtUnit = true;
+        //     rc.buildRobot(RobotType.MINER, dir);
+        // }
     }
 }
