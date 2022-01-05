@@ -24,6 +24,30 @@ public class Miner extends Robot {
 
         // Try to act again if we didn't before moving
         mineNearbySquares();
+
+        disintegrate();
+    }
+
+    /**
+     * Disintegrate to put lead on tile if there's many friendly miners, no enemies, and 
+     * no lead on the tile currently
+     * @throws GameActionException
+     */
+    public void disintegrate() throws GameActionException {
+        if (rc.senseLead(myLocation) == 0) {
+            if (rc.senseNearbyRobots(RobotType.MINER.visionRadiusSquared, enemyTeam).length == 0) {
+                RobotInfo[] adjacentAllies = rc.senseNearbyRobots(2, allyTeam);
+                int adjacentMiners = 0;
+                for (RobotInfo ally : adjacentAllies) {
+                    if (ally.type == RobotType.MINER) {
+                        adjacentMiners++;
+                    }
+                }
+                if (adjacentMiners >= 5) {
+                    rc.disintegrate();
+                }
+            }
+        }
     }
 
     /**

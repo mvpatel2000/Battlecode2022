@@ -16,6 +16,34 @@ public class Soldier extends Robot {
 
         // Try to act again if we didn't before moving
         attack();
+
+        disintegrate();
+    }
+
+    /**
+     * Disintegrate to put lead on tile if there's many friendly miners and soldiers, no enemies, and 
+     * no lead on the tile currently
+     * @throws GameActionException
+     */
+    public void disintegrate() throws GameActionException {
+        if (rc.senseLead(myLocation) == 0) {
+            if (rc.senseNearbyRobots(RobotType.SOLDIER.visionRadiusSquared, enemyTeam).length == 0) {
+                RobotInfo[] adjacentAllies = rc.senseNearbyRobots(2, allyTeam);
+                int adjacentMiners = 0;
+                int adjacentSoldiers = 0;
+                for (RobotInfo ally : adjacentAllies) {
+                    if (ally.type == RobotType.MINER) {
+                        adjacentMiners++;
+                    }
+                    else if (ally.type == RobotType.SOLDIER) {
+                        adjacentSoldiers++;
+                    }
+                }
+                if (adjacentAllies.length >= 6 && adjacentMiners >= 1 && adjacentSoldiers >= 1) {
+                    rc.disintegrate();
+                }
+            }
+        }
     }
 
     /**
@@ -43,6 +71,10 @@ public class Soldier extends Robot {
                     }
                     // Move to low rubble tile in combat to be able to fight faster
                     score += rc.senseRubble(moveLocation);
+                    // Tiebreak in favor of not moving
+                    if (dir == Direction.CENTER) {
+                        score -= 0.001;
+                    }
                     if (score < optimalScore) {
                         optimalDirection = dir;
                         optimalScore = score;
