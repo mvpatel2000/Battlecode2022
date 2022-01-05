@@ -12,11 +12,11 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 1000) {
-        //     rc.disintegrate();
-        // }
+        if (currentRound > 100) {
+            rc.disintegrate();
+        }
         // Pick a direction to build in.
-        Direction dir = directions[rng.nextInt(directions.length)];
+        Direction dir = directionsWithoutCenter[rng.nextInt(directionsWithoutCenter.length)];
         if (rng.nextBoolean()) {
             // Let's try to build a miner.
             rc.setIndicatorString("Trying to build a miner");

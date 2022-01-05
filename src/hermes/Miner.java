@@ -13,7 +13,7 @@ public class Miner extends Robot {
     @Override
     public void runUnit() throws GameActionException { 
         updateDestination();
-        // rc.setIndicatorLine(myLocation, destination, 255, 0, 0);
+        rc.setIndicatorLine(myLocation, destination, 255, 0, 0);
         mineNearbySquares();
 
         fuzzyMove(destination);

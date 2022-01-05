@@ -22,7 +22,18 @@ public class Robot {
     ArrayList<MapLocation> priorDestinations;
 
     /** Array containing all the possible movement directions. */
-    final Direction[] directions = {
+    final Direction[] directionsWithoutCenter = {
+        Direction.NORTH,
+        Direction.NORTHEAST,
+        Direction.EAST,
+        Direction.SOUTHEAST,
+        Direction.SOUTH,
+        Direction.SOUTHWEST,
+        Direction.WEST,
+        Direction.NORTHWEST
+    };
+
+    final Direction[] directionsWithCenter = {
         Direction.NORTH,
         Direction.NORTHEAST,
         Direction.EAST,
@@ -31,6 +42,7 @@ public class Robot {
         Direction.SOUTHWEST,
         Direction.WEST,
         Direction.NORTHWEST,
+        Direction.CENTER
     };
 
     /**
@@ -105,7 +117,7 @@ public class Robot {
         MapLocation myLocation = rc.getLocation();
         Direction toDest = myLocation.directionTo(destination);
         Direction[] dirs = {toDest, toDest.rotateLeft(), toDest.rotateRight(), toDest.rotateLeft().rotateLeft(), toDest.rotateRight().rotateRight()};
-        double cost = -1;
+        double cost = Integer.MAX_VALUE;
         Direction optimalDir = null;
         for (int i = 0; i < dirs.length; i++) {
             // Prefer forward moving steps over horizontal shifts
@@ -117,9 +129,9 @@ public class Robot {
                 double newCost = rc.senseRubble(myLocation.add(dir));
                 // add epsilon boost to forward direction
                 if (dir == toDest) {
-                    newCost += 0.001;
+                    newCost -= 0.001;
                 }
-                if (newCost > cost) {
+                if (newCost < cost) {
                     cost = newCost;
                     optimalDir = dir;
                 }
