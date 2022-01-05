@@ -57,7 +57,9 @@ public class Miner extends Robot {
             if (!rc.onTheMap(spiralPlace)) {
                 continue;
             }
-            if (rc.senseLead(spiralPlace) > 1 || rc.senseGold(spiralPlace) > 0) {
+            // Require more lead after first 20 rounds so miners don't go back to refreshed lead deposits
+            int requiredLead = currentRound > 20 ? 6 : 1;
+            if (rc.senseLead(spiralPlace) > requiredLead || rc.senseGold(spiralPlace) > 0) {
                 destination = spiralPlace;
                 exploreMode = false;
                 return;

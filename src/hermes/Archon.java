@@ -12,7 +12,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        if (currentRound > 100) {
+        if (currentRound > 200) {
             rc.disintegrate();
         }
         // Pick a direction to build in.

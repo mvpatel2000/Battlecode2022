@@ -33,16 +33,25 @@ public class Soldier extends Robot {
             Direction optimalDirection = null;
             int optimalScore = Integer.MAX_VALUE;
             for (Direction dir : directionsWithCenter) {
+                MapLocation moveLocation = myLocation.add(dir);
+                if (!rc.onTheMap(moveLocation)) {
+                    continue;
+                }
+                // Move towards nearest enemy
                 int score = Integer.MAX_VALUE;
                 for (RobotInfo enemy : enemies) {
-                    score = Math.min(score, myLocation.distanceSquaredTo(enemy.location));
+                    score = Math.min(score, moveLocation.distanceSquaredTo(enemy.location));
                 }
+                // Move to low rubble tile in combat to be able to fight faster
+                score += rc.senseRubble(moveLocation);
                 if (score < optimalScore) {
                     optimalDirection = dir;
                     optimalScore = score;
                 }
             }
+            rc.setIndicatorString(optimalDirection.toString() + optimalScore);
             if (optimalDirection != null && optimalDirection != Direction.CENTER) {
+                rc.setIndicatorLine(myLocation, myLocation.add(optimalDirection), 0, 255, 0);
                 fuzzyMove(myLocation.add(optimalDirection));
             }
         }
@@ -60,7 +69,7 @@ public class Soldier extends Robot {
     public void attack() throws GameActionException {
         // Find attack maximizing score
         MapLocation optimalAttack = null;
-        int optimalScore = 0;
+        int optimalScore = -1;
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, enemyTeam);
         for (RobotInfo enemy : nearbyEnemies) {
             int score = 0;
