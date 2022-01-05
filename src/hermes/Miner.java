@@ -99,6 +99,11 @@ public class Miner extends Robot {
      */
     public void updateDestination() throws GameActionException {
         int requiredLead = currentRound > 20 ? 6 : 1;
+        // Don't scan if destination still has lead
+        if (destination != null && rc.canSenseLocation(destination) && rc.senseLead(destination) > requiredLead) {
+            exploreMode = false;
+            return;
+        }
         // Rescan all tiles in vision radius if we're not moving and have extra compute
         if (!rc.isMovementReady()) {
             for (int[] shift : INNER_SPIRAL_ORDER) {
@@ -128,10 +133,7 @@ public class Miner extends Robot {
             }
         }
         // Switch to explore mode if destination no longer has lead
-        if (exploreMode || !rc.onTheMap(destination) || !rc.canSenseLocation(destination) 
-            || rc.senseLead(destination) <= requiredLead) {
-            exploreMode = true;
-            updateDestinationForExploration();
-        }
+        exploreMode = true;
+        updateDestinationForExploration();
     }
 }
