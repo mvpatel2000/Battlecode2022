@@ -4,7 +4,8 @@ import battlecode.common.*;
 
 public class Miner extends Robot {
 
-    final static int[][] SENSE_SPIRAL_ORDER = {{0,0},{0,1},{1,0},{0,-1},{-1,0},{1,1},{1,-1},{-1,-1},{-1,1},{0,2},{2,0},{0,-2},{-2,0},{1,2},{2,1},{2,-1},{1,-2},{-1,-2},{-2,-1},{-2,1},{-1,2},{2,2},{2,-2},{-2,-2},{-2,2},{0,3},{3,0},{0,-3},{-3,0},{1,3},{3,1},{3,-1},{1,-3},{-1,-3},{-3,-1},{-3,1},{-1,3},{2,3},{3,2},{3,-2},{2,-3},{-2,-3},{-3,-2},{-3,2},{-2,3},{0,4},{4,0},{0,-4},{-4,0},{1,4},{4,1},{4,-1},{1,-4},{-1,-4},{-4,-1},{-4,1},{-1,4},{3,3},{3,-3},{-3,-3},{-3,3},{2,4},{4,2},{4,-2},{2,-4},{-2,-4},{-4,-2},{-4,2},{-2,4}};
+    final static int[][] INNER_SPIRAL_ORDER = {{0,0},{0,1},{1,0},{0,-1},{-1,0},{1,1},{1,-1},{-1,-1},{-1,1},{0,2},{2,0},{0,-2},{-2,0},{1,2},{2,1},{2,-1},{1,-2},{-1,-2},{-2,-1},{-2,1},{-1,2},{2,2},{2,-2},{-2,-2},{-2,2},{0,3},{3,0},{0,-3},{-3,0},{1,3},{3,1},{3,-1},{1,-3},{-1,-3},{-3,-1},{-3,1},{-1,3},{2,3},{3,2},{3,-2},{2,-3},{-2,-3},{-3,-2},{-3,2},{-2,3}};
+    final static int[][] OUTER_SPIRAL_ORDER = {{0,4},{4,0},{0,-4},{-4,0},{1,4},{4,1},{4,-1},{1,-4},{-1,-4},{-4,-1},{-4,1},{-1,4},{3,3},{3,-3},{-3,-3},{-3,3},{2,4},{4,2},{4,-2},{2,-4},{-2,-4},{-4,-2},{-4,2},{-2,4}};
     
     public Miner(RobotController rc) throws GameActionException {
         super(rc);
@@ -52,20 +53,40 @@ public class Miner extends Robot {
      * @throws GameActionException
      */
     public void updateDestination() throws GameActionException {
-        for (int[] shift : SENSE_SPIRAL_ORDER) {
+        int requiredLead = currentRound > 20 ? 6 : 1;
+        // Rescan all tiles in vision radius if we're not moving and have extra compute
+        if (!rc.isMovementReady()) {
+            for (int[] shift : INNER_SPIRAL_ORDER) {
+                MapLocation spiralPlace = myLocation.translate(shift[0], shift[1]);
+                if (!rc.onTheMap(spiralPlace)) {
+                    continue;
+                }
+                // Require more lead after first 20 rounds so miners don't go back to refreshed lead deposits
+                if (rc.senseLead(spiralPlace) > requiredLead || rc.senseGold(spiralPlace) > 0) {
+                    destination = spiralPlace;
+                    exploreMode = false;
+                    return;
+                }
+            }
+        }
+        // Only scan newly visible tiles if we're ready to move
+        for (int[] shift : OUTER_SPIRAL_ORDER) {
             MapLocation spiralPlace = myLocation.translate(shift[0], shift[1]);
             if (!rc.onTheMap(spiralPlace)) {
                 continue;
             }
             // Require more lead after first 20 rounds so miners don't go back to refreshed lead deposits
-            int requiredLead = currentRound > 20 ? 6 : 1;
             if (rc.senseLead(spiralPlace) > requiredLead || rc.senseGold(spiralPlace) > 0) {
                 destination = spiralPlace;
                 exploreMode = false;
                 return;
             }
         }
-        exploreMode = true;
-        updateDestinationForExploration();
+        // Switch to explore mode if destination no longer has lead
+        if (exploreMode || !rc.onTheMap(destination) || !rc.canSenseLocation(destination) 
+            || rc.senseLead(destination) <= requiredLead) {
+            exploreMode = true;
+            updateDestinationForExploration();
+        }
     }
 }

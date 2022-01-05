@@ -109,10 +109,12 @@ public class Robot {
 
     /**
      * Moves towards destination, in the optimal direction or diagonal offsets based on which is
-     * cheaper to move through. Assumes rc.isReady() == true, or otherwise wastes bytecode on
-     * unnecessary computation. Allows orthogonal moves to unlodge.
+     * cheaper to move through. Allows orthogonal moves to unlodge.
      */
     void fuzzyMove(MapLocation destination) throws GameActionException {
+        if (!rc.isMovementReady()) {
+            return;
+        }
         // TODO: This is not optimal! Sometimes taking a slower move is better if its diagonal.
         MapLocation myLocation = rc.getLocation();
         Direction toDest = myLocation.directionTo(destination);
