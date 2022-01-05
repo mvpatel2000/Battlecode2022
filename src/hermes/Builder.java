@@ -10,12 +10,12 @@ public class Builder extends Robot {
 
     @Override
     public void runUnit() throws GameActionException { 
-        buildOrHeal();
+        buildOrHealOrUpgrade();
 
         move();
         
         // Try to act again if we didn't before moving
-        buildOrHeal();
+        buildOrHealOrUpgrade();
     }
 
     /**
@@ -23,7 +23,7 @@ public class Builder extends Robot {
      * completing prototype units over repairing existing ones.
      * @throws GameActionException
      */
-    public void buildOrHeal() throws GameActionException {
+    public void buildOrHealOrUpgrade() throws GameActionException {
         if (!rc.isActionReady()) {
             return;
         }
@@ -34,7 +34,7 @@ public class Builder extends Robot {
         for (RobotInfo ally : allies) {
             // Prioritize finishing prototypes
             int allyHealth = ally.getMode() == RobotMode.PROTOTYPE ? ally.getType().getMaxHealth(1) - ally.health - 1000 : ally.health;
-            if (rc.canRepair(ally.location) && allyHealth < remainingHealth) {
+            if (rc.canRepair(ally.location) && allyHealth < remainingHealth && allyHealth != ally.getType().getMaxHealth(ally.level)) {
                 repairLocation = ally.location;
                 remainingHealth = allyHealth;
             }
@@ -60,6 +60,34 @@ public class Builder extends Robot {
                 if (optimalDir != null && rc.canBuildRobot(RobotType.WATCHTOWER, optimalDir)) {
                     rc.buildRobot(RobotType.WATCHTOWER, optimalDir);
                 }
+            }
+        }
+        // Upgrade watchtower if lots of resources
+        if (rc.isActionReady() && rc.getTeamLeadAmount(allyTeam) > 2000) {
+            allies = rc.senseNearbyRobots(2, allyTeam); // Can only mutate adjacent buildings
+
+            int buildingsAroundMe = 0;
+            for (RobotInfo ally : allies) {
+                if (ally.type == RobotType.WATCHTOWER) {
+                    buildingsAroundMe++;
+                }
+            }
+            if (buildingsAroundMe == 0) {
+                return;
+            }
+
+            MapLocation mutateLocation = null;
+            int optimalRubble = Integer.MAX_VALUE;
+            for (RobotInfo ally : allies) {
+                int rubble = rc.senseRubble(ally.location);
+                System.out.println(myLocation + " " + ally.type + " " + ally.location + " " + rubble + " " + rc.canMutate(ally.location));
+                if (rc.canMutate(ally.location) && rubble < optimalRubble) {
+                    mutateLocation = ally.location;
+                    optimalRubble = rubble;
+                }
+            }
+            if (mutateLocation != null && rc.canMutate(mutateLocation)) {
+                rc.mutate(mutateLocation);
             }
         }
     }

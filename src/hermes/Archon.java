@@ -4,15 +4,13 @@ import battlecode.common.*;
 
 public class Archon extends Robot {
 
-    boolean builtUnit = false; // TODO: Delete
-
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
     }
 
     @Override
     public void runUnit() throws GameActionException {
-        if (currentRound > 1000) {
+        if (currentRound > 800) {
             rc.disintegrate();
         }
         RobotType toBuild = rng.nextBoolean() ? RobotType.MINER : RobotType.SOLDIER;

@@ -205,7 +205,6 @@ public class Robot {
         }
         int actionRadius = rc.getType().actionRadiusSquared;
         int damage = rc.getType().getDamage(rc.getLevel());
-        rc.setIndicatorString(actionRadius + "" + damage);
         // Find attack maximizing score
         MapLocation optimalAttack = null;
         int optimalScore = -1;
@@ -215,6 +214,10 @@ public class Robot {
             // Always prioritize kills
             if (enemy.health <= damage) {
                 score += 1000000;
+            }
+            // Prioritize archons after opening
+            if (currentRound > 500 && enemy.type == RobotType.ARCHON) {
+                score += 20000;
             }
             // Prioritize combat units
             if (enemy.type == RobotType.WATCHTOWER || enemy.type == RobotType.SOLDIER || enemy.type == RobotType.SAGE) {
