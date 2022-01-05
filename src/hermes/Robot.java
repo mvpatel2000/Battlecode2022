@@ -193,4 +193,49 @@ public class Robot {
             }
         }
     }
+
+    /**
+     * Sorts through nearby units to attack. Prioritize killing >> prototypes close to finishing
+     * >> combat units >> weakest unit
+     * @throws GameActionException
+     */
+    public void attack() throws GameActionException {
+        if (!rc.isActionReady()) {
+            return;
+        }
+        int actionRadius = rc.getType().actionRadiusSquared;
+        int damage = rc.getType().getDamage(rc.getLevel());
+        rc.setIndicatorString(actionRadius + "" + damage);
+        // Find attack maximizing score
+        MapLocation optimalAttack = null;
+        int optimalScore = -1;
+        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(actionRadius, enemyTeam);
+        for (RobotInfo enemy : nearbyEnemies) {
+            int score = 0;
+            // Always prioritize kills
+            if (enemy.health <= damage) {
+                score += 1000000;
+            }
+            // Prioritize combat units
+            if (enemy.type == RobotType.WATCHTOWER || enemy.type == RobotType.SOLDIER || enemy.type == RobotType.SAGE) {
+                score += 10000;
+            }
+            // Target prototype units closest to being finished
+            if (enemy.getMode() == RobotMode.PROTOTYPE && enemy.getType().getMaxHealth(1) - enemy.health <= 10) {
+                // We want to prioritize hitting buildings closest to being finished so they're not completed
+                score += 100000 + enemy.getType().getMaxHealth(1) - enemy.health;
+            }
+            // Target weakest unit
+            else {
+                score += 1000 - enemy.health;
+            }
+            if (score > optimalScore) {
+                optimalAttack = enemy.location;
+                optimalScore = score;
+            }
+        }
+        if (optimalAttack != null && rc.canAttack(optimalAttack)) {
+            rc.attack(optimalAttack);
+        }
+    }
 }

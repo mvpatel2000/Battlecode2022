@@ -14,10 +14,8 @@ public class Soldier extends Robot {
 
         move();
 
-        // Try to attack again if we didn't attack before move
-        if (rc.isActionReady()) {
-            attack();
-        }
+        // Try to act again if we didn't before moving
+        attack();
     }
 
     /**
@@ -29,27 +27,28 @@ public class Soldier extends Robot {
         // Chase and attack nearest enemy
         if (enemies.length > 0) {
             // Find direction minimizing score (closest to enemy)
-            // TODO: Create better heuristics! Should not rush into enemy
+            // TODO: Create better heuristics!
             Direction optimalDirection = null;
             int optimalScore = Integer.MAX_VALUE;
             for (Direction dir : directionsWithCenter) {
-                MapLocation moveLocation = myLocation.add(dir);
-                if (!rc.onTheMap(moveLocation)) {
-                    continue;
-                }
-                // Move towards nearest enemy
-                int score = Integer.MAX_VALUE;
-                for (RobotInfo enemy : enemies) {
-                    score = Math.min(score, moveLocation.distanceSquaredTo(enemy.location));
-                }
-                // Move to low rubble tile in combat to be able to fight faster
-                score += rc.senseRubble(moveLocation);
-                if (score < optimalScore) {
-                    optimalDirection = dir;
-                    optimalScore = score;
+                if (rc.canMove(dir)) {
+                    MapLocation moveLocation = myLocation.add(dir);
+                    if (!rc.onTheMap(moveLocation)) {
+                        continue;
+                    }
+                    // Move towards nearest enemy
+                    int score = Integer.MAX_VALUE;
+                    for (RobotInfo enemy : enemies) {
+                        score = Math.min(score, moveLocation.distanceSquaredTo(enemy.location));
+                    }
+                    // Move to low rubble tile in combat to be able to fight faster
+                    score += rc.senseRubble(moveLocation);
+                    if (score < optimalScore) {
+                        optimalDirection = dir;
+                        optimalScore = score;
+                    }
                 }
             }
-            rc.setIndicatorString(optimalDirection.toString() + optimalScore);
             if (optimalDirection != null && optimalDirection != Direction.CENTER) {
                 rc.setIndicatorLine(myLocation, myLocation.add(optimalDirection), 0, 255, 0);
                 fuzzyMove(myLocation.add(optimalDirection));
@@ -59,37 +58,6 @@ public class Soldier extends Robot {
             updateDestinationForExploration();
             rc.setIndicatorLine(myLocation, destination, 0, 255, 0);
             fuzzyMove(destination);
-        }
-    }
-
-    /**
-     * Sorts through nearby units to attack. Prioritize killing >> combat units >> weakest unit
-     * @throws GameActionException
-     */
-    public void attack() throws GameActionException {
-        // Find attack maximizing score
-        MapLocation optimalAttack = null;
-        int optimalScore = -1;
-        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, enemyTeam);
-        for (RobotInfo enemy : nearbyEnemies) {
-            int score = 0;
-            // Always prioritize kills
-            if (enemy.health <= RobotType.SOLDIER.damage) {
-                score += 100000;
-            }
-            // Prioritize combat units
-            if (enemy.type == RobotType.WATCHTOWER || enemy.type == RobotType.SOLDIER || enemy.type == RobotType.SAGE) {
-                score += 10000;
-            }
-            // Target units closest to dying
-            score += 1000 - enemy.health;
-            if (score > optimalScore) {
-                optimalAttack = enemy.location;
-                optimalScore = score;
-            }
-        }
-        if (optimalAttack != null && rc.canAttack(optimalAttack)) {
-            rc.attack(optimalAttack);
         }
     }
 }

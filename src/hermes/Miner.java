@@ -13,11 +13,12 @@ public class Miner extends Robot {
 
     @Override
     public void runUnit() throws GameActionException { 
-        updateDestination();
-        rc.setIndicatorLine(myLocation, destination, 255, 0, 0);
         mineNearbySquares();
 
-        fuzzyMove(destination);
+        move();
+
+        // Try to act again if we didn't before moving
+        mineNearbySquares();
     }
 
     /**
@@ -26,6 +27,9 @@ public class Miner extends Robot {
      * @throws GameActionException
      */
     public void mineNearbySquares() throws GameActionException {
+        if (!rc.isActionReady()) {
+            return;
+        }
         MapLocation me = rc.getLocation();
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
@@ -45,6 +49,12 @@ public class Miner extends Robot {
                 }
             }
         }
+    }
+
+    public void move() throws GameActionException {
+        updateDestination();
+        rc.setIndicatorLine(myLocation, destination, 255, 0, 0);
+        fuzzyMove(destination);
     }
 
     /**

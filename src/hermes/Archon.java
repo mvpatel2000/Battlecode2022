@@ -12,27 +12,28 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        if (currentRound > 100) {
+        if (currentRound > 1000) {
             rc.disintegrate();
         }
-        // Pick a direction to build in.
-        Direction dir = directionsWithoutCenter[rng.nextInt(directionsWithoutCenter.length)];
-        if (rng.nextBoolean()) {
-            // Let's try to build a miner.
-            rc.setIndicatorString("Trying to build a miner");
-            if (rc.canBuildRobot(RobotType.MINER, dir)) {
-                rc.buildRobot(RobotType.MINER, dir);
-            }
-        } else {
-            // Let's try to build a soldier.
-            rc.setIndicatorString("Trying to build a soldier");
-            if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
-                rc.buildRobot(RobotType.SOLDIER, dir);
+        RobotType toBuild = rng.nextBoolean() ? RobotType.MINER : RobotType.SOLDIER;
+        // Build builders if lots of lead for watchtowers
+        if (rc.getTeamLeadAmount(allyTeam) > 1000) {
+            toBuild = RobotType.BUILDER;
+        }
+
+        Direction optimalDir = null;
+        int optimalRubble = Integer.MAX_VALUE;
+        for (Direction dir : directionsWithoutCenter) {
+            if (rc.canBuildRobot(toBuild, dir)) {
+                int rubble = rc.senseRubble(myLocation.add(dir));
+                if (rubble < optimalRubble) {
+                    optimalDir = dir;
+                    optimalRubble = rubble;
+                }
             }
         }
-        // if (!builtUnit && rc.canBuildRobot(RobotType.MINER, dir)) {
-        //     builtUnit = true;
-        //     rc.buildRobot(RobotType.MINER, dir);
-        // }
+        if (optimalDir != null && rc.canBuildRobot(toBuild, optimalDir)) {
+            rc.buildRobot(toBuild, optimalDir);
+        }
     }
 }
