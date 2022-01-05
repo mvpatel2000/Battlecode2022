@@ -35,5 +35,28 @@ public class Archon extends Robot {
         if (optimalDir != null && rc.canBuildRobot(toBuild, optimalDir)) {
             rc.buildRobot(toBuild, optimalDir);
         }
+
+        repair();
+    }
+
+    /**
+     * If we didn't build a unit, repair a damaged nearby one
+     * @throws GameActionException
+     */
+    public void repair() throws GameActionException {
+        if (rc.isActionReady()) {
+            RobotInfo[] nearbyAllies = rc.senseNearbyRobots(RobotType.ARCHON.actionRadiusSquared, allyTeam);
+            MapLocation optimalRepair = null;
+            int remainingHealth = Integer.MAX_VALUE;
+            for (RobotInfo ally : nearbyAllies) {
+                if (rc.canRepair(ally.location) && ally.health < remainingHealth) {
+                    optimalRepair = ally.location;
+                    remainingHealth = ally.health;
+                }
+            }
+            if (optimalRepair != null && rc.canRepair(optimalRepair)) {
+                rc.repair(optimalRepair);
+            }
+        }
     }
 }
