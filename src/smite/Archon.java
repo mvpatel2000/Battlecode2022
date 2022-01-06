@@ -1,4 +1,4 @@
-package hermes;
+package smite;
 
 import battlecode.common.*;
 

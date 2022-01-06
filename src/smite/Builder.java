@@ -1,4 +1,4 @@
-package hermes;
+package smite;
 
 import battlecode.common.*;
 
@@ -101,7 +101,7 @@ public class Builder extends Robot {
         }
 
         updateDestinationForExploration();
-        rc.setIndicatorLine(myLocation, destination, 0, 0, 255);
+        //rc.setIndicatorLine(myLocation, destination, 0, 0, 255);
         fuzzyMove(destination);
     }
 }
