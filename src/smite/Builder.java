@@ -1,4 +1,4 @@
-package hermes;
+package smite;
 
 import battlecode.common.*;
 
@@ -63,7 +63,7 @@ public class Builder extends Robot {
             }
         }
         // Upgrade watchtower if lots of resources
-        if (rc.isActionReady() && rc.getTeamLeadAmount(allyTeam) - rc.getTeamLeadAmount(enemyTeam) > 5000) {
+        if (rc.isActionReady() && rc.getTeamLeadAmount(allyTeam) > 2000) {
             allies = rc.senseNearbyRobots(2, allyTeam); // Can only mutate adjacent buildings
 
             int buildingsAroundMe = 0;
@@ -101,7 +101,7 @@ public class Builder extends Robot {
         }
 
         updateDestinationForExploration();
-        rc.setIndicatorLine(myLocation, destination, 0, 0, 255);
+        //rc.setIndicatorLine(myLocation, destination, 0, 0, 255);
         fuzzyMove(destination);
     }
 }

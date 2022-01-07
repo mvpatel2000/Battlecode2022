@@ -1,4 +1,4 @@
-package hermes;
+package smite;
 
 import battlecode.common.*;
 
@@ -10,9 +10,9 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        if (currentRound > 200) {
-            rc.disintegrate();
-        }
+        // if (currentRound > 55) {
+        //     rc.disintegrate();
+        // }
         boolean shouldBuildMiner = turnCount < 100 ? rng.nextBoolean() : rng.nextDouble() < 0.3;
         RobotType toBuild = shouldBuildMiner ? RobotType.MINER : RobotType.SOLDIER;
         // Build builders if lots of lead for watchtowers

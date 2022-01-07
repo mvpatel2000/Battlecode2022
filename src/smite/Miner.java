@@ -1,4 +1,4 @@
-package hermes;
+package smite;
 
 import battlecode.common.*;
 
@@ -106,13 +106,13 @@ public class Miner extends Robot {
         if (fleeingCounter > 0) {
             MapLocation fleeDirection = myLocation.add(myLocation.directionTo(lastEnemyLocation).opposite());
             fuzzyMove(fleeDirection);
-            rc.setIndicatorLine(myLocation, fleeDirection, 255, 0, 0);
+            //rc.setIndicatorLine(myLocation, fleeDirection, 255, 0, 0);
             fleeingCounter--;
         }
         // Path
         else {
             fuzzyMove(destination);
-            rc.setIndicatorLine(myLocation, destination, 255, 0, 0);
+            //rc.setIndicatorLine(myLocation, destination, 255, 0, 0);
         }
     }
 

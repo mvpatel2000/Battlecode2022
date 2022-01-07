@@ -1,4 +1,4 @@
-package hermes;
+package smite;
 
 import battlecode.common.*;
 
@@ -106,13 +106,13 @@ public class Soldier extends Robot {
                 }
             }
             if (optimalDirection != null && optimalDirection != Direction.CENTER) {
-                rc.setIndicatorLine(myLocation, myLocation.add(optimalDirection), 0, 255, 0);
+                //rc.setIndicatorLine(myLocation, myLocation.add(optimalDirection), 0, 255, 0);
                 fuzzyMove(myLocation.add(optimalDirection));
             }
         }
         else {
             updateDestinationForExploration();
-            rc.setIndicatorLine(myLocation, destination, 0, 255, 0);
+            //rc.setIndicatorLine(myLocation, destination, 0, 255, 0);
             fuzzyMove(destination);
         }
     }
