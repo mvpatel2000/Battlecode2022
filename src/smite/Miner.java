@@ -128,36 +128,7 @@ public class Miner extends Robot {
              && (rc.senseLead(destination) > requiredLead || rc.senseGold(destination) > 0)) {
             exploreMode = false;
             return;
-        }
-        // // Rescan all tiles in vision radius if we're not moving and have extra compute
-        // if (!rc.isMovementReady()) {
-        //     for (int[] shift : INNER_SPIRAL_ORDER) {
-        //         MapLocation spiralPlace = myLocation.translate(shift[0], shift[1]);
-        //         if (!rc.onTheMap(spiralPlace)) {
-        //             continue;
-        //         }
-        //         // Require more lead after first 20 rounds so miners don't go back to refreshed lead deposits
-        //         if (rc.senseLead(spiralPlace) > requiredLead || rc.senseGold(spiralPlace) > 0) {
-        //             destination = spiralPlace;
-        //             exploreMode = false;
-        //             return;
-        //         }
-        //     }
-        // }
-        // // Only scan newly visible tiles if we're ready to move
-        // for (int[] shift : OUTER_SPIRAL_ORDER) {
-        //     MapLocation spiralPlace = myLocation.translate(shift[0], shift[1]);
-        //     if (!rc.onTheMap(spiralPlace)) {
-        //         continue;
-        //     }
-        //     // Require more lead after first 20 rounds so miners don't go back to refreshed lead deposits
-        //     if (rc.senseLead(spiralPlace) > requiredLead || rc.senseGold(spiralPlace) > 0) {
-        //         destination = spiralPlace;
-        //         exploreMode = false;
-        //         return;
-        //     }
-        // }
-        // TODO: Replace this w new API call!         
+        }      
         
         // Find nearest resource tile
         MapLocation nearestResource = null;

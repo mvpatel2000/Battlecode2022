@@ -115,6 +115,10 @@ public class Robot {
         if (!rc.isMovementReady()) {
             return;
         }
+        // Don't move if adjacent to destination and something is blocking it
+        if (myLocation.distanceSquaredTo(destination) <= 2 && !rc.canMove(myLocation.directionTo(destination))) {
+            return;
+        }
         // TODO: This is not optimal! Sometimes taking a slower move is better if its diagonal.
         MapLocation myLocation = rc.getLocation();
         Direction toDest = myLocation.directionTo(destination);

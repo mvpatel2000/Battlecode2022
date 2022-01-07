@@ -54,28 +54,52 @@ public class Soldier extends Robot {
         RobotInfo[] enemies = rc.senseNearbyRobots(RobotType.SOLDIER.visionRadiusSquared, enemyTeam);
         // Chase and attack nearest enemy
         if (enemies.length > 0) {
-            // Find direction minimizing score (closest to enemy)
-            // TODO: Create better heuristics!
+            boolean holdGround = false;
+            int combatAllies = 0;
+            RobotInfo[] allies = rc.senseNearbyRobots(RobotType.SOLDIER.visionRadiusSquared, allyTeam);
+            for (RobotInfo ally : allies) {
+                if (ally.type == RobotType.WATCHTOWER || ally.type == RobotType.SOLDIER) {
+                    combatAllies++;
+                }
+                else if (ally.type == RobotType.ARCHON) {
+                    holdGround = true;
+                }
+            }
+            holdGround |= combatAllies >= 3;
+
             Direction optimalDirection = null;
-            int optimalScore = Integer.MAX_VALUE;
+            int optimalScore = 0;
             for (Direction dir : directionsWithCenter) {
                 if (rc.canMove(dir)) {
                     MapLocation moveLocation = myLocation.add(dir);
                     if (!rc.onTheMap(moveLocation)) {
                         continue;
                     }
-                    // Move towards nearest enemy
-                    int score = Integer.MAX_VALUE;
+                    int score = 0;
                     for (RobotInfo enemy : enemies) {
-                        score = Math.min(score, moveLocation.distanceSquaredTo(enemy.location));
+                        // TODO: Prioritize locking up archons?
+                        // Avoid enemy combat units unless holding ground
+                        if (!holdGround 
+                            && (enemy.type == RobotType.WATCHTOWER && enemy.mode == RobotMode.TURRET 
+                                || enemy.type == RobotType.SOLDIER
+                                || enemy.type == RobotType.SAGE)
+                            && moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared) {
+                            score -= 100000;
+                        }
+                        // Move towards enemy units we want to kill
+                        if ((enemy.type == RobotType.MINER || enemy.type == RobotType.BUILDER 
+                            || enemy.type == RobotType.LABORATORY || enemy.type == RobotType.ARCHON)
+                            && moveLocation.distanceSquaredTo(enemy.location) <= RobotType.SOLDIER.actionRadiusSquared) {
+                            score += 10000 - moveLocation.distanceSquaredTo(enemy.location);
+                        }
                     }
                     // Move to low rubble tile in combat to be able to fight faster
-                    score += rc.senseRubble(moveLocation);
+                    score += rc.senseRubble(moveLocation) * 1000; // TODO: What is the right scaling here?
                     // Tiebreak in favor of not moving
                     if (dir == Direction.CENTER) {
-                        score -= 0.001;
+                        score += 1;
                     }
-                    if (score < optimalScore) {
+                    if (score > optimalScore) {
                         optimalDirection = dir;
                         optimalScore = score;
                     }
