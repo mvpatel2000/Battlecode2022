@@ -1,5 +1,7 @@
 # Build output
 .gradle*
+gradlew
+version.txt
 client/*
 build/*
 bin*
