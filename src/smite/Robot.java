@@ -21,6 +21,8 @@ public class Robot {
     boolean exploreMode;
     ArrayList<MapLocation> priorDestinations;
 
+    CommsHandler commsHandler;
+
     /** Array containing all the possible movement directions. */
     final Direction[] directionsWithoutCenter = {
         Direction.NORTH,
@@ -64,6 +66,7 @@ public class Robot {
         destination = null;
         exploreMode = true; // TODO: This should be set to false if given instructions
         priorDestinations = new ArrayList<MapLocation>();
+        commsHandler = new CommsHandler(rc);
 
         // Buildings are their own base
         if (rc.getType() == RobotType.LABORATORY || rc.getType() == RobotType.WATCHTOWER || rc.getType() == RobotType.ARCHON) {
@@ -113,6 +116,10 @@ public class Robot {
      */
     void fuzzyMove(MapLocation destination) throws GameActionException {
         if (!rc.isMovementReady()) {
+            return;
+        }
+        // Don't move if adjacent to destination and something is blocking it
+        if (myLocation.distanceSquaredTo(destination) <= 2 && !rc.canMove(myLocation.directionTo(destination))) {
             return;
         }
         // TODO: This is not optimal! Sometimes taking a slower move is better if its diagonal.

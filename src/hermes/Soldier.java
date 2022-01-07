@@ -52,7 +52,7 @@ public class Soldier extends Robot {
      */
     public void move() throws GameActionException {
         RobotInfo[] enemies = rc.senseNearbyRobots(RobotType.SOLDIER.visionRadiusSquared, enemyTeam);
-        // Chase and attack nearest enemy
+        // Combat move. Kites enemy soldiers if harassing, otherwise pushes
         if (enemies.length > 0) {
             boolean holdGround = false;
             int combatAllies = 0;
@@ -68,7 +68,7 @@ public class Soldier extends Robot {
             holdGround |= combatAllies >= 3;
 
             Direction optimalDirection = null;
-            int optimalScore = 0;
+            int optimalScore = Integer.MIN_VALUE;
             for (Direction dir : directionsWithCenter) {
                 if (rc.canMove(dir)) {
                     MapLocation moveLocation = myLocation.add(dir);
@@ -78,23 +78,31 @@ public class Soldier extends Robot {
                     int score = 0;
                     for (RobotInfo enemy : enemies) {
                         // TODO: Prioritize locking up archons?
-                        // Avoid enemy combat units unless holding ground
+                        // Avoid enemy combat units unless holding ground (1000000, highest priority)
                         if (!holdGround 
                             && (enemy.type == RobotType.WATCHTOWER && enemy.mode == RobotMode.TURRET 
                                 || enemy.type == RobotType.SOLDIER
                                 || enemy.type == RobotType.SAGE)
                             && moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared) {
-                            score -= 100000;
+                            score -= 1000000;
                         }
+                        boolean canKillTarget = false;
                         // Move towards enemy units we want to kill
-                        if ((enemy.type == RobotType.MINER || enemy.type == RobotType.BUILDER 
-                            || enemy.type == RobotType.LABORATORY || enemy.type == RobotType.ARCHON)
-                            && moveLocation.distanceSquaredTo(enemy.location) <= RobotType.SOLDIER.actionRadiusSquared) {
-                            score += 10000 - moveLocation.distanceSquaredTo(enemy.location);
+                        if (enemy.type == RobotType.MINER || enemy.type == RobotType.BUILDER 
+                            || enemy.type == RobotType.LABORATORY || enemy.type == RobotType.ARCHON) {
+                            // move towards sighted enemy units (fourth highest priority)
+                            score -= moveLocation.distanceSquaredTo(enemy.location);
+                            if (moveLocation.distanceSquaredTo(enemy.location) <= RobotType.SOLDIER.actionRadiusSquared) {
+                                canKillTarget = true;
+                            }
+                        }
+                        // points for being able to kill them (200000, second highest priority)
+                        if (canKillTarget) {
+                            score += 200000;
                         }
                     }
-                    // Move to low rubble tile in combat to be able to fight faster
-                    score += rc.senseRubble(moveLocation) * 1000; // TODO: What is the right scaling here?
+                    // Move to low rubble tile in combat to be able to fight faster (1000 - 100000, third highest priority)
+                    score -= rc.senseRubble(moveLocation) * 1000;
                     // Tiebreak in favor of not moving
                     if (dir == Direction.CENTER) {
                         score += 1;

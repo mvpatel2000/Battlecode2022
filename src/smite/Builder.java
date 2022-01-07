@@ -63,7 +63,7 @@ public class Builder extends Robot {
             }
         }
         // Upgrade watchtower if lots of resources
-        if (rc.isActionReady() && rc.getTeamLeadAmount(allyTeam) > 2000) {
+        if (rc.isActionReady() && rc.getTeamLeadAmount(allyTeam) - rc.getTeamLeadAmount(enemyTeam) > 5000) {
             allies = rc.senseNearbyRobots(2, allyTeam); // Can only mutate adjacent buildings
 
             int buildingsAroundMe = 0;

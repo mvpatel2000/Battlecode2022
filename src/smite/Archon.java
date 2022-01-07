@@ -10,7 +10,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 55) {
+        // if (currentRound > 34) {
         //     rc.disintegrate();
         // }
         boolean shouldBuildMiner = turnCount < 100 ? rng.nextBoolean() : rng.nextDouble() < 0.3;
