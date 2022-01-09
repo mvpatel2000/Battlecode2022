@@ -4,7 +4,6 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 import battlecode.common.GameActionException;
-import hermes.CommsHandler;
 
 public class CommsTest {
 
