@@ -125,14 +125,19 @@ public class Robot {
     /**
      * Updates cluster information. Scans nearby tiles, enemy locations, and nearby resources
      * and aggregates into clusterControls and clusterResoruces as buffers. Uses 
-     * markedClustersBuffer to track which buffers have been modified each turn to reset them
+     * markedClustersBuffer to track which buffers have been modified each turn to reset them.
+     * Alternates whether control or resources are scanned each turn to conserve bytecode.
      * @throws GameActionException
      */
     public void setClusterStates() throws GameActionException {
         int bytecodeUsed = Clock.getBytecodeNum();
         
-        setClusterControlStates();
-        setClusterResourceStates();
+        if (currentRound % 2 == 0) {
+            setClusterControlStates();
+        }
+        else {
+            setClusterResourceStates();
+        }
 
         int bytecodeUsed2 = Clock.getBytecodeNum();
         rc.setIndicatorString("Cluster States: "+(bytecodeUsed2 - bytecodeUsed));
@@ -197,19 +202,15 @@ public class Robot {
         // Reset buffer
         int markedClustersCount = 0;
 
-        // Scan nearby resources and aggregate counts
-        for (MapLocation tile : rc.senseNearbyLocationsWithLead(RobotType.MINER.visionRadiusSquared)) {
-            int leadAmount = rc.senseLead(tile);
-            // Ignore spaces with just 1 lead since they'll regenerate
-            if (leadAmount > 1) {
-                int clusterIdx = whichCluster(tile);
-                // Only add to modified list if we haven't marked this cluster yet
-                if (clusterResources[clusterIdx] == 0) {
-                    markedClustersBuffer[markedClustersCount] = clusterIdx;
-                    markedClustersCount++;
-                }
-                clusterResources[clusterIdx] += leadAmount - 1;
+        // Scan nearby resources and aggregate counts. Require at least 2 lead since 1 lead regenerates
+        for (MapLocation tile : rc.senseNearbyLocationsWithLead(RobotType.MINER.visionRadiusSquared, 2)) {
+            int clusterIdx = whichCluster(tile);
+            // Only add to modified list if we haven't marked this cluster yet
+            if (clusterResources[clusterIdx] == 0) {
+                markedClustersBuffer[markedClustersCount] = clusterIdx;
+                markedClustersCount++;
             }
+            clusterResources[clusterIdx] += rc.senseLead(tile) - 1;
         }
         for (MapLocation tile : rc.senseNearbyLocationsWithGold(RobotType.MINER.visionRadiusSquared)) {
             int clusterIdx = whichCluster(tile);
