@@ -14,18 +14,34 @@ public class CommsHandler {
     final int OUR_ARCHON_BITS = 16; // 4 bits: status; 6 bits: x coordinate; 6 bits: y coordinate
     final int OUR_ARCHON_SLOTS = 4;
     final int OUR_ARCHON_OFFSET = 0;
+    public class ArchonStatus {
+        public static final int DEAD = 0;
+        public static final int STANDBY = 1;
+        public static final int UNDER_ATTACK = 2;
+    }
 
     final int ENEMY_ARCHON_BITS = 13; // schema TBD
     final int ENEMY_ARCHON_SLOTS = 4;
     final int ENEMY_ARCHON_OFFSET = OUR_ARCHON_OFFSET + OUR_ARCHON_SLOTS;
 
-    final int MAP_SYMMETRY_BITS = 2; // 1 bit: horizontal symmetry; 1 bit: vertical symmetry
+    final int MAP_SYMMETRY_BITS = 2; // 2 bits: symmetry
     final int MAP_SYMMETRY_SLOTS = 1;
     final int MAP_SYMMETRY_OFFSET = ENEMY_ARCHON_OFFSET + ENEMY_ARCHON_SLOTS;
+    public class MapSymmetry {
+        public static final int UNKNOWN = 0;
+        public static final int HORIZONTAL = 1;
+        public static final int VERTICAL = 2;
+        public static final int ROTATIONAL = 3;
+    }
 
     final int CLUSTER_BITS = 5; // 2 bits: cluster control status; 3 bits: resource count.
     final int CLUSTER_SLOTS = 100;
     final int CLUSTER_OFFSET = MAP_SYMMETRY_OFFSET + MAP_SYMMETRY_SLOTS;
+    public class ControlStatus {
+        public static final int UNKNOWN = 0;
+        public static final int OURS = 1;
+        public static final int THEIRS = 2;
+    }
 
     final int ARCHON_INSTRUCTION_BITS = 16; // schema TBD
     final int ARCHON_INSTRUCTION_SLOTS = 4;
@@ -164,8 +180,7 @@ public class CommsHandler {
     }
 
     /**
-     * Returns the symmetry of the map, encoded as follows:
-     * 0: unknown; 1: vertical; 2: horizontal; 3: diagonal.
+     * Returns the symmetry of the map, encoded via MapSymmetry enum.
      *
      * @return the symmetry of the map
      * @throws GameActionException
@@ -175,8 +190,7 @@ public class CommsHandler {
     }
 
     /**
-     * Writes the symmetry of the map, encoded as follows:
-     * 0: unknown; 1: vertical; 2: horizontal; 3: diagonal.
+     * Writes the symmetry of the map, encoded via MapSymmetry enum.
      *
      * @param symmetry the symmetry to write
      * @return true if the write was successful
@@ -187,8 +201,7 @@ public class CommsHandler {
     }
 
     /**
-     * Returns the cluster control status of the specified cluster, encoded as follows:
-     * 0: unknown; 1: we control; 2: enemy controls; 3: ??.
+     * Returns the cluster control status of the specified cluster, encoded via ControlStatus enum.
      *
      * @param clusterNum the cluster number
      * @return the cluster control status of the specified cluster
@@ -199,8 +212,7 @@ public class CommsHandler {
     }
 
     /**
-     * Writes the cluster control status of the specified cluster, encoded as follows:
-     * 0: unknown; 1: we control; 2: enemy controls; 3: ??.
+     * Writes the cluster control status of the specified cluster, encoded via ControlStatus enum.
      *
      * @param clusterNum the cluster number
      * @param status the cluster control status to write

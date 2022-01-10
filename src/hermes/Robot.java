@@ -160,6 +160,9 @@ public class Robot {
      * clusterControls as a buffer. Uses markedClustersBuffer to track which buffers have been
      * modified each turn to write them. In clusterControls, we set the tens digit to be the new
      * value and only read/write if it is different from the previous state.
+     * 
+     * TODO: replace 10 with bitshifting by 2
+     * 
      * @throws GameActionException
      */
     public void setClusterControlStates() throws GameActionException {
@@ -218,6 +221,9 @@ public class Robot {
      * a buffer. Uses markedClustersBuffer to track which buffers have been modified each turn to
      * reset them. In clusterResoruces, we set the ten millions digit to be the old value and only 
      * read/write if it is different from the previous state.
+     * 
+     * TODO: replace 10000000 with bitshifting by 3
+     * 
      * @throws GameActionException
      */
     public void setClusterResourceStates() throws GameActionException {
@@ -425,7 +431,7 @@ public class Robot {
         int closestCluster = commsHandler.UNDEFINED_CLUSTER_INDEX;
         int closestDistance = Integer.MAX_VALUE;
         for (int i = 0; i < commsHandler.COMBAT_CLUSTER_SLOTS; i++) {
-            int nearestCluster = commsHandler.readCombatClusterIndex(0);
+            int nearestCluster = commsHandler.readCombatClusterIndex(i);
             // Break if no more combat clusters exist
             if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 break;
@@ -442,10 +448,11 @@ public class Robot {
     /**
      * Get the nearest cluster that satisfies the given control status, encoded as follows:
      * 0: unknown; 1: we control; 2: enemy controls; 3: ??.
+     * Get the nearest cluster that satisfies the given control status, encoded by `commsHandler.ControlStatus`.
      * 
      */
     public int getNearestClusterByControlStatus(int status) throws GameActionException {
-        int closestCluster = -1;
+        int closestCluster = commsHandler.UNDEFINED_CLUSTER_INDEX;
         int closestDistance = Integer.MAX_VALUE;
         for (int i = 0; i < numClusters; i++) {
             if (commsHandler.readClusterControlStatus(i) == status) {
