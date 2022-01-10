@@ -16,10 +16,6 @@ public class Archon extends Robot {
         switch (currentRound) {
             case 1:
                 firstRound();
-                break;
-            case 2:
-                secondRound();
-                break;
             default:
                 // rc.resign();
                 mainLoop();
@@ -90,22 +86,6 @@ public class Archon extends Robot {
         System.out.println("I am archon number " + myArchonNum);
         commsHandler.writeOurArchonStatus(myArchonNum, 1);
         commsHandler.writeOurArchonLocation(myArchonNum, myLocation);
-    }
-
-    /**
-     * Second round, find out how many archons we have
-     * 
-     * @throws GameActionException
-     */
-    public void secondRound() throws GameActionException {
-        numOurArchons = 1;
-        if (commsHandler.readOurArchonStatus(1) == 1) {
-            numOurArchons++;
-        } if (commsHandler.readOurArchonStatus(2) == 1) {
-            numOurArchons++;
-        } if (commsHandler.readOurArchonStatus(3) == 1) {
-            numOurArchons++;
-        }
-        System.out.println("Our team has " + numOurArchons + " archons");
+        numOurArchons = rc.getArchonCount();
     }
 }
