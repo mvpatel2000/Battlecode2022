@@ -123,7 +123,7 @@ public class CommsHandler {
 
     /**
      * Returns the cluster control status of the specified cluster, encoded as follows:
-     * 0: unknown; 1: we control; 2: enemy controls; 3: contested.
+     * 0: unknown; 1: we control; 2: enemy controls; 3: ??.
      *
      * @param clusterNum the cluster number
      * @return the cluster control status of the specified cluster
@@ -135,7 +135,7 @@ public class CommsHandler {
 
     /**
      * Writes the cluster control status of the specified cluster, encoded as follows:
-     * 0: unknown; 1: we control; 2: enemy controls; 3: contested.
+     * 0: unknown; 1: we control; 2: enemy controls; 3: ??.
      *
      * @param clusterNum the cluster number
      * @param status the cluster control status to write

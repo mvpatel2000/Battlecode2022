@@ -116,10 +116,31 @@ public class Robot {
     }
 
     /**
+     * Updates communication cluster information
+     * @throws GameActionException
+     */
+    public void setClusterStates() throws GameActionException {
+        // TODO: track cluster status
+
+
+        RobotInfo[] enemies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, enemyTeam);
+        for (RobotInfo enemy : enemies) {
+            int clusterIdx = whichCluster(enemy.location);
+            int clusterStatus = commsHandler.readClusterControlStatus(clusterIdx);
+            if (clusterStatus != 2) {
+                commsHandler.writeClusterControlStatus(clusterIdx, 2);
+            }
+        }
+        // TODO: Mark all clusters visible as explored
+
+        // TODO: Write resource counts. Use integer division or something to reduce to center
+    }
+
+    /**
      * Use this function instead of rc.move(). Still need
      * to verify canMove before calling this.
      */
-    void move(Direction dir) throws GameActionException {
+    public void move(Direction dir) throws GameActionException {
         rc.move(dir);
         myLocation = myLocation.add(dir);
     }
@@ -128,7 +149,7 @@ public class Robot {
      * Moves towards destination, in the optimal direction or diagonal offsets based on which is
      * cheaper to move through. Allows orthogonal moves to unlodge.
      */
-    void fuzzyMove(MapLocation destination) throws GameActionException {
+    public void fuzzyMove(MapLocation destination) throws GameActionException {
         if (!rc.isMovementReady()) {
             return;
         }
@@ -165,20 +186,12 @@ public class Robot {
         }
     }
 
-    // void aStarMove(MapLocation destination) throws GameActionException {
-    //     if (!rc.isMovementReady()) {
-    //         return;
-    //     }
-    //     PriorityQueue queue = new PriorityQueue();
-
-    // }
-
     /**
      * Update destination to encourage exploration if destination is off map or destination is not
      * an enemy target. Uses rejection sampling to avoid destinations near already explored areas.
      * @throws GameActionException.
      */
-    void updateDestinationForExploration() throws GameActionException {
+    public void updateDestinationForExploration() throws GameActionException {
         MapLocation nearDestination = myLocation;
         if (destination != null) {
             for (int i = 0; i < 3; i++) {
