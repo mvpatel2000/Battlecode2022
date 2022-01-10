@@ -29,7 +29,7 @@ public class Robot {
     int[] clusterWidths;
     float xStep;
     float yStep;
-    int[][] clusterCenters;
+    MapLocation[] clusterCenters;
 
     CommsHandler commsHandler;
 
@@ -76,6 +76,7 @@ public class Robot {
         mapHeight = rc.getMapHeight();
         mapWidth = rc.getMapWidth();
         setupClusters();
+        precomputeClusterCenters();
         destination = null;
         exploreMode = true; // TODO: This should be set to false if given instructions
         priorDestinations = new ArrayList<MapLocation>();
@@ -270,6 +271,21 @@ public class Robot {
         }
     }
 
+    public int getNearestClusterByControlStatus(int status) throws GameActionException {
+        int closestCluster = -1;
+        int closestDistance = Integer.MAX_VALUE;
+        for (int i = 0; i < numClusters; i++) {
+            if (commsHandler.readClusterControlStatus(i) == status) {
+                int distance = myLocation.distanceSquaredTo(clusterCenters[i]);
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closestCluster = i;
+                }
+            }
+        }
+        return closestCluster;
+    }
+
     public void setupClusters() {
         clusterHeights = computeClusterSizes(mapHeight);
         clusterWidths = computeClusterSizes(mapWidth);
@@ -279,14 +295,14 @@ public class Robot {
     }
 
     public void precomputeClusterCenters() {
-        clusterCenters = new int[numClusters][2];
+        clusterCenters = new MapLocation[numClusters];
         int yStart = 0;
         for (int j = 0; j < clusterHeights.length; j++) {
             int xStart = 0;
             for (int i = 0; i < clusterWidths.length; i++) {
                 int xCenter = xStart + (clusterWidths[i] / 2);
                 int yCenter = yStart + (clusterHeights[j] / 2);
-                clusterCenters[i + j * clusterWidths.length] = new int[] {xCenter, yCenter};
+                clusterCenters[i + j * clusterWidths.length] = new MapLocation(xCenter, yCenter);
                 xStart += clusterWidths[i];
             }
             yStart += clusterHeights[j];
