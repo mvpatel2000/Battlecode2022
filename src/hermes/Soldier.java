@@ -127,9 +127,10 @@ public class Soldier extends Robot {
             }
             // Explore map
             else {
+                exploreMode = true;
                 updateDestinationForExploration();
             }
-            rc.setIndicatorLine(myLocation, destination, 0, 255, 0);
+            // rc.setIndicatorLine(myLocation, destination, 0, 255, 0);
             fuzzyMove(destination);
         }
     }
