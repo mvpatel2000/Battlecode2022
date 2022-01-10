@@ -54,18 +54,19 @@ public class Soldier extends Robot {
         RobotInfo[] enemies = rc.senseNearbyRobots(RobotType.SOLDIER.visionRadiusSquared, enemyTeam);
         // Combat move. Kites enemy soldiers if harassing, otherwise pushes
         if (enemies.length > 0) {
+            // TODO: Does it ever make sense to not kite?
             boolean holdGround = false;
-            int combatAllies = 0;
-            RobotInfo[] allies = rc.senseNearbyRobots(RobotType.SOLDIER.visionRadiusSquared, allyTeam);
-            for (RobotInfo ally : allies) {
-                if (ally.type == RobotType.WATCHTOWER || ally.type == RobotType.SOLDIER) {
-                    combatAllies++;
-                }
-                else if (ally.type == RobotType.ARCHON) {
-                    holdGround = true;
-                }
-            }
-            holdGround |= combatAllies >= 3;
+            // int combatAllies = 0;
+            // RobotInfo[] allies = rc.senseNearbyRobots(RobotType.SOLDIER.visionRadiusSquared, allyTeam);
+            // for (RobotInfo ally : allies) {
+            //     if (ally.type == RobotType.WATCHTOWER || ally.type == RobotType.SOLDIER) {
+            //         combatAllies++;
+            //     }
+            //     else if (ally.type == RobotType.ARCHON) {
+            //         holdGround = true;
+            //     }
+            // }
+            // holdGround |= combatAllies >= 3;
 
             Direction optimalDirection = null;
             int optimalScore = Integer.MIN_VALUE;
@@ -120,8 +121,8 @@ public class Soldier extends Robot {
         }
         else {
             // Navigate to nearest found enemy
-            int nearestCluster = getNearestClusterByControlStatus(2);
-            if (nearestCluster != -1) {
+            int nearestCluster = getNearestCombatCluster();
+            if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 destination = clusterCenters[nearestCluster];
             }
             // Explore map

@@ -26,8 +26,28 @@ public class Archon extends Robot {
     }
 
     public void mainLoop() throws GameActionException {
+        setCombatClusters();
+        
         build();
         repair();
+    }
+
+    /**
+     * Sets the first COMBAT_CLUSTER_SLOTS found as combat slots
+     * @throws GameActionException
+     */
+    public void setCombatClusters() throws GameActionException {
+        int combatClusterIndex = 0;
+        for (int i = 0; i < numClusters; i++) {
+            if (commsHandler.readClusterControlStatus(i) == 2) {
+                commsHandler.writeCombatClusterIndex(combatClusterIndex, i);
+                combatClusterIndex++;
+                // Can only write at max COMBAT_CLUSTER_SLOTS amount of clusters
+                if (combatClusterIndex >= commsHandler.COMBAT_CLUSTER_SLOTS) {
+                    break;
+                }
+            }
+        }
     }
 
     /**
