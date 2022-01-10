@@ -271,6 +271,11 @@ public class Robot {
         }
     }
 
+    /**
+     * Get the nearest cluster that satisfies the given control status, encoded as follows:
+     * 0: unknown; 1: we control; 2: enemy controls; 3: ??.
+     * 
+     */
     public int getNearestClusterByControlStatus(int status) throws GameActionException {
         int closestCluster = -1;
         int closestDistance = Integer.MAX_VALUE;
