@@ -130,6 +130,21 @@ public class Robot {
      */
     public void setClusterStates() throws GameActionException {
         int bytecodeUsed = Clock.getBytecodeNum();
+        
+        setClusterControlStates();
+        setClusterResourceStates();
+
+        int bytecodeUsed2 = Clock.getBytecodeNum();
+        rc.setIndicatorString("Cluster States: "+(bytecodeUsed2 - bytecodeUsed));
+    }
+
+    /**
+     * Updates cluster information. Scans nearby tiles and enemy locations and aggregates into 
+     * clusterControls as a buffer. Uses markedClustersBuffer to track which buffers have been
+     * modified each turn to reset them
+     * @throws GameActionException
+     */
+    public void setClusterControlStates() throws GameActionException {
         int markedClustersCount = 0;
 
         // Mark nearby clusters as explored
@@ -170,9 +185,17 @@ public class Robot {
             }
             clusterControls[clusterIdx] = 0;
         }
+    }
 
+    /**
+     * Updates cluster information. Scans nearby resources and aggregates into clusterResoruces as
+     * a buffer. Uses markedClustersBuffer to track which buffers have been modified each turn to
+     * reset them
+     * @throws GameActionException
+     */
+    public void setClusterResourceStates() throws GameActionException {
         // Reset buffer
-        markedClustersCount = 0;
+        int markedClustersCount = 0;
 
         // Scan nearby resources and aggregate counts
         for (MapLocation tile : rc.senseNearbyLocationsWithLead(RobotType.MINER.visionRadiusSquared)) {
@@ -207,8 +230,6 @@ public class Robot {
             }
             clusterResources[clusterIdx] = 0;
         }
-        int bytecodeUsed2 = Clock.getBytecodeNum();
-        rc.setIndicatorString("Cluster States: "+(bytecodeUsed2 - bytecodeUsed));
     }
 
     /**
