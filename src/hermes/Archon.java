@@ -15,9 +15,11 @@ public class Archon extends Robot {
     public void runUnit() throws GameActionException {
         switch (currentRound) {
             case 1:
-                firstRound();
+                firstRound();                
             default:
-                // rc.resign();
+                if (currentRound > 200) {
+                    rc.resign();
+                }
                 mainLoop();
                 break;
         }
