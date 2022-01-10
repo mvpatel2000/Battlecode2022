@@ -21,7 +21,7 @@ public class Archon extends Robot {
                 secondRound();
                 break;
             default:
-                rc.resign();
+                // rc.resign();
                 mainLoop();
                 break;
         }
@@ -49,7 +49,6 @@ public class Archon extends Robot {
         if (optimalDir != null && rc.canBuildRobot(toBuild, optimalDir)) {
             rc.buildRobot(toBuild, optimalDir);
         }
-
         repair();
     }
 

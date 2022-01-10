@@ -14,12 +14,22 @@ public class Robot {
     Team allyTeam;
     Team enemyTeam;
     MapLocation myLocation;
+    int mapHeight;
+    int mapWidth;
 
     // Pathing
     MapLocation baseLocation;
     MapLocation destination;
     boolean exploreMode;
     ArrayList<MapLocation> priorDestinations;
+
+    // Clusters are 6x6, 5x6, 6x5, or 5x5
+    int numClusters;
+    int[] clusterHeights;
+    int[] clusterWidths;
+    float xStep;
+    float yStep;
+    int[][] clusterCenters;
 
     CommsHandler commsHandler;
 
@@ -63,6 +73,9 @@ public class Robot {
         enemyTeam = allyTeam.opponent();
         myID = rc.getID();
         myLocation = rc.getLocation();
+        mapHeight = rc.getMapHeight();
+        mapWidth = rc.getMapWidth();
+        setupClusters();
         destination = null;
         exploreMode = true; // TODO: This should be set to false if given instructions
         priorDestinations = new ArrayList<MapLocation>();
@@ -254,6 +267,122 @@ public class Robot {
         }
         if (optimalAttack != null && rc.canAttack(optimalAttack)) {
             rc.attack(optimalAttack);
+        }
+    }
+
+    public void setupClusters() {
+        clusterHeights = computeClusterSizes(mapHeight);
+        clusterWidths = computeClusterSizes(mapWidth);
+        numClusters = clusterHeights.length * clusterWidths.length;
+        yStep = mapHeight / ((float) clusterHeights.length);
+        xStep = mapWidth / ((float) clusterWidths.length);
+    }
+
+    public void precomputeClusterCenters() {
+        clusterCenters = new int[numClusters][2];
+        int yStart = 0;
+        for (int j = 0; j < clusterHeights.length; j++) {
+            int xStart = 0;
+            for (int i = 0; i < clusterWidths.length; i++) {
+                int xCenter = xStart + (clusterWidths[i] / 2);
+                int yCenter = yStart + (clusterHeights[j] / 2);
+                clusterCenters[i + j * clusterWidths.length] = new int[] {xCenter, yCenter};
+                xStart += clusterWidths[i];
+            }
+            yStart += clusterHeights[j];
+        }
+    }
+
+    public int whichCluster(MapLocation loc) {
+        return ((int) (loc.x / xStep)) + ((int) (loc.y / yStep)) * clusterWidths.length;
+    }
+
+    public int[] computeClusterSizes(int dim) {
+        switch (dim) {
+            case 20:
+                return new int[] {5, 5, 5, 5};
+            case 21:
+                return new int[] {5, 5, 5, 6};
+            case 22:
+                return new int[] {5, 6, 5, 6};
+            case 23:
+                return new int[] {5, 6, 6, 6};
+            case 24:
+                return new int[] {6, 6, 6, 6};
+            case 25:
+                return new int[] {5, 5, 5, 5, 5};
+            case 26:
+                return new int[] {5, 5, 5, 5, 6};
+            case 27:
+                return new int[] {5, 5, 6, 5, 6};
+            case 28:
+                return new int[] {5, 6, 5, 6, 6};
+            case 29:
+                return new int[] {5, 6, 6, 6, 6};
+            case 30:
+                return new int[] {6, 6, 6, 6, 6};
+            case 31:
+                return new int[] {5, 5, 5, 5, 5, 6};
+            case 32:
+                return new int[] {5, 5, 6, 5, 5, 5};
+            case 33:
+                return new int[] {5, 6, 5, 6, 5, 6};
+            case 34:
+                return new int[] {5, 6, 6, 5, 6, 6};
+            case 35:
+                return new int[] {5, 6, 6, 6, 6, 6};
+            case 36:
+                return new int[] {6, 6, 6, 6, 6, 6};
+            case 37:
+                return new int[] {5, 5, 5, 6, 5, 5, 6};
+            case 38:
+                return new int[] {5, 5, 6, 5, 6, 5, 6};
+            case 39:
+                return new int[] {5, 6, 5, 6, 5, 6, 5};
+            case 40:
+                return new int[] {5, 6, 6, 5, 6, 6, 6};
+            case 41:
+                return new int[] {5, 6, 6, 6, 6, 6, 5};
+            case 42:
+                return new int[] {6, 6, 6, 6, 6, 6, 6};
+            case 43:
+                return new int[] {5, 5, 6, 5, 5, 6, 5, 6};
+            case 44:
+                return new int[] {5, 6, 5, 6, 5, 6, 5, 6};
+            case 45:
+                return new int[] {5, 6, 5, 6, 6, 5, 6, 6};
+            case 46:
+                return new int[] {5, 6, 6, 6, 5, 6, 6, 6};
+            case 47:
+                return new int[] {5, 6, 6, 6, 6, 6, 6, 6};
+            case 48:
+                return new int[] {6, 6, 6, 6, 6, 6, 6, 6};
+            case 49:
+                return new int[] {5, 5, 6, 5, 6, 5, 6, 5, 5};
+            case 50:
+                return new int[] {5, 6, 5, 6, 5, 6, 5, 6, 6};
+            case 51:
+                return new int[] {5, 6, 6, 5, 6, 6, 5, 6, 5};
+            case 52:
+                return new int[] {5, 6, 6, 6, 5, 6, 6, 6, 6};
+            case 53:
+                return new int[] {5, 6, 6, 6, 6, 6, 6, 6, 6};
+            case 54:
+                return new int[] {6, 6, 6, 6, 6, 6, 6, 6, 6};
+            case 55:
+                return new int[] {5, 6, 5, 6, 5, 6, 5, 6, 5, 6};
+            case 56:
+                return new int[] {5, 6, 5, 6, 6, 5, 6, 5, 6, 6};
+            case 57:
+                return new int[] {5, 6, 6, 5, 6, 6, 5, 6, 6, 6};
+            case 58:
+                return new int[] {5, 6, 6, 6, 6, 5, 6, 6, 6, 5};
+            case 59:
+                return new int[] {5, 6, 6, 6, 6, 6, 6, 6, 6, 5};
+            case 60:
+                return new int[] {6, 6, 6, 6, 6, 6, 6, 6, 6, 6};
+            default:
+                return new int[] {};
         }
     }
 }
