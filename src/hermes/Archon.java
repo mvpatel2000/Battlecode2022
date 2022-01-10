@@ -26,6 +26,15 @@ public class Archon extends Robot {
     }
 
     public void mainLoop() throws GameActionException {
+        build();
+        repair();
+    }
+
+    /**
+     * Builds a unit
+     * @throws GameActionException
+     */
+    public void build() throws GameActionException {
         boolean shouldBuildMiner = turnCount < 100 ? rng.nextBoolean() : rng.nextDouble() < 0.3;
         RobotType toBuild = shouldBuildMiner ? RobotType.MINER : RobotType.SOLDIER;
         // Build builders if lots of lead for watchtowers
@@ -47,7 +56,6 @@ public class Archon extends Robot {
         if (optimalDir != null && rc.canBuildRobot(toBuild, optimalDir)) {
             rc.buildRobot(toBuild, optimalDir);
         }
-        repair();
     }
 
     /**
