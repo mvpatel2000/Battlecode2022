@@ -4,8 +4,7 @@ import battlecode.common.*;
 
 public class Archon extends Robot {
 
-    int myArchonNum;
-    int numOurArchons;
+    int myArchonNum = -1;
 
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
@@ -13,16 +12,13 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        switch (currentRound) {
-            case 1:
-                firstRound();                
-            default:
-                // if (currentRound > 250) {
-                //     //rc.resign\();
-                // }
-                mainLoop();
-                break;
+        // if (currentRound > 250) {
+        //     //rc.resign\();
+        // }
+        if (currentRound <= 3) { // temporary fix to round 1 TLE
+            computeArchonNum();
         }
+        mainLoop();
     }
 
     public void mainLoop() throws GameActionException {
@@ -88,7 +84,9 @@ public class Archon extends Robot {
      */
     public void build() throws GameActionException {
         // temporary solution to starvation
-        boolean pass = rng.nextDouble() > ((1 + myArchonNum) / (double) numOurArchons) + (rc.getTeamLeadAmount(allyTeam) / 1000.0);
+        double passThreshold = (1 / (double) (numOurArchons - myArchonNum)) + (rc.getTeamLeadAmount(allyTeam) / 1000.0);
+        //System.out.println\("passThreshold: " + passThreshold);
+        boolean pass = rng.nextDouble() > passThreshold;
         if (pass) {
             return;
         }
@@ -142,7 +140,10 @@ public class Archon extends Robot {
      * 
      * @throws GameActionException
      */
-    public void firstRound() throws GameActionException {
+    public void computeArchonNum() throws GameActionException {
+        if (myArchonNum >= 0) {
+            return;
+        }
         myArchonNum = 0;
         if (commsHandler.readOurArchonStatus(0) == 1) {
             myArchonNum = 1;
@@ -154,6 +155,5 @@ public class Archon extends Robot {
         //System.out.println\("I am archon number " + myArchonNum);
         commsHandler.writeOurArchonStatus(myArchonNum, 1);
         commsHandler.writeOurArchonLocation(myArchonNum, myLocation);
-        numOurArchons = rc.getArchonCount();
     }
 }

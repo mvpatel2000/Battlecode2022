@@ -16,6 +16,7 @@ public class Robot {
     MapLocation myLocation;
     int mapHeight;
     int mapWidth;
+    int numOurArchons;
 
     // Pathing
     MapLocation baseLocation;
@@ -89,6 +90,7 @@ public class Robot {
         exploreMode = true; // TODO: This should be set to false if given instructions
         priorDestinations = new ArrayList<MapLocation>();
         commsHandler = new CommsHandler(rc);
+        numOurArchons = rc.getArchonCount();
 
         // Precompute math for whichCluster
         whichXLoc = new int[mapWidth];
