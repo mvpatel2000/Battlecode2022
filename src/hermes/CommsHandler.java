@@ -12,9 +12,10 @@ public class CommsHandler {
     // Chunk schema:
     int OUR_ARCHON_BITS = 16; // 4 bits: status; 6 bits: x coordinate; 6 bits: y coordinate
     int ENEMY_ARCHON_BITS = 13;
-    int MAP_SYMMETRY_BITS = 2; // 1 bit: horizontal symmetry; 1 bit: vertical symmetry
-    int CLUSTER_BITS = 8; // 2 bits: cluster control status; 2 bits: how actively are we reinforcing; 4 bits: resource count
+    int MAP_SYMMETRY_BITS = 12; // 1 bit: horizontal symmetry; 1 bit: vertical symmetry
+    int CLUSTER_BITS = 5; // 2 bits: cluster control status; 3 bits: resource count.
     int ARCHON_INSTRUCTION_BITS = 16;
+    int PRIORITY_CLUSTER_BITS = 16;
     int[] CHUNK_SIZES = {
         OUR_ARCHON_BITS, OUR_ARCHON_BITS, OUR_ARCHON_BITS, OUR_ARCHON_BITS,             // our 4 archons
         ENEMY_ARCHON_BITS, ENEMY_ARCHON_BITS, ENEMY_ARCHON_BITS, ENEMY_ARCHON_BITS,     // enemy 4 archons
@@ -40,15 +41,20 @@ public class CommsHandler {
         CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, 
         CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, 
         ARCHON_INSTRUCTION_BITS, ARCHON_INSTRUCTION_BITS, ARCHON_INSTRUCTION_BITS, ARCHON_INSTRUCTION_BITS, 
+        PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, // up to 20 priority clusters
+        PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, 
+        PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, 
+        PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, 
         // TODO: add more
     };
     int[] CHUNK_OFFSETS = new int[CHUNK_SIZES.length]; // TODO: precompute prefix sums of CHUNK_SIZES
 
     final int SHARED_ARRAY_ELEM_SIZE = 16;
     final int SHARED_ARRAY_ELEM_LOG2 = 4;
+    final int MAX_SHARED_ARRAY_ELEM = 65535;
 
-    boolean unitTest = false;
     // for unit test only
+    boolean unitTest = false;
     int[] sharedArray;
 
     public CommsHandler(RobotController rc) {
@@ -56,6 +62,7 @@ public class CommsHandler {
         for (int i = 0; i < CHUNK_SIZES.length; i++) { // TODO: remove once we precompute CHUNK_OFFSETS
             CHUNK_OFFSETS[i] = (i == 0) ? 0 : CHUNK_OFFSETS[i-1] + CHUNK_SIZES[i-1];
         }
+        // System.out.println("Total bits used: " + (CHUNK_OFFSETS[CHUNK_OFFSETS.length-1] + CHUNK_SIZES[CHUNK_SIZES.length-1]));
     }
 
     public CommsHandler() { // for unit test only
@@ -63,6 +70,9 @@ public class CommsHandler {
         sharedArray = new int[GameConstants.SHARED_ARRAY_LENGTH];
         for (int j = 0; j < sharedArray.length; j++) {
             sharedArray[j] = 0;
+        }
+        for (int i = 0; i < CHUNK_SIZES.length; i++) { // TODO: remove once we precompute CHUNK_OFFSETS
+            CHUNK_OFFSETS[i] = (i == 0) ? 0 : CHUNK_OFFSETS[i-1] + CHUNK_SIZES[i-1];
         }
     }
 
@@ -161,32 +171,7 @@ public class CommsHandler {
     }
 
     /**
-     * Returns the reinforcement status of the specified cluster, encoded as follows:
-     * 0: no current reinforcement; 1: eco mission on the way; 2: sending army; 3: heavily sending army.
-     *
-     * @param clusterNum the cluster number
-     * @return the reinforcement status of the specified cluster
-     * @throws GameActionException
-     */
-    public int readClusterReinforcementStatus(int clusterIdx) throws GameActionException {
-        return readChunkPortion(9 + clusterIdx, 2, 2);
-    }
-
-    /**
-     * Writes the reinforcement status of the specified cluster, encoded as follows:
-     * 0: no current reinforcement; 1: eco mission on the way; 2: sending army; 3: heavily sending army.
-     *
-     * @param clusterNum the cluster number
-     * @param status the reinforcement status to write
-     * @return true if the write was successful
-     * @throws GameActionException
-     */
-    public boolean writeClusterReinforcementStatus(int clusterIdx, int status) throws GameActionException {
-        return writeChunkPortion(status, 9 + clusterIdx, 2, 2);
-    }
-
-    /**
-     * Returns the number of resources in the specified cluster, encoded in the range [1, 15].
+     * Returns the number of resources in the specified cluster, encoded in the range [1, 7].
      * Returns 0 if the resource count is unknown.
      *
      * @param clusterNum the cluster number
@@ -194,11 +179,11 @@ public class CommsHandler {
      * @throws GameActionException
      */
     public int readClusterResourceCount(int clusterIdx) throws GameActionException {
-        return readChunkPortion(9 + clusterIdx, 4, 4);
+        return readChunkPortion(9 + clusterIdx, 2, 3);
     }
 
     /**
-     * Writes the number of resources in the specified cluster, encoded in the range [1, 15].
+     * Writes the number of resources in the specified cluster, encoded in the range [1, 7].
      * Returns 0 if the resource count is unknown.
      * 
      * @param clusterNum the cluster number
@@ -207,7 +192,7 @@ public class CommsHandler {
      * @throws GameActionException
      */
     public boolean writeClusterResourceCount(int clusterIdx, int count) throws GameActionException {
-        return writeChunkPortion(count, 9 + clusterIdx, 4, 4);
+        return writeChunkPortion(count, 9 + clusterIdx, 2, 3);
     }
 
     private int readChunk(int chunkIndex) throws GameActionException { // Implements lazy reading from the main shared array
@@ -230,17 +215,17 @@ public class CommsHandler {
     private int readSharedArray(int index) throws GameActionException {
         if (unitTest) {
             return sharedArray[index];
-        } else {
-            return rc.readSharedArray(index);
         }
+        return rc.readSharedArray(index);
     }
 
     // TODO: after unit tests pass, remove this and replace all writeSharedArray with rc.writeSharedArray to save bytecode
     private void writeSharedArray(int index, int value) throws GameActionException {
+        // System.out.println("Writing " + (value & MAX_SHARED_ARRAY_ELEM) + " to shared array at index " + index);
         if (unitTest) {
-            sharedArray[index] = value;
+            sharedArray[index] = value & MAX_SHARED_ARRAY_ELEM;
         } else {
-            rc.writeSharedArray(index, value);
+            rc.writeSharedArray(index, value & MAX_SHARED_ARRAY_ELEM);
         }
     }
 
