@@ -461,29 +461,6 @@ public class Robot {
     }
 
     /**
-     * Returns nearest mine cluster or UNDEFINED_CLUSTER_INDEX otherwise
-     * @return
-     * @throws GameActionException
-     */
-    public int getNearestMineCluster() throws GameActionException {
-        int closestCluster = commsHandler.UNDEFINED_CLUSTER_INDEX;
-        int closestDistance = Integer.MAX_VALUE;
-        for (int i = 0; i < commsHandler.MINE_CLUSTER_SLOTS; i++) {
-            int nearestCluster = commsHandler.readMineClusterIndex(i);
-            // Break if no more mine clusters exist
-            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                break;
-            }
-            int distance = myLocation.distanceSquaredTo(clusterCenters[nearestCluster]);
-            if (distance < closestDistance) {
-                closestDistance = distance;
-                closestCluster = nearestCluster;
-            }
-        }
-        return closestCluster;
-    }
-
-    /**
      * Get the nearest cluster that satisfies the given control status, encoded as follows:
      * 0: unknown; 1: we control; 2: enemy controls; 3: ??.
      * Get the nearest cluster that satisfies the given control status, encoded by `commsHandler.ControlStatus`.

@@ -17,9 +17,9 @@ public class Archon extends Robot {
             case 1:
                 firstRound();                
             default:
-                if (currentRound > 250) {
-                    rc.resign();
-                }
+                // if (currentRound > 250) {
+                //     rc.resign();
+                // }
                 mainLoop();
                 break;
         }
@@ -39,21 +39,44 @@ public class Archon extends Robot {
     public void setCompressedClusters() throws GameActionException {
         int combatClusterIndex = 0;
         int miningClusterIndex = 0;
+
+        // Preserve mining clusters which still have resources
+        while (true) {
+            int cluster = commsHandler.readMineClusterIndex(miningClusterIndex);
+            if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                break;
+            }
+            int oldResourceCount = commsHandler.readClusterResourceCount(cluster);
+            if (oldResourceCount == 0) {
+                break;
+            }
+            miningClusterIndex++;
+        }
+
         for (int i = 0; i < numClusters; i++) {
-            if (commsHandler.readClusterControlStatus(i) == 2) {
+            if (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS && commsHandler.readClusterControlStatus(i) == 2) {
                 commsHandler.writeCombatClusterIndex(combatClusterIndex, i);
                 combatClusterIndex++;
-                // Can only write at max COMBAT_CLUSTER_SLOTS amount of clusters
-                if (combatClusterIndex >= commsHandler.COMBAT_CLUSTER_SLOTS) {
-                    break;
-                }
             }
-            if (commsHandler.readClusterResourceCount(i) > 0) {
-                commsHandler.writeMineClusterIndex(miningClusterIndex, i);
-                miningClusterIndex++;
-                // Can only write at max MINE_CLUSTER_SLOTS amount of clusters
-                if (miningClusterIndex >= commsHandler.MINE_CLUSTER_SLOTS) {
-                    break;
+            if (miningClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
+                int resourceCount = commsHandler.readClusterResourceCount(i);
+                if (resourceCount > 0) {
+                    commsHandler.writeMineClusterIndex(miningClusterIndex, i);
+                    commsHandler.writeMineClusterClaimStatus(miningClusterIndex, resourceCount);
+                    miningClusterIndex++;
+
+                    // Preserve mining clusters which still have resources
+                    while (true) {
+                        int cluster = commsHandler.readMineClusterIndex(miningClusterIndex);
+                        if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                            break;
+                        }
+                        int oldResourceCount = commsHandler.readClusterResourceCount(cluster);
+                        if (oldResourceCount == 0) {
+                            break;
+                        }
+                        miningClusterIndex++;
+                    }
                 }
             }
         }

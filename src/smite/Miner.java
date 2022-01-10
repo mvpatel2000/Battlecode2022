@@ -106,13 +106,13 @@ public class Miner extends Robot {
         if (fleeingCounter > 0) {
             MapLocation fleeDirection = myLocation.add(myLocation.directionTo(lastEnemyLocation).opposite());
             fuzzyMove(fleeDirection);
-            //rc.setIndicatorLine(myLocation, fleeDirection, 255, 0, 0);
+            // //rc.setIndicatorLine(myLocation, fleeDirection, 255, 0, 0);
             fleeingCounter--;
         }
         // Path
         else {
             fuzzyMove(destination);
-            //rc.setIndicatorLine(myLocation, destination, 255, 0, 0);
+            // //rc.setIndicatorLine(myLocation, destination, 255, 0, 0);
         }
     }
 
@@ -122,7 +122,7 @@ public class Miner extends Robot {
      * @throws GameActionException
      */
     public void updateDestination() throws GameActionException {
-        int requiredLead = currentRound > 20 ? 6 : 1;
+        int requiredLead = currentRound > 20 ? 2 : 1;
         // Don't scan if destination still has lead or gold
         if (destination != null && rc.canSenseLocation(destination)
              && (rc.senseLead(destination) > requiredLead || rc.senseGold(destination) > 0)) {
@@ -133,16 +133,16 @@ public class Miner extends Robot {
         // Find nearest resource tile
         MapLocation nearestResource = null;
         int optimalDistance = Integer.MAX_VALUE;
-        for (MapLocation tile : rc.senseNearbyLocationsWithLead(RobotType.MINER.visionRadiusSquared)) {
+        for (MapLocation tile : rc.senseNearbyLocationsWithLead(RobotType.MINER.visionRadiusSquared, requiredLead)) {
             int dist = myLocation.distanceSquaredTo(tile);
-            if (rc.senseLead(tile) > requiredLead && dist < optimalDistance) {
+            if (dist < optimalDistance) {
                 nearestResource = tile;
                 optimalDistance = dist;
             }
         }
         for (MapLocation tile : rc.senseNearbyLocationsWithGold(RobotType.MINER.visionRadiusSquared)) {
             int dist = myLocation.distanceSquaredTo(tile);
-            if (rc.senseGold(tile) > 0 && dist < optimalDistance) {
+            if (dist < optimalDistance) {
                 nearestResource = tile;
                 optimalDistance = dist;
             }
@@ -151,10 +151,52 @@ public class Miner extends Robot {
             destination = nearestResource;
             exploreMode = false;
         }
-        // Switch to explore mode if destination no longer has lead
         else {
-            exploreMode = true;
-            updateDestinationForExploration();
+            // Navigate to nearest resources found
+            int nearestCluster = getNearestMineCluster();
+            if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                destination = clusterCenters[nearestCluster];
+            }
+            // Explore map
+            else {
+                exploreMode = true;
+                updateDestinationForExploration();
+            }
         }
+        // //rc.setIndicatorLine(myLocation, destination, 0, 255, 0);
+    }
+
+    /**
+     * Returns nearest mine cluster or UNDEFINED_CLUSTER_INDEX otherwise
+     * @return
+     * @throws GameActionException
+     */
+    public int getNearestMineCluster() throws GameActionException {
+        int closestCluster = commsHandler.UNDEFINED_CLUSTER_INDEX;
+        int closestClusterIndex = commsHandler.UNDEFINED_CLUSTER_INDEX;
+        int closestDistance = Integer.MAX_VALUE;
+        for (int i = 0; i < commsHandler.MINE_CLUSTER_SLOTS; i++) {
+            int nearestCluster = commsHandler.readMineClusterIndex(i);
+            // Break if no more mine clusters exist
+            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                break;
+            }
+            // Skip clusters which are fully claimed
+            if (commsHandler.readMineClusterClaimStatus(i) == 0) {
+                continue;
+            }
+            int distance = myLocation.distanceSquaredTo(clusterCenters[nearestCluster]);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestCluster = nearestCluster;
+                closestClusterIndex = i;
+            }
+        }
+        // Claim cluster
+        if (closestClusterIndex != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+            int oldStatus = commsHandler.readMineClusterClaimStatus(closestClusterIndex);
+            commsHandler.writeMineClusterClaimStatus(closestClusterIndex, oldStatus-1);
+        }
+        return closestCluster;
     }
 }

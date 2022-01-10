@@ -163,6 +163,40 @@ public class Miner extends Robot {
                 updateDestinationForExploration();
             }
         }
-        rc.setIndicatorLine(myLocation, destination, 0, 255, 0);
+        // rc.setIndicatorLine(myLocation, destination, 0, 255, 0);
+    }
+
+    /**
+     * Returns nearest mine cluster or UNDEFINED_CLUSTER_INDEX otherwise
+     * @return
+     * @throws GameActionException
+     */
+    public int getNearestMineCluster() throws GameActionException {
+        int closestCluster = commsHandler.UNDEFINED_CLUSTER_INDEX;
+        int closestClusterIndex = commsHandler.UNDEFINED_CLUSTER_INDEX;
+        int closestDistance = Integer.MAX_VALUE;
+        for (int i = 0; i < commsHandler.MINE_CLUSTER_SLOTS; i++) {
+            int nearestCluster = commsHandler.readMineClusterIndex(i);
+            // Break if no more mine clusters exist
+            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                break;
+            }
+            // Skip clusters which are fully claimed
+            if (commsHandler.readMineClusterClaimStatus(i) == 0) {
+                continue;
+            }
+            int distance = myLocation.distanceSquaredTo(clusterCenters[nearestCluster]);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestCluster = nearestCluster;
+                closestClusterIndex = i;
+            }
+        }
+        // Claim cluster
+        if (closestClusterIndex != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+            int oldStatus = commsHandler.readMineClusterClaimStatus(closestClusterIndex);
+            commsHandler.writeMineClusterClaimStatus(closestClusterIndex, oldStatus-1);
+        }
+        return closestCluster;
     }
 }

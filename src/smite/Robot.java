@@ -14,12 +14,27 @@ public class Robot {
     Team allyTeam;
     Team enemyTeam;
     MapLocation myLocation;
+    int mapHeight;
+    int mapWidth;
 
     // Pathing
     MapLocation baseLocation;
     MapLocation destination;
     boolean exploreMode;
     ArrayList<MapLocation> priorDestinations;
+
+    // Clusters are 6x6, 5x6, 6x5, or 5x5
+    int numClusters;
+    int[] clusterHeights;
+    int[] clusterWidths;
+    float xStep;
+    float yStep;
+    int[] whichXLoc;
+    int[] whichYLoc;
+    MapLocation[] clusterCenters;
+    int[] clusterResources;
+    int[] clusterControls;
+    int[] markedClustersBuffer;
 
     CommsHandler commsHandler;
 
@@ -63,10 +78,27 @@ public class Robot {
         enemyTeam = allyTeam.opponent();
         myID = rc.getID();
         myLocation = rc.getLocation();
+        mapHeight = rc.getMapHeight();
+        mapWidth = rc.getMapWidth();
+        setupClusters();
+        precomputeClusterCenters();
+        clusterResources = new int[numClusters];
+        clusterControls = new int[numClusters];
+        markedClustersBuffer = new int[numClusters];
         destination = null;
         exploreMode = true; // TODO: This should be set to false if given instructions
         priorDestinations = new ArrayList<MapLocation>();
         commsHandler = new CommsHandler(rc);
+
+        // Precompute math for whichCluster
+        whichXLoc = new int[mapWidth];
+        whichYLoc = new int[mapHeight];
+        for (int i = 0; i < mapWidth; i++) {
+            whichXLoc[i] = (int) (i / xStep);
+        }
+        for (int i = 0; i < mapHeight; i++) {
+            whichYLoc[i] = (int) (i / yStep) * clusterWidths.length;
+        }
 
         // Buildings are their own base
         if (rc.getType() == RobotType.LABORATORY || rc.getType() == RobotType.WATCHTOWER || rc.getType() == RobotType.ARCHON) {
@@ -87,6 +119,7 @@ public class Robot {
         // Before unit runs
         turnCount++;
         currentRound = rc.getRoundNum();
+        setClusterStates();
 
         // Does turn
         runUnit();
@@ -102,10 +135,165 @@ public class Robot {
     }
 
     /**
+     * Updates cluster information. Scans nearby tiles, enemy locations, and nearby resources
+     * and aggregates into clusterControls and clusterResoruces as buffers. Uses 
+     * markedClustersBuffer to track which buffers have been modified each turn to reset them.
+     * Alternates whether control or resources are scanned each turn to conserve bytecode.
+     * @throws GameActionException
+     */
+    public void setClusterStates() throws GameActionException {
+        int bytecodeUsed = Clock.getBytecodeNum();
+        
+        if (currentRound % 2 == 0) {
+            setClusterControlStates();
+        }
+        else {
+            setClusterResourceStates();
+        }
+
+        int bytecodeUsed2 = Clock.getBytecodeNum();
+        //rc.setIndicatorString("Cluster States: "+(bytecodeUsed2 - bytecodeUsed));
+    }
+
+    /**
+     * Updates cluster information. Scans nearby tiles and enemy locations and aggregates into 
+     * clusterControls as a buffer. Uses markedClustersBuffer to track which buffers have been
+     * modified each turn to write them. In clusterControls, we set the tens digit to be the new
+     * value and only read/write if it is different from the previous state.
+     * 
+     * TODO: replace 10 with bitshifting by 2
+     * 
+     * @throws GameActionException
+     */
+    public void setClusterControlStates() throws GameActionException {
+        int markedClustersCount = 0;
+
+        // Mark nearby clusters as explored
+        int[][] shifts = {{0, 3}, {2, 2}, {3, 0}, {2, -2}, {0, -3}, {-2, -2}, {-3, 0}, {-2, 2}};
+        for (int[] shift : shifts) {
+            MapLocation shiftedLocation = myLocation.translate(shift[0], shift[1]);
+            if (rc.canSenseLocation(shiftedLocation)) {
+                // int clusterIdx = whichCluster(shiftedLocation); Note: Inlined to save bytecode
+                int clusterIdx = whichXLoc[shiftedLocation.x] + whichYLoc[shiftedLocation.y];
+                // Write new status to buffer if we haven't yet
+                if (clusterControls[clusterIdx] < 10) {
+                    clusterControls[clusterIdx] += 10;
+                    markedClustersBuffer[markedClustersCount] = clusterIdx;
+                    markedClustersCount++;
+                }
+            }
+        }
+
+        // Mark nearby clusters with enemies as hostile
+        RobotInfo[] enemies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, enemyTeam);
+        // Process at max 10 enemies
+        int numEnemies = Math.min(enemies.length, 10);
+        for (int i = 0; i < numEnemies; i++) {
+            RobotInfo enemy = enemies[i];
+            // int clusterIdx = whichCluster(enemy.location); Note: Inlined to save bytecode
+            int clusterIdx = whichXLoc[enemy.location.x] + whichYLoc[enemy.location.y];
+            // Write new status to buffer if we haven't marked as enemy controlled yet
+            if (clusterControls[clusterIdx] < 20) {
+                // Only add to modified list if we haven't marked this cluster yet
+                if (clusterControls[clusterIdx] < 10) {
+                    markedClustersBuffer[markedClustersCount] = clusterIdx;
+                    markedClustersCount++;
+                }
+                clusterControls[clusterIdx] = 20 + (clusterControls[clusterIdx] % 10);
+            }
+        }
+
+        // Flush control buffer and write to comms
+        for (int i = 0; i < markedClustersCount; i++) {
+            int clusterIdx = markedClustersBuffer[i];
+            int oldClusterStatus = clusterControls[clusterIdx] % 10;
+            int newClusterStatus = (clusterControls[clusterIdx] - oldClusterStatus)/10;
+            if (oldClusterStatus != newClusterStatus 
+                    && newClusterStatus != commsHandler.readClusterControlStatus(clusterIdx)) {
+                commsHandler.writeClusterControlStatus(clusterIdx, newClusterStatus);
+            }
+            clusterControls[clusterIdx] = newClusterStatus;
+        }
+    }
+
+    /**
+     * Updates cluster information. Scans nearby resources and aggregates into clusterResoruces as
+     * a buffer. Uses markedClustersBuffer to track which buffers have been modified each turn to
+     * reset them. In clusterResoruces, we set the ten millions digit to be the old value and only 
+     * read/write if it is different from the previous state.
+     * 
+     * TODO: replace 10000000 with bitshifting by 3
+     * 
+     * @throws GameActionException
+     */
+    public void setClusterResourceStates() throws GameActionException {
+        // Reset buffer
+        int markedClustersCount = 0;
+
+        // Scan nearby resources and aggregate counts. Require at least 2 lead since 1 lead regenerates
+        for (MapLocation tile : rc.senseNearbyLocationsWithLead(RobotType.MINER.visionRadiusSquared, 2)) {
+            // int clusterIdx = whichCluster(tile); Note: Inlined to save bytecode
+            int clusterIdx = whichXLoc[tile.x] + whichYLoc[tile.y];
+            // Only add to modified list if we haven't marked this cluster yet
+            if (clusterResources[clusterIdx] % 10000000 == 0) {
+                markedClustersBuffer[markedClustersCount] = clusterIdx;
+                markedClustersCount++;
+            }
+            clusterResources[clusterIdx] += rc.senseLead(tile) - 1;
+        }
+        for (MapLocation tile : rc.senseNearbyLocationsWithGold(RobotType.MINER.visionRadiusSquared)) {
+            // int clusterIdx = whichCluster(tile); Note: Inlined to save bytecode
+            int clusterIdx = whichXLoc[tile.x] + whichYLoc[tile.y];
+            // Only add to modified list if we haven't marked this cluster yet
+            if (clusterResources[clusterIdx] % 10000000 == 0) {
+                markedClustersBuffer[markedClustersCount] = clusterIdx;
+                markedClustersCount++;
+            }
+            clusterResources[clusterIdx] += rc.senseGold(tile);
+        }
+
+        // Add surrounding clusters to buffer. This ensures we clear out clusters where all
+        // resources have been mined
+        int[][] shifts = {{0, 3}, {2, 2}, {3, 0}, {2, -2}, {0, -3}, {-2, -2}, {-3, 0}, {-2, 2}};
+        for (int[] shift : shifts) {
+            MapLocation shiftedLocation = myLocation.translate(shift[0], shift[1]);
+            if (rc.canSenseLocation(shiftedLocation)) {
+                // int clusterIdx = whichCluster(shiftedLocation); Note: Inlined to save bytecode
+                int clusterIdx = whichXLoc[shiftedLocation.x] + whichYLoc[shiftedLocation.y];
+                if (clusterResources[clusterIdx] % 10000000 == 0) {
+                    markedClustersBuffer[markedClustersCount] = clusterIdx;
+                    markedClustersCount++;
+                }
+            }
+        }
+        
+        // Flush resource buffer and write to comms
+        for (int i = 0; i < markedClustersCount; i++) {
+            int clusterIdx = markedClustersBuffer[i];
+            int rawResourceCount = clusterResources[clusterIdx] % 10000000;
+            int newResourceCount = compressResourceCount(rawResourceCount);
+            int oldResourceCount = (clusterResources[clusterIdx] - rawResourceCount)/10000000;
+            if (oldResourceCount != newResourceCount 
+                    && newResourceCount != commsHandler.readClusterResourceCount(clusterIdx)) {
+                commsHandler.writeClusterResourceCount(clusterIdx, newResourceCount);
+            }
+            clusterResources[clusterIdx] = newResourceCount * 10000000;
+        }
+    }
+
+    /**
+     * Take log base e of resources to compress into bits. Max value of 7 as we only have 3 bits
+     * @param resourceCount
+     */
+    public int compressResourceCount(int resourceCount) {
+        return Math.min((int)Math.log(resourceCount), 7);
+    }
+
+    /**
      * Use this function instead of rc.move(). Still need
      * to verify canMove before calling this.
      */
-    void move(Direction dir) throws GameActionException {
+    public void move(Direction dir) throws GameActionException {
         rc.move(dir);
         myLocation = myLocation.add(dir);
     }
@@ -114,7 +302,7 @@ public class Robot {
      * Moves towards destination, in the optimal direction or diagonal offsets based on which is
      * cheaper to move through. Allows orthogonal moves to unlodge.
      */
-    void fuzzyMove(MapLocation destination) throws GameActionException {
+    public void fuzzyMove(MapLocation destination) throws GameActionException {
         if (!rc.isMovementReady()) {
             return;
         }
@@ -151,20 +339,12 @@ public class Robot {
         }
     }
 
-    // void aStarMove(MapLocation destination) throws GameActionException {
-    //     if (!rc.isMovementReady()) {
-    //         return;
-    //     }
-    //     PriorityQueue queue = new PriorityQueue();
-
-    // }
-
     /**
      * Update destination to encourage exploration if destination is off map or destination is not
      * an enemy target. Uses rejection sampling to avoid destinations near already explored areas.
      * @throws GameActionException.
      */
-    void updateDestinationForExploration() throws GameActionException {
+    public void updateDestinationForExploration() throws GameActionException {
         MapLocation nearDestination = myLocation;
         if (destination != null) {
             for (int i = 0; i < 3; i++) {
@@ -254,6 +434,173 @@ public class Robot {
         }
         if (optimalAttack != null && rc.canAttack(optimalAttack)) {
             rc.attack(optimalAttack);
+        }
+    }
+
+    /**
+     * Returns nearest combat cluster or UNDEFINED_CLUSTER_INDEX otherwise
+     * @return
+     * @throws GameActionException
+     */
+    public int getNearestCombatCluster() throws GameActionException {
+        int closestCluster = commsHandler.UNDEFINED_CLUSTER_INDEX;
+        int closestDistance = Integer.MAX_VALUE;
+        for (int i = 0; i < commsHandler.COMBAT_CLUSTER_SLOTS; i++) {
+            int nearestCluster = commsHandler.readCombatClusterIndex(i);
+            // Break if no more combat clusters exist
+            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                break;
+            }
+            int distance = myLocation.distanceSquaredTo(clusterCenters[nearestCluster]);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestCluster = nearestCluster;
+            }
+        }
+        return closestCluster;
+    }
+
+    /**
+     * Get the nearest cluster that satisfies the given control status, encoded as follows:
+     * 0: unknown; 1: we control; 2: enemy controls; 3: ??.
+     * Get the nearest cluster that satisfies the given control status, encoded by `commsHandler.ControlStatus`.
+     * 
+     */
+    public int getNearestClusterByControlStatus(int status) throws GameActionException {
+        int closestCluster = commsHandler.UNDEFINED_CLUSTER_INDEX;
+        int closestDistance = Integer.MAX_VALUE;
+        for (int i = 0; i < numClusters; i++) {
+            if (commsHandler.readClusterControlStatus(i) == status) {
+                int distance = myLocation.distanceSquaredTo(clusterCenters[i]);
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closestCluster = i;
+                }
+            }
+        }
+        return closestCluster;
+    }
+
+    public void setupClusters() {
+        clusterHeights = computeClusterSizes(mapHeight);
+        clusterWidths = computeClusterSizes(mapWidth);
+        numClusters = clusterHeights.length * clusterWidths.length;
+        yStep = mapHeight / ((float) clusterHeights.length);
+        xStep = mapWidth / ((float) clusterWidths.length);
+    }
+
+    public void precomputeClusterCenters() {
+        clusterCenters = new MapLocation[numClusters];
+        int yStart = 0;
+        for (int j = 0; j < clusterHeights.length; j++) {
+            int xStart = 0;
+            for (int i = 0; i < clusterWidths.length; i++) {
+                int xCenter = xStart + (clusterWidths[i] / 2);
+                int yCenter = yStart + (clusterHeights[j] / 2);
+                clusterCenters[i + j * clusterWidths.length] = new MapLocation(xCenter, yCenter);
+                xStart += clusterWidths[i];
+            }
+            yStart += clusterHeights[j];
+        }
+    }
+
+    /**
+     * Returns cluster given a location.
+     * 
+     * NOTE: THIS FUNCTION IS ONLY FOR REFERENCE. IF CALLED FREQUENTLY, INLINE THIS FUNCTION!!
+     * @param loc
+     * @return
+     */
+    public int whichCluster(MapLocation loc) {
+        return whichXLoc[loc.x] + whichYLoc[loc.y];
+    }
+
+    public int[] computeClusterSizes(int dim) {
+        switch (dim) {
+            case 20:
+                return new int[] {5, 5, 5, 5};
+            case 21:
+                return new int[] {5, 5, 5, 6};
+            case 22:
+                return new int[] {5, 6, 5, 6};
+            case 23:
+                return new int[] {5, 6, 6, 6};
+            case 24:
+                return new int[] {6, 6, 6, 6};
+            case 25:
+                return new int[] {5, 5, 5, 5, 5};
+            case 26:
+                return new int[] {5, 5, 5, 5, 6};
+            case 27:
+                return new int[] {5, 5, 6, 5, 6};
+            case 28:
+                return new int[] {5, 6, 5, 6, 6};
+            case 29:
+                return new int[] {5, 6, 6, 6, 6};
+            case 30:
+                return new int[] {6, 6, 6, 6, 6};
+            case 31:
+                return new int[] {5, 5, 5, 5, 5, 6};
+            case 32:
+                return new int[] {5, 5, 6, 5, 5, 5};
+            case 33:
+                return new int[] {5, 6, 5, 6, 5, 6};
+            case 34:
+                return new int[] {5, 6, 6, 5, 6, 6};
+            case 35:
+                return new int[] {5, 6, 6, 6, 6, 6};
+            case 36:
+                return new int[] {6, 6, 6, 6, 6, 6};
+            case 37:
+                return new int[] {5, 5, 5, 6, 5, 5, 6};
+            case 38:
+                return new int[] {5, 5, 6, 5, 6, 5, 6};
+            case 39:
+                return new int[] {5, 6, 5, 6, 5, 6, 5};
+            case 40:
+                return new int[] {5, 6, 6, 5, 6, 6, 6};
+            case 41:
+                return new int[] {5, 6, 6, 6, 6, 6, 5};
+            case 42:
+                return new int[] {6, 6, 6, 6, 6, 6, 6};
+            case 43:
+                return new int[] {5, 5, 6, 5, 5, 6, 5, 6};
+            case 44:
+                return new int[] {5, 6, 5, 6, 5, 6, 5, 6};
+            case 45:
+                return new int[] {5, 6, 5, 6, 6, 5, 6, 6};
+            case 46:
+                return new int[] {5, 6, 6, 6, 5, 6, 6, 6};
+            case 47:
+                return new int[] {5, 6, 6, 6, 6, 6, 6, 6};
+            case 48:
+                return new int[] {6, 6, 6, 6, 6, 6, 6, 6};
+            case 49:
+                return new int[] {5, 5, 6, 5, 6, 5, 6, 5, 5};
+            case 50:
+                return new int[] {5, 6, 5, 6, 5, 6, 5, 6, 6};
+            case 51:
+                return new int[] {5, 6, 6, 5, 6, 6, 5, 6, 5};
+            case 52:
+                return new int[] {5, 6, 6, 6, 5, 6, 6, 6, 6};
+            case 53:
+                return new int[] {5, 6, 6, 6, 6, 6, 6, 6, 6};
+            case 54:
+                return new int[] {6, 6, 6, 6, 6, 6, 6, 6, 6};
+            case 55:
+                return new int[] {5, 6, 5, 6, 5, 6, 5, 6, 5, 6};
+            case 56:
+                return new int[] {5, 6, 5, 6, 6, 5, 6, 5, 6, 6};
+            case 57:
+                return new int[] {5, 6, 6, 5, 6, 6, 5, 6, 6, 6};
+            case 58:
+                return new int[] {5, 6, 6, 6, 6, 5, 6, 6, 6, 5};
+            case 59:
+                return new int[] {5, 6, 6, 6, 6, 6, 6, 6, 6, 5};
+            case 60:
+                return new int[] {6, 6, 6, 6, 6, 6, 6, 6, 6, 6};
+            default:
+                return new int[] {};
         }
     }
 }
