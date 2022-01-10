@@ -13,7 +13,7 @@ public class CommsHandler {
     int OUR_ARCHON_BITS = 16; // 4 bits: status; 6 bits: x coordinate; 6 bits: y coordinate
     int ENEMY_ARCHON_BITS = 13;
     int MAP_SYMMETRY_BITS = 12; // 1 bit: horizontal symmetry; 1 bit: vertical symmetry
-    int CLUSTER_BITS = 4; // 2 bits: cluster control status; 2 bits: resource count.
+    int CLUSTER_BITS = 5; // 2 bits: cluster control status; 3 bits: resource count.
 
     int ARCHON_INSTRUCTION_BITS = 16;
     int[] CHUNK_SIZES = {
@@ -163,7 +163,7 @@ public class CommsHandler {
     }
 
     /**
-     * Returns the number of resources in the specified cluster, encoded in the range [1, 3].
+     * Returns the number of resources in the specified cluster, encoded in the range [1, 7].
      * Returns 0 if the resource count is unknown.
      *
      * @param clusterNum the cluster number
@@ -171,11 +171,11 @@ public class CommsHandler {
      * @throws GameActionException
      */
     public int readClusterResourceCount(int clusterIdx) throws GameActionException {
-        return readChunkPortion(9 + clusterIdx, 2, 2);
+        return readChunkPortion(9 + clusterIdx, 2, 3);
     }
 
     /**
-     * Writes the number of resources in the specified cluster, encoded in the range [1, 3].
+     * Writes the number of resources in the specified cluster, encoded in the range [1, 7].
      * Returns 0 if the resource count is unknown.
      * 
      * @param clusterNum the cluster number
@@ -184,7 +184,7 @@ public class CommsHandler {
      * @throws GameActionException
      */
     public boolean writeClusterResourceCount(int clusterIdx, int count) throws GameActionException {
-        return writeChunkPortion(count, 9 + clusterIdx, 2, 2);
+        return writeChunkPortion(count, 9 + clusterIdx, 2, 3);
     }
 
     private int readChunk(int chunkIndex) throws GameActionException { // Implements lazy reading from the main shared array
