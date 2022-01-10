@@ -159,6 +159,19 @@ public class CommsHandler {
     }
 
     /**
+     * Writes the reinforcement status of the specified cluster, encoded as follows:
+     * 0: no current reinforcement; 1: eco mission on the way; 2: sending army; 3: heavily sending army.
+     *
+     * @param clusterNum the cluster number
+     * @param status the reinforcement status to write
+     * @return true if the write was successful
+     * @throws GameActionException
+     */
+    public boolean writeClusterReinforcementStatus(int clusterIdx, int status) throws GameActionException {
+        return writeChunkPortion(status, 9 + clusterIdx, 2, 2);
+    }
+
+    /**
      * Returns the number of resources in the specified cluster, encoded in the range [1, 15].
      * Returns 0 if the resource count is unknown.
      *
