@@ -87,21 +87,22 @@ public class CommsHandler {
     boolean unitTest = false;
     int[] sharedArray;
 
-    public CommsHandler(RobotController rc) {
+    public CommsHandler(RobotController rc) throws GameActionException {
         this.rc = rc;
         init();
         // System.out.println("Total bits used: " + (CHUNK_OFFSETS[CHUNK_OFFSETS.length-1] + CHUNK_SIZES[CHUNK_SIZES.length-1]));
     }
 
-    public CommsHandler() { // for unit test only
+    public CommsHandler() throws GameActionException { // for unit test only
         unitTest = true;
         sharedArray = new int[GameConstants.SHARED_ARRAY_LENGTH];
         for (int j = 0; j < sharedArray.length; j++) {
             sharedArray[j] = 0;
         }
+        init();
     }
 
-    private void init() {
+    private void init() throws GameActionException {
         for (int i = 0; i < CHUNK_SIZES.length; i++) { // TODO: remove once we precompute CHUNK_OFFSETS
             CHUNK_OFFSETS[i] = (i == 0) ? 0 : CHUNK_OFFSETS[i-1] + CHUNK_SIZES[i-1];
         }
