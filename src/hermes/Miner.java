@@ -122,7 +122,7 @@ public class Miner extends Robot {
      * @throws GameActionException
      */
     public void updateDestination() throws GameActionException {
-        int requiredLead = currentRound > 20 ? 6 : 1;
+        int requiredLead = currentRound > 20 ? 2 : 1;
         // Don't scan if destination still has lead or gold
         if (destination != null && rc.canSenseLocation(destination)
              && (rc.senseLead(destination) > requiredLead || rc.senseGold(destination) > 0)) {
@@ -133,16 +133,16 @@ public class Miner extends Robot {
         // Find nearest resource tile
         MapLocation nearestResource = null;
         int optimalDistance = Integer.MAX_VALUE;
-        for (MapLocation tile : rc.senseNearbyLocationsWithLead(RobotType.MINER.visionRadiusSquared)) {
+        for (MapLocation tile : rc.senseNearbyLocationsWithLead(RobotType.MINER.visionRadiusSquared, requiredLead)) {
             int dist = myLocation.distanceSquaredTo(tile);
-            if (rc.senseLead(tile) > requiredLead && dist < optimalDistance) {
+            if (dist < optimalDistance) {
                 nearestResource = tile;
                 optimalDistance = dist;
             }
         }
         for (MapLocation tile : rc.senseNearbyLocationsWithGold(RobotType.MINER.visionRadiusSquared)) {
             int dist = myLocation.distanceSquaredTo(tile);
-            if (rc.senseGold(tile) > 0 && dist < optimalDistance) {
+            if (dist < optimalDistance) {
                 nearestResource = tile;
                 optimalDistance = dist;
             }
