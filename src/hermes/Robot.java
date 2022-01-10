@@ -123,7 +123,6 @@ public class Robot {
     public void setClusterStates() throws GameActionException {
         // TODO: track cluster status
 
-
         RobotInfo[] enemies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, enemyTeam);
         for (RobotInfo enemy : enemies) {
             int clusterIdx = whichCluster(enemy.location);

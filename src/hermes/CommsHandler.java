@@ -12,8 +12,9 @@ public class CommsHandler {
     // Chunk schema:
     int OUR_ARCHON_BITS = 16; // 4 bits: status; 6 bits: x coordinate; 6 bits: y coordinate
     int ENEMY_ARCHON_BITS = 13;
-    int MAP_SYMMETRY_BITS = 2; // 1 bit: horizontal symmetry; 1 bit: vertical symmetry
-    int CLUSTER_BITS = 8; // 2 bits: cluster control status; 2 bits: how actively are we reinforcing; 4 bits: resource count
+    int MAP_SYMMETRY_BITS = 12; // 1 bit: horizontal symmetry; 1 bit: vertical symmetry
+    int CLUSTER_BITS = 4; // 2 bits: cluster control status; 2 bits: resource count.
+
     int ARCHON_INSTRUCTION_BITS = 16;
     int[] CHUNK_SIZES = {
         OUR_ARCHON_BITS, OUR_ARCHON_BITS, OUR_ARCHON_BITS, OUR_ARCHON_BITS,             // our 4 archons
@@ -56,15 +57,16 @@ public class CommsHandler {
         for (int i = 0; i < CHUNK_SIZES.length; i++) { // TODO: remove once we precompute CHUNK_OFFSETS
             CHUNK_OFFSETS[i] = (i == 0) ? 0 : CHUNK_OFFSETS[i-1] + CHUNK_SIZES[i-1];
         }
+        System.out.println("Total bits used: " + (CHUNK_OFFSETS[CHUNK_OFFSETS.length-1] + CHUNK_SIZES[CHUNK_SIZES.length-1]));
     }
 
-    public CommsHandler() { // for unit test only
-        unitTest = true;
-        sharedArray = new int[GameConstants.SHARED_ARRAY_LENGTH];
-        for (int j = 0; j < sharedArray.length; j++) {
-            sharedArray[j] = 0;
-        }
-    }
+    // public CommsHandler() { // for unit test only
+    //     unitTest = true;
+    //     sharedArray = new int[GameConstants.SHARED_ARRAY_LENGTH];
+    //     for (int j = 0; j < sharedArray.length; j++) {
+    //         sharedArray[j] = 0;
+    //     }
+    // }
 
     /**
      * Returns the status of the given friendly archon, encoded as follows:
@@ -161,32 +163,7 @@ public class CommsHandler {
     }
 
     /**
-     * Returns the reinforcement status of the specified cluster, encoded as follows:
-     * 0: no current reinforcement; 1: eco mission on the way; 2: sending army; 3: heavily sending army.
-     *
-     * @param clusterNum the cluster number
-     * @return the reinforcement status of the specified cluster
-     * @throws GameActionException
-     */
-    public int readClusterReinforcementStatus(int clusterIdx) throws GameActionException {
-        return readChunkPortion(9 + clusterIdx, 2, 2);
-    }
-
-    /**
-     * Writes the reinforcement status of the specified cluster, encoded as follows:
-     * 0: no current reinforcement; 1: eco mission on the way; 2: sending army; 3: heavily sending army.
-     *
-     * @param clusterNum the cluster number
-     * @param status the reinforcement status to write
-     * @return true if the write was successful
-     * @throws GameActionException
-     */
-    public boolean writeClusterReinforcementStatus(int clusterIdx, int status) throws GameActionException {
-        return writeChunkPortion(status, 9 + clusterIdx, 2, 2);
-    }
-
-    /**
-     * Returns the number of resources in the specified cluster, encoded in the range [1, 15].
+     * Returns the number of resources in the specified cluster, encoded in the range [1, 3].
      * Returns 0 if the resource count is unknown.
      *
      * @param clusterNum the cluster number
@@ -194,11 +171,11 @@ public class CommsHandler {
      * @throws GameActionException
      */
     public int readClusterResourceCount(int clusterIdx) throws GameActionException {
-        return readChunkPortion(9 + clusterIdx, 4, 4);
+        return readChunkPortion(9 + clusterIdx, 2, 2);
     }
 
     /**
-     * Writes the number of resources in the specified cluster, encoded in the range [1, 15].
+     * Writes the number of resources in the specified cluster, encoded in the range [1, 3].
      * Returns 0 if the resource count is unknown.
      * 
      * @param clusterNum the cluster number
@@ -207,7 +184,7 @@ public class CommsHandler {
      * @throws GameActionException
      */
     public boolean writeClusterResourceCount(int clusterIdx, int count) throws GameActionException {
-        return writeChunkPortion(count, 9 + clusterIdx, 4, 4);
+        return writeChunkPortion(count, 9 + clusterIdx, 2, 2);
     }
 
     private int readChunk(int chunkIndex) throws GameActionException { // Implements lazy reading from the main shared array
@@ -226,23 +203,23 @@ public class CommsHandler {
         return write(value, CHUNK_OFFSETS[chunkIndex] + beginBit, numBits);
     }
 
-    // TODO: after unit tests pass, remove this and replace all readSharedArray with rc.readSharedArray to save bytecode
-    private int readSharedArray(int index) throws GameActionException {
-        if (unitTest) {
-            return sharedArray[index];
-        } else {
-            return rc.readSharedArray(index);
-        }
-    }
+    // // TODO: after unit tests pass, remove this and replace all readSharedArray with rc.readSharedArray to save bytecode
+    // private int readSharedArray(int index) throws GameActionException {
+    //     if (unitTest) {
+    //         return sharedArray[index];
+    //     } else {
+    //         return rc.readSharedArray(index);
+    //     }
+    // }
 
-    // TODO: after unit tests pass, remove this and replace all writeSharedArray with rc.writeSharedArray to save bytecode
-    private void writeSharedArray(int index, int value) throws GameActionException {
-        if (unitTest) {
-            sharedArray[index] = value;
-        } else {
-            rc.writeSharedArray(index, value);
-        }
-    }
+    // // TODO: after unit tests pass, remove this and replace all writeSharedArray with rc.writeSharedArray to save bytecode
+    // private void writeSharedArray(int index, int value) throws GameActionException {
+    //     if (unitTest) {
+    //         sharedArray[index] = value;
+    //     } else {
+    //         rc.writeSharedArray(index, value);
+    //     }
+    // }
 
     /*
      * Low-level read and write methods based on bit masking.
@@ -266,8 +243,8 @@ public class CommsHandler {
             int bitm = bitmask(integerBitBegin, integerBitEnd, false);
             value = value << (SHARED_ARRAY_ELEM_SIZE-integerBitBegin-numBits);
             // read value from shared array at arrIndexStart
-            int entry = readSharedArray(arrIndexStart);
-            writeSharedArray(arrIndexStart, (entry & bitm) | value);
+            int entry = rc.readSharedArray(arrIndexStart);
+            rc.writeSharedArray(arrIndexStart, (entry & bitm) | value);
         } else {
             //if write spans two integers
             int bitm1 = bitmask(integerBitBegin, SHARED_ARRAY_ELEM_SIZE-1, false);
@@ -280,10 +257,10 @@ public class CommsHandler {
             part1 = part1 >>> part2len;
             part2 = part2 << (SHARED_ARRAY_ELEM_SIZE-part2len);
             
-            int entry1 = readSharedArray(arrIndexStart);
-            int entry2 = readSharedArray(arrIndexEnd);
-            writeSharedArray(arrIndexStart, (entry1 & bitm1) | part1);
-            writeSharedArray(arrIndexEnd, (entry2 & bitm2) | part2);
+            int entry1 = rc.readSharedArray(arrIndexStart);
+            int entry2 = rc.readSharedArray(arrIndexEnd);
+            rc.writeSharedArray(arrIndexStart, (entry1 & bitm1) | part1);
+            rc.writeSharedArray(arrIndexEnd, (entry2 & bitm2) | part2);
         }
         return true;
     }
@@ -301,14 +278,14 @@ public class CommsHandler {
         //if read is contained in a single integer
         if(arrIndexStart==arrIndexEnd) {
             int bitm = bitmask(integerBitBegin, integerBitEnd, true);
-            output = (readSharedArray(arrIndexStart) & bitm) >>> (SHARED_ARRAY_ELEM_SIZE - integerBitBegin - numBits);
+            output = (rc.readSharedArray(arrIndexStart) & bitm) >>> (SHARED_ARRAY_ELEM_SIZE - integerBitBegin - numBits);
         } else {
                 //if the read spans two integers
                 int bitm = bitmask(integerBitBegin, SHARED_ARRAY_ELEM_SIZE-1, true);
                 int bitm2 = bitmask(0, integerBitEnd, true);
-                output = (readSharedArray(arrIndexStart) & bitm) >>> (SHARED_ARRAY_ELEM_SIZE - integerBitBegin - numBits + integerBitEnd + 1);
+                output = (rc.readSharedArray(arrIndexStart) & bitm) >>> (SHARED_ARRAY_ELEM_SIZE - integerBitBegin - numBits + integerBitEnd + 1);
                 output = output << integerBitEnd + 1;
-                output |= (readSharedArray(arrIndexEnd) & bitm2) >>> (SHARED_ARRAY_ELEM_SIZE - numBits + SHARED_ARRAY_ELEM_SIZE - integerBitBegin);
+                output |= (rc.readSharedArray(arrIndexEnd) & bitm2) >>> (SHARED_ARRAY_ELEM_SIZE - numBits + SHARED_ARRAY_ELEM_SIZE - integerBitBegin);
         }
         return output;
     }
