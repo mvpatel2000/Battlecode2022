@@ -151,10 +151,18 @@ public class Miner extends Robot {
             destination = nearestResource;
             exploreMode = false;
         }
-        // Switch to explore mode if destination no longer has lead
         else {
-            exploreMode = true;
-            updateDestinationForExploration();
+            // Navigate to nearest resources found
+            int nearestCluster = getNearestMineCluster();
+            if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                destination = clusterCenters[nearestCluster];
+            }
+            // Explore map
+            else {
+                exploreMode = true;
+                updateDestinationForExploration();
+            }
         }
+        rc.setIndicatorLine(myLocation, destination, 0, 255, 0);
     }
 }

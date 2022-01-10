@@ -237,7 +237,7 @@ public class Robot {
             // int clusterIdx = whichCluster(tile); Note: Inlined to save bytecode
             int clusterIdx = whichXLoc[tile.x] + whichYLoc[tile.y];
             // Only add to modified list if we haven't marked this cluster yet
-            if (clusterResources[clusterIdx] == 0) {
+            if (clusterResources[clusterIdx] % 10000000 == 0) {
                 markedClustersBuffer[markedClustersCount] = clusterIdx;
                 markedClustersCount++;
             }
@@ -247,11 +247,26 @@ public class Robot {
             // int clusterIdx = whichCluster(tile); Note: Inlined to save bytecode
             int clusterIdx = whichXLoc[tile.x] + whichYLoc[tile.y];
             // Only add to modified list if we haven't marked this cluster yet
-            if (clusterResources[clusterIdx] == 0) {
+            if (clusterResources[clusterIdx] % 10000000 == 0) {
                 markedClustersBuffer[markedClustersCount] = clusterIdx;
                 markedClustersCount++;
             }
             clusterResources[clusterIdx] += rc.senseGold(tile);
+        }
+
+        // Add surrounding clusters to buffer. This ensures we clear out clusters where all
+        // resources have been mined
+        int[][] shifts = {{0, 3}, {2, 2}, {3, 0}, {2, -2}, {0, -3}, {-2, -2}, {-3, 0}, {-2, 2}};
+        for (int[] shift : shifts) {
+            MapLocation shiftedLocation = myLocation.translate(shift[0], shift[1]);
+            if (rc.canSenseLocation(shiftedLocation)) {
+                // int clusterIdx = whichCluster(shiftedLocation); Note: Inlined to save bytecode
+                int clusterIdx = whichXLoc[shiftedLocation.x] + whichYLoc[shiftedLocation.y];
+                if (clusterResources[clusterIdx] % 10000000 == 0) {
+                    markedClustersBuffer[markedClustersCount] = clusterIdx;
+                    markedClustersCount++;
+                }
+            }
         }
         
         // Flush resource buffer and write to comms
@@ -435,6 +450,29 @@ public class Robot {
         for (int i = 0; i < commsHandler.COMBAT_CLUSTER_SLOTS; i++) {
             int nearestCluster = commsHandler.readCombatClusterIndex(i);
             // Break if no more combat clusters exist
+            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                break;
+            }
+            int distance = myLocation.distanceSquaredTo(clusterCenters[nearestCluster]);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestCluster = nearestCluster;
+            }
+        }
+        return closestCluster;
+    }
+
+    /**
+     * Returns nearest mine cluster or UNDEFINED_CLUSTER_INDEX otherwise
+     * @return
+     * @throws GameActionException
+     */
+    public int getNearestMineCluster() throws GameActionException {
+        int closestCluster = commsHandler.UNDEFINED_CLUSTER_INDEX;
+        int closestDistance = Integer.MAX_VALUE;
+        for (int i = 0; i < commsHandler.MINE_CLUSTER_SLOTS; i++) {
+            int nearestCluster = commsHandler.readMineClusterIndex(i);
+            // Break if no more mine clusters exist
             if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 break;
             }
