@@ -169,7 +169,8 @@ public class Robot {
         for (int[] shift : shifts) {
             MapLocation shiftedLocation = myLocation.translate(shift[0], shift[1]);
             if (rc.canSenseLocation(shiftedLocation)) {
-                int clusterIdx = whichCluster(shiftedLocation);
+                // int clusterIdx = whichCluster(shiftedLocation); Note: Inlined to save bytecode
+                int clusterIdx = whichXLoc[shiftedLocation.x] + whichYLoc[shiftedLocation.y];
                 // Write new status to buffer if we haven't yet
                 if (clusterControls[clusterIdx] == 0) {
                     clusterControls[clusterIdx] = 1;
@@ -180,8 +181,13 @@ public class Robot {
         }
 
         // Mark nearby clusters with enemies as hostile
-        for (RobotInfo enemy : rc.senseNearbyRobots(rc.getType().visionRadiusSquared, enemyTeam)) {
-            int clusterIdx = whichCluster(enemy.location);
+        RobotInfo[] enemies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, enemyTeam);
+        // Process at max 10 enemies
+        int numEnemies = Math.min(enemies.length, 10);
+        for (int i = 0; i < numEnemies; i++) {
+            RobotInfo enemy = enemies[i];
+            // int clusterIdx = whichCluster(enemy.location); Note: Inlined to save bytecode
+            int clusterIdx = whichXLoc[enemy.location.x] + whichYLoc[enemy.location.y];
             // Write new status to buffer if we haven't marked as enemy controlled yet
             if (clusterControls[clusterIdx] < 2) {
                 // Only add to modified list if we haven't marked this cluster yet
@@ -216,7 +222,8 @@ public class Robot {
 
         // Scan nearby resources and aggregate counts. Require at least 2 lead since 1 lead regenerates
         for (MapLocation tile : rc.senseNearbyLocationsWithLead(RobotType.MINER.visionRadiusSquared, 2)) {
-            int clusterIdx = whichCluster(tile);
+            // int clusterIdx = whichCluster(tile); Note: Inlined to save bytecode
+            int clusterIdx = whichXLoc[tile.x] + whichYLoc[tile.y];
             // Only add to modified list if we haven't marked this cluster yet
             if (clusterResources[clusterIdx] == 0) {
                 markedClustersBuffer[markedClustersCount] = clusterIdx;
@@ -225,7 +232,8 @@ public class Robot {
             clusterResources[clusterIdx] += rc.senseLead(tile) - 1;
         }
         for (MapLocation tile : rc.senseNearbyLocationsWithGold(RobotType.MINER.visionRadiusSquared)) {
-            int clusterIdx = whichCluster(tile);
+            // int clusterIdx = whichCluster(tile); Note: Inlined to save bytecode
+            int clusterIdx = whichXLoc[tile.x] + whichYLoc[tile.y];
             // Only add to modified list if we haven't marked this cluster yet
             if (clusterResources[clusterIdx] == 0) {
                 markedClustersBuffer[markedClustersCount] = clusterIdx;
@@ -238,7 +246,8 @@ public class Robot {
         for (int i = 0; i < markedClustersCount; i++) {
             int clusterIdx = markedClustersBuffer[i];
             int resourceCount = compressResourceCount(clusterResources[clusterIdx]);
-            if (resourceCount != commsHandler.readClusterResourceCount(clusterIdx)) {
+            int existingResourceCount = commsHandler.readClusterResourceCount(clusterIdx);
+            if (resourceCount != existingResourceCount) {
                 commsHandler.writeClusterResourceCount(clusterIdx, resourceCount);
             }
             clusterResources[clusterIdx] = 0;
@@ -250,7 +259,7 @@ public class Robot {
      * @param resourceCount
      */
     public int compressResourceCount(int resourceCount) {
-        return Math.max((int)Math.log(resourceCount), 15);
+        return Math.min((int)Math.log(resourceCount), 15);
     }
 
     /**
@@ -444,6 +453,13 @@ public class Robot {
         }
     }
 
+    /**
+     * Returns cluster given a location.
+     * 
+     * NOTE: THIS FUNCTION IS ONLY FOR REFERENCE. IF CALLED FREQUENTLY, INLINE THIS FUNCTION!!
+     * @param loc
+     * @return
+     */
     public int whichCluster(MapLocation loc) {
         return whichXLoc[loc.x] + whichYLoc[loc.y];
     }
