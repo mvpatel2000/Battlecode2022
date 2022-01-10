@@ -120,8 +120,8 @@ public class Soldier extends Robot {
         }
         else {
             // Navigate to nearest found enemy
-            int nearestCluster = getNearestClusterByControlStatus(2);
-            if (nearestCluster != -1) {
+            int nearestCluster = getNearestClusterByControlStatus(CommsHandler.ControlStatus.THEIRS);
+            if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 destination = clusterCenters[nearestCluster];
             }
             // Explore map
