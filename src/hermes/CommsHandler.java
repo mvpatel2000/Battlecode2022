@@ -326,7 +326,7 @@ public class CommsHandler {
      * @return the claim status of the specified mining cluster
      * @throws GameActionException
      */
-    public int readMiningClusterClaimStatus(int mineClusterIndex) throws GameActionException {
+    public int readMineClusterClaimStatus(int mineClusterIndex) throws GameActionException {
         return readChunkPortion(MINE_CLUSTER_OFFSET + mineClusterIndex, 0, 3);
     }
 
@@ -338,7 +338,7 @@ public class CommsHandler {
      * @return true if the write was successful
      * @throws GameActionException
      */
-    public boolean writeMiningClusterClaimStatus(int mineClusterIndex, int claimStatus) throws GameActionException {
+    public boolean writeMineClusterClaimStatus(int mineClusterIndex, int claimStatus) throws GameActionException {
         return writeChunkPortion(claimStatus, MINE_CLUSTER_OFFSET + mineClusterIndex, 0, 3);
     }
 
