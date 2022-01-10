@@ -121,6 +121,7 @@ public class Soldier extends Robot {
         else {
             // Navigate to nearest found enemy
             int nearestCluster = getNearestClusterByControlStatus(2);
+            rc.setIndicatorString(myLocation + " " + nearestCluster);
             if (nearestCluster != -1) {
                 destination = clusterCenters[nearestCluster];
             }

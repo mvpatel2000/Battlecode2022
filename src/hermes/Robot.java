@@ -101,6 +101,7 @@ public class Robot {
         // Before unit runs
         turnCount++;
         currentRound = rc.getRoundNum();
+        setClusterStates();
 
         // Does turn
         runUnit();
