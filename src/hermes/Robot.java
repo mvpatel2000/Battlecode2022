@@ -29,6 +29,8 @@ public class Robot {
     int[] clusterWidths;
     float xStep;
     float yStep;
+    int[] whichXLoc;
+    int[] whichYLoc;
     MapLocation[] clusterCenters;
     int[] clusterResources;
     int[] clusterControls;
@@ -87,6 +89,16 @@ public class Robot {
         exploreMode = true; // TODO: This should be set to false if given instructions
         priorDestinations = new ArrayList<MapLocation>();
         commsHandler = new CommsHandler(rc);
+
+        // Precompute math for whichCluster
+        whichXLoc = new int[mapWidth];
+        whichYLoc = new int[mapHeight];
+        for (int i = 0; i < mapWidth; i++) {
+            whichXLoc[i] = (int) (i / xStep);
+        }
+        for (int i = 0; i < mapHeight; i++) {
+            whichYLoc[i] = (int) (i / yStep) * clusterWidths.length;
+        }
 
         // Buildings are their own base
         if (rc.getType() == RobotType.LABORATORY || rc.getType() == RobotType.WATCHTOWER || rc.getType() == RobotType.ARCHON) {
@@ -433,7 +445,7 @@ public class Robot {
     }
 
     public int whichCluster(MapLocation loc) {
-        return ((int) (loc.x / xStep)) + ((int) (loc.y / yStep)) * clusterWidths.length;
+        return whichXLoc[loc.x] + whichYLoc[loc.y];
     }
 
     public int[] computeClusterSizes(int dim) {
