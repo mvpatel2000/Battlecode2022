@@ -64,10 +64,16 @@ public class Archon extends Robot {
      * @throws GameActionException
      */
     public void build() throws GameActionException {
-        boolean shouldBuildMiner = turnCount < 100 ? rng.nextBoolean() : rng.nextDouble() < 0.3;
+        // temporary solution to starvation
+        boolean pass = rng.nextDouble() > ((1 + myArchonNum) / (double) numOurArchons) + (rc.getTeamLeadAmount(allyTeam) / 1000.0);
+        if (pass) {
+            return;
+        }
+
+        boolean shouldBuildMiner = turnCount < 20 ? true : (turnCount < 100 ? rng.nextBoolean() : rng.nextDouble() < 0.3);
         RobotType toBuild = shouldBuildMiner ? RobotType.MINER : RobotType.SOLDIER;
         // Build builders if lots of lead for watchtowers
-        if (rc.getTeamLeadAmount(allyTeam) > 1000) {
+        if (rc.getTeamLeadAmount(allyTeam) > 500 && rng.nextDouble() < 0.3) {
             toBuild = RobotType.BUILDER;
         }
 
