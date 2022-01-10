@@ -8,14 +8,41 @@ public class CommsHandler {
     RobotController rc;
 
     // Max chunk size: 16 bits
-    // TODO (Nikhil): support up to 32 bit chunks (requires modifying low-level functions to cover split over 3 case)
-    // Chunk schema:
-    int OUR_ARCHON_BITS = 16; // 4 bits: status; 6 bits: x coordinate; 6 bits: y coordinate
-    int ENEMY_ARCHON_BITS = 13;
-    int MAP_SYMMETRY_BITS = 12; // 1 bit: horizontal symmetry; 1 bit: vertical symmetry
-    int CLUSTER_BITS = 5; // 2 bits: cluster control status; 3 bits: resource count.
-    int ARCHON_INSTRUCTION_BITS = 16;
-    int PRIORITY_CLUSTER_BITS = 16;
+
+    // ********** CHUNK SCHEMA **********
+
+    final int OUR_ARCHON_BITS = 16; // 4 bits: status; 6 bits: x coordinate; 6 bits: y coordinate
+    final int OUR_ARCHON_SLOTS = 4;
+    final int OUR_ARCHON_OFFSET = 0;
+
+    final int ENEMY_ARCHON_BITS = 13; // schema TBD
+    final int ENEMY_ARCHON_SLOTS = 4;
+    final int ENEMY_ARCHON_OFFSET = OUR_ARCHON_OFFSET + OUR_ARCHON_SLOTS;
+
+    final int MAP_SYMMETRY_BITS = 2; // 1 bit: horizontal symmetry; 1 bit: vertical symmetry
+    final int MAP_SYMMETRY_SLOTS = 1;
+    final int MAP_SYMMETRY_OFFSET = ENEMY_ARCHON_OFFSET + ENEMY_ARCHON_SLOTS;
+
+    final int CLUSTER_BITS = 5; // 2 bits: cluster control status; 3 bits: resource count.
+    final int CLUSTER_SLOTS = 100;
+    final int CLUSTER_OFFSET = MAP_SYMMETRY_OFFSET + MAP_SYMMETRY_SLOTS;
+
+    final int ARCHON_INSTRUCTION_BITS = 16; // schema TBD
+    final int ARCHON_INSTRUCTION_SLOTS = 4;
+    final int ARCHON_INSTRUCTION_OFFSET = CLUSTER_OFFSET + CLUSTER_SLOTS;
+
+    final int COMBAT_CLUSTER_BITS = 7; // 7 bits: cluster index
+    final int COMBAT_CLUSTER_SLOTS = 5;
+    final int COMBAT_CLUSTER_OFFSET = ARCHON_INSTRUCTION_OFFSET + ARCHON_INSTRUCTION_SLOTS;
+
+    final int EXPLORE_CLUSTER_BITS = 8; // 1 bit: claim status, 7 bits: cluster index
+    final int EXPLORE_CLUSTER_SLOTS = 10;
+    final int EXPLORE_CLUSTER_OFFSET = COMBAT_CLUSTER_OFFSET + COMBAT_CLUSTER_SLOTS;
+
+    final int MINE_CLUSTER_BITS = 10; // 3 bits: claim status, 7 bits: cluster index
+    final int MINE_CLUSTER_SLOTS = 10;
+    final int MINE_CLUSTER_OFFSET = EXPLORE_CLUSTER_OFFSET + EXPLORE_CLUSTER_SLOTS;
+
     int[] CHUNK_SIZES = {
         OUR_ARCHON_BITS, OUR_ARCHON_BITS, OUR_ARCHON_BITS, OUR_ARCHON_BITS,             // our 4 archons
         ENEMY_ARCHON_BITS, ENEMY_ARCHON_BITS, ENEMY_ARCHON_BITS, ENEMY_ARCHON_BITS,     // enemy 4 archons
@@ -41,10 +68,11 @@ public class CommsHandler {
         CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, 
         CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, 
         ARCHON_INSTRUCTION_BITS, ARCHON_INSTRUCTION_BITS, ARCHON_INSTRUCTION_BITS, ARCHON_INSTRUCTION_BITS, 
-        PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, // up to 20 priority clusters
-        PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, 
-        PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, 
-        PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, PRIORITY_CLUSTER_BITS, 
+        COMBAT_CLUSTER_BITS, COMBAT_CLUSTER_BITS, COMBAT_CLUSTER_BITS, COMBAT_CLUSTER_BITS, COMBAT_CLUSTER_BITS, // up to 5 active combat clusters
+        EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, // up to 10 active exploration clusters
+        EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, 
+        MINE_CLUSTER_BITS, MINE_CLUSTER_BITS, MINE_CLUSTER_BITS, MINE_CLUSTER_BITS, MINE_CLUSTER_BITS, // up to 10 active mining clusters
+        MINE_CLUSTER_BITS, MINE_CLUSTER_BITS, MINE_CLUSTER_BITS, MINE_CLUSTER_BITS, MINE_CLUSTER_BITS, 
         // TODO: add more
     };
     int[] CHUNK_OFFSETS = new int[CHUNK_SIZES.length]; // TODO: precompute prefix sums of CHUNK_SIZES
@@ -53,15 +81,15 @@ public class CommsHandler {
     final int SHARED_ARRAY_ELEM_LOG2 = 4;
     final int MAX_SHARED_ARRAY_ELEM = 65535;
 
+    final int UNDEFINED_CLUSTER_INDEX = 127;
+
     // for unit test only
     boolean unitTest = false;
     int[] sharedArray;
 
     public CommsHandler(RobotController rc) {
         this.rc = rc;
-        for (int i = 0; i < CHUNK_SIZES.length; i++) { // TODO: remove once we precompute CHUNK_OFFSETS
-            CHUNK_OFFSETS[i] = (i == 0) ? 0 : CHUNK_OFFSETS[i-1] + CHUNK_SIZES[i-1];
-        }
+        init();
         // System.out.println("Total bits used: " + (CHUNK_OFFSETS[CHUNK_OFFSETS.length-1] + CHUNK_SIZES[CHUNK_SIZES.length-1]));
     }
 
@@ -71,8 +99,20 @@ public class CommsHandler {
         for (int j = 0; j < sharedArray.length; j++) {
             sharedArray[j] = 0;
         }
+    }
+
+    private void init() {
         for (int i = 0; i < CHUNK_SIZES.length; i++) { // TODO: remove once we precompute CHUNK_OFFSETS
             CHUNK_OFFSETS[i] = (i == 0) ? 0 : CHUNK_OFFSETS[i-1] + CHUNK_SIZES[i-1];
+        }
+        for (int i = 0; i < COMBAT_CLUSTER_SLOTS; i++) {
+            writeCombatClusterIndex(i, UNDEFINED_CLUSTER_INDEX);
+        }
+        for (int i = 0; i < EXPLORE_CLUSTER_SLOTS; i++) {
+            writeExploreClusterIndex(i, UNDEFINED_CLUSTER_INDEX);
+        }
+        for (int i = 0; i < MINE_CLUSTER_SLOTS; i++) {
+            writeMineClusterIndex(i, UNDEFINED_CLUSTER_INDEX);
         }
     }
 
@@ -84,7 +124,7 @@ public class CommsHandler {
      * @param archonNum the archon number
      */
     public int readOurArchonStatus(int archonNum) throws GameActionException {
-        return readChunkPortion(archonNum, 0, 4);
+        return readChunkPortion(OUR_ARCHON_OFFSET + archonNum, 0, 4);
     }
 
     /**
@@ -96,7 +136,7 @@ public class CommsHandler {
      * @param status the status to write
      */
     public boolean writeOurArchonStatus(int archonNum, int status) throws GameActionException {
-        return writeChunkPortion(status, archonNum, 0, 4);
+        return writeChunkPortion(status, OUR_ARCHON_OFFSET + archonNum, 0, 4);
     }
 
     /**
@@ -107,7 +147,7 @@ public class CommsHandler {
      * @throws GameActionException
      */
     public MapLocation readOurArchonLocation(int archonNum) throws GameActionException {
-        return new MapLocation(readChunkPortion(archonNum, 4, 6), readChunkPortion(archonNum, 10, 6));
+        return new MapLocation(readChunkPortion(OUR_ARCHON_OFFSET + archonNum, 4, 6), readChunkPortion(OUR_ARCHON_OFFSET + archonNum, 10, 6));
     }
 
     /**
@@ -119,7 +159,7 @@ public class CommsHandler {
      * @throws GameActionException
      */
     public boolean writeOurArchonLocation(int archonNum, MapLocation loc) throws GameActionException {
-        return writeChunkPortion(loc.x, archonNum, 4, 6) && writeChunkPortion(loc.y, archonNum, 10, 6);
+        return writeChunkPortion(loc.x, OUR_ARCHON_OFFSET + archonNum, 4, 6) && writeChunkPortion(loc.y, OUR_ARCHON_OFFSET + archonNum, 10, 6);
     }
 
     /**
@@ -129,8 +169,8 @@ public class CommsHandler {
      * @return the symmetry of the map
      * @throws GameActionException
      */
-    public int readSymmetry() throws GameActionException {
-        return readChunk(8);
+    public int readMapSymmetry() throws GameActionException {
+        return readChunkPortion(MAP_SYMMETRY_OFFSET, 0, 2);
     }
 
     /**
@@ -141,8 +181,8 @@ public class CommsHandler {
      * @return true if the write was successful
      * @throws GameActionException
      */
-    public boolean writeSymmetry(int symmetry) throws GameActionException {
-        return writeChunk(symmetry, 8);
+    public boolean writeMapSymmetry(int symmetry) throws GameActionException {
+        return writeChunkPortion(symmetry, MAP_SYMMETRY_OFFSET, 0, 2);
     }
 
     /**
@@ -154,7 +194,7 @@ public class CommsHandler {
      * @throws GameActionException
      */
     public int readClusterControlStatus(int clusterIdx) throws GameActionException {
-        return readChunkPortion(9 + clusterIdx, 0, 2);
+        return readChunkPortion(CLUSTER_OFFSET + clusterIdx, 0, 2);
     }
 
     /**
@@ -167,7 +207,7 @@ public class CommsHandler {
      * @throws GameActionException
      */
     public boolean writeClusterControlStatus(int clusterIdx, int status) throws GameActionException {
-        return writeChunkPortion(status, 9 + clusterIdx, 0, 2);
+        return writeChunkPortion(status, CLUSTER_OFFSET + clusterIdx, 0, 2);
     }
 
     /**
@@ -179,7 +219,7 @@ public class CommsHandler {
      * @throws GameActionException
      */
     public int readClusterResourceCount(int clusterIdx) throws GameActionException {
-        return readChunkPortion(9 + clusterIdx, 2, 3);
+        return readChunkPortion(CLUSTER_OFFSET + clusterIdx, 2, 3);
     }
 
     /**
@@ -192,7 +232,125 @@ public class CommsHandler {
      * @throws GameActionException
      */
     public boolean writeClusterResourceCount(int clusterIdx, int count) throws GameActionException {
-        return writeChunkPortion(count, 9 + clusterIdx, 2, 3);
+        return writeChunkPortion(count, CLUSTER_OFFSET + clusterIdx, 2, 3);
+    }
+
+    /**
+     * Returns the cluster index of the specified combat cluster.
+     * Returns UNDEFINED_CLUSTER_INDEX if the combat cluster is not specified.
+     * 
+     * @param combatClusterIndex the combat cluster index, in the range [0, COMBAT_CLUSTER_SLOTS - 1]
+     * @return the cluster index of the specified combat cluster
+     * @throws GameActionException
+     */
+    public int readCombatClusterIndex(int combatClusterIndex) throws GameActionException {
+        return readChunkPortion(COMBAT_CLUSTER_OFFSET + combatClusterIndex, 0, 7);
+    }
+
+    /**
+     * Writes the cluster index of the specified combat cluster.
+     * 
+     * @param combatClusterIndex the combat cluster index, in the range [0, COMBAT_CLUSTER_SLOTS - 1]
+     * @param clusterIndex the cluster index to write
+     * @return true if the write was successful
+     * @throws GameActionException
+     */
+    public boolean writeCombatClusterIndex(int combatClusterIndex, int clusterIndex) throws GameActionException {
+        return writeChunkPortion(clusterIndex, COMBAT_CLUSTER_OFFSET + combatClusterIndex, 0, 7);
+    }
+
+    /**
+     * Returns the claim status of the specified exploration cluster; 0: unclaimed, 1: claimed.
+     * 
+     * @param exploreClusterIndex the exploration cluster index, in the range [0, EXPLORE_CLUSTER_SLOTS - 1]
+     * @return the claim status of the specified exploration cluster
+     * @throws GameActionException
+     */
+    public int readExploreClusterClaimStatus(int exploreClusterIndex) throws GameActionException {
+        return readChunkPortion(EXPLORE_CLUSTER_OFFSET + exploreClusterIndex, 0, 1);
+    }
+
+    /**
+     * Writes the claim status of the specified exploration cluster; 0: unclaimed, 1: claimed.
+     * 
+     * @param exploreClusterIndex the exploration cluster index, in the range [0, EXPLORE_CLUSTER_SLOTS - 1]
+     * @param claimStatus the claim status to write
+     * @return true if the write was successful
+     * @throws GameActionException
+     */
+    public boolean writeExploreClusterClaimStatus(int exploreClusterIndex, int claimStatus) throws GameActionException {
+        return writeChunkPortion(claimStatus, EXPLORE_CLUSTER_OFFSET + exploreClusterIndex, 0, 1);
+    }
+
+    /** 
+     * Returns the cluster index of the specified exploration cluster.
+     * Returns UNDEFINED_CLUSTER_INDEX if the exploration cluster is not specified.
+     * 
+     * @param exploreClusterIndex the exploration cluster index, in the range [0, EXPLORE_CLUSTER_SLOTS - 1]
+     * @return the cluster index of the specified exploration cluster
+     * @throws GameActionException
+     */
+    public int readExploreClusterIndex(int exploreClusterIndex) throws GameActionException {
+        return readChunkPortion(EXPLORE_CLUSTER_OFFSET + exploreClusterIndex, 1, 7);
+    }
+
+    /**
+     * Writes the cluster index of the specified exploration cluster.
+     * 
+     * @param exploreClusterIndex the exploration cluster index, in the range [0, EXPLORE_CLUSTER_SLOTS - 1]
+     * @param clusterIndex the cluster index to write
+     * @return true if the write was successful
+     * @throws GameActionException
+     */
+    public boolean writeExploreClusterIndex(int exploreClusterIndex, int clusterIndex) throws GameActionException {
+        return writeChunkPortion(clusterIndex, EXPLORE_CLUSTER_OFFSET + exploreClusterIndex, 1, 7);
+    }
+
+    /** 
+     * Returns the claim status of the specified mining cluster, in the range [0, 7].
+     * 
+     * @param mineClusterIndex the mining cluster index, in the range [0, MINE_CLUSTER_SLOTS - 1]
+     * @return the claim status of the specified mining cluster
+     * @throws GameActionException
+     */
+    public int readMiningClusterClaimStatus(int mineClusterIndex) throws GameActionException {
+        return readChunkPortion(MINE_CLUSTER_OFFSET + mineClusterIndex, 0, 3);
+    }
+
+    /**
+     * Writes the claim status of the specified mining cluster, in the range [0, 7].
+     * 
+     * @param mineClusterIndex the mining cluster index, in the range [0, MINE_CLUSTER_SLOTS - 1]
+     * @param claimStatus the claim status to write
+     * @return true if the write was successful
+     * @throws GameActionException
+     */
+    public boolean writeMiningClusterClaimStatus(int mineClusterIndex, int claimStatus) throws GameActionException {
+        return writeChunkPortion(claimStatus, MINE_CLUSTER_OFFSET + mineClusterIndex, 0, 3);
+    }
+
+    /**
+     * Returns the cluster index of the specified mining cluster.
+     * Returns UNDEFINED_CLUSTER_INDEX if the mining cluster is not specified.
+     * 
+     * @param mineClusterIndex the mining cluster index, in the range [0, MINE_CLUSTER_SLOTS - 1]
+     * @return the cluster index of the specified mining cluster
+     * @throws GameActionException
+     */
+    public int readMineClusterIndex(int mineClusterIndex) throws GameActionException {
+        return readChunkPortion(MINE_CLUSTER_OFFSET + mineClusterIndex, 3, 7);
+    }
+
+    /**
+     * Writes the cluster index of the specified mining cluster.
+     * 
+     * @param mineClusterIndex the mining cluster index, in the range [0, MINE_CLUSTER_SLOTS - 1]
+     * @param clusterIndex the cluster index to write
+     * @return true if the write was successful
+     * @throws GameActionException
+     */
+    public boolean writeMineClusterIndex(int mineClusterIndex, int clusterIndex) throws GameActionException {
+        return writeChunkPortion(clusterIndex, MINE_CLUSTER_OFFSET + mineClusterIndex, 3, 7);
     }
 
     private int readChunk(int chunkIndex) throws GameActionException { // Implements lazy reading from the main shared array
