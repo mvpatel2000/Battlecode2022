@@ -29,7 +29,12 @@ public class Robot {
     int[] clusterWidths;
     float xStep;
     float yStep;
+    int[] whichXLoc;
+    int[] whichYLoc;
     MapLocation[] clusterCenters;
+    int[] clusterResources;
+    int[] clusterControls;
+    int[] markedClustersBuffer;
 
     CommsHandler commsHandler;
 
@@ -77,10 +82,23 @@ public class Robot {
         mapWidth = rc.getMapWidth();
         setupClusters();
         precomputeClusterCenters();
+        clusterResources = new int[numClusters];
+        clusterControls = new int[numClusters];
+        markedClustersBuffer = new int[numClusters];
         destination = null;
         exploreMode = true; // TODO: This should be set to false if given instructions
         priorDestinations = new ArrayList<MapLocation>();
         commsHandler = new CommsHandler(rc);
+
+        // Precompute math for whichCluster
+        whichXLoc = new int[mapWidth];
+        whichYLoc = new int[mapHeight];
+        for (int i = 0; i < mapWidth; i++) {
+            whichXLoc[i] = (int) (i / xStep);
+        }
+        for (int i = 0; i < mapHeight; i++) {
+            whichYLoc[i] = (int) (i / yStep) * clusterWidths.length;
+        }
 
         // Buildings are their own base
         if (rc.getType() == RobotType.LABORATORY || rc.getType() == RobotType.WATCHTOWER || rc.getType() == RobotType.ARCHON) {
@@ -117,24 +135,122 @@ public class Robot {
     }
 
     /**
-     * Updates communication cluster information
+     * Updates cluster information. Scans nearby tiles, enemy locations, and nearby resources
+     * and aggregates into clusterControls and clusterResoruces as buffers. Uses 
+     * markedClustersBuffer to track which buffers have been modified each turn to reset them.
+     * Alternates whether control or resources are scanned each turn to conserve bytecode.
      * @throws GameActionException
      */
     public void setClusterStates() throws GameActionException {
-        // TODO: track cluster status
+        int bytecodeUsed = Clock.getBytecodeNum();
+        
+        if (currentRound % 2 == 0) {
+            setClusterControlStates();
+        }
+        else {
+            setClusterResourceStates();
+        }
 
+        int bytecodeUsed2 = Clock.getBytecodeNum();
+        rc.setIndicatorString("Cluster States: "+(bytecodeUsed2 - bytecodeUsed));
+    }
 
-        RobotInfo[] enemies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, enemyTeam);
-        for (RobotInfo enemy : enemies) {
-            int clusterIdx = whichCluster(enemy.location);
-            int clusterStatus = commsHandler.readClusterControlStatus(clusterIdx);
-            if (clusterStatus != 2) {
-                commsHandler.writeClusterControlStatus(clusterIdx, 2);
+    /**
+     * Updates cluster information. Scans nearby tiles and enemy locations and aggregates into 
+     * clusterControls as a buffer. Uses markedClustersBuffer to track which buffers have been
+     * modified each turn to reset them
+     * @throws GameActionException
+     */
+    public void setClusterControlStates() throws GameActionException {
+        int markedClustersCount = 0;
+
+        // Mark nearby clusters as explored
+        int[][] shifts = {{0, 3}, {2, 2}, {3, 0}, {2, -2}, {0, -3}, {-2, -2}, {-3, 0}, {-2, 2}};
+        for (int[] shift : shifts) {
+            MapLocation shiftedLocation = myLocation.translate(shift[0], shift[1]);
+            if (rc.canSenseLocation(shiftedLocation)) {
+                int clusterIdx = whichCluster(shiftedLocation);
+                // Write new status to buffer if we haven't yet
+                if (clusterControls[clusterIdx] == 0) {
+                    clusterControls[clusterIdx] = 1;
+                    markedClustersBuffer[markedClustersCount] = clusterIdx;
+                    markedClustersCount++;
+                }
             }
         }
-        // TODO: Mark all clusters visible as explored
 
-        // TODO: Write resource counts. Use integer division or something to reduce to center
+        // Mark nearby clusters with enemies as hostile
+        for (RobotInfo enemy : rc.senseNearbyRobots(rc.getType().visionRadiusSquared, enemyTeam)) {
+            int clusterIdx = whichCluster(enemy.location);
+            // Write new status to buffer if we haven't marked as enemy controlled yet
+            if (clusterControls[clusterIdx] < 2) {
+                // Only add to modified list if we haven't marked this cluster yet
+                if (clusterControls[clusterIdx] == 0) {
+                    markedClustersBuffer[markedClustersCount] = clusterIdx;
+                    markedClustersCount++;
+                }
+                clusterControls[clusterIdx] = 2;
+            }
+        }
+
+        // Flush control buffer and write to comms
+        for (int i = 0; i < markedClustersCount; i++) {
+            int clusterIdx = markedClustersBuffer[i];
+            int clusterStatus = clusterControls[clusterIdx];
+            if (clusterStatus != commsHandler.readClusterControlStatus(clusterIdx)) {
+                commsHandler.writeClusterControlStatus(clusterIdx, clusterStatus);
+            }
+            clusterControls[clusterIdx] = 0;
+        }
+    }
+
+    /**
+     * Updates cluster information. Scans nearby resources and aggregates into clusterResoruces as
+     * a buffer. Uses markedClustersBuffer to track which buffers have been modified each turn to
+     * reset them
+     * @throws GameActionException
+     */
+    public void setClusterResourceStates() throws GameActionException {
+        // Reset buffer
+        int markedClustersCount = 0;
+
+        // Scan nearby resources and aggregate counts. Require at least 2 lead since 1 lead regenerates
+        for (MapLocation tile : rc.senseNearbyLocationsWithLead(RobotType.MINER.visionRadiusSquared, 2)) {
+            int clusterIdx = whichCluster(tile);
+            // Only add to modified list if we haven't marked this cluster yet
+            if (clusterResources[clusterIdx] == 0) {
+                markedClustersBuffer[markedClustersCount] = clusterIdx;
+                markedClustersCount++;
+            }
+            clusterResources[clusterIdx] += rc.senseLead(tile) - 1;
+        }
+        for (MapLocation tile : rc.senseNearbyLocationsWithGold(RobotType.MINER.visionRadiusSquared)) {
+            int clusterIdx = whichCluster(tile);
+            // Only add to modified list if we haven't marked this cluster yet
+            if (clusterResources[clusterIdx] == 0) {
+                markedClustersBuffer[markedClustersCount] = clusterIdx;
+                markedClustersCount++;
+            }
+            clusterResources[clusterIdx] += rc.senseGold(tile);
+        }
+        
+        // Flush resource buffer and write to comms
+        for (int i = 0; i < markedClustersCount; i++) {
+            int clusterIdx = markedClustersBuffer[i];
+            int resourceCount = compressResourceCount(clusterResources[clusterIdx]);
+            if (resourceCount != commsHandler.readClusterResourceCount(clusterIdx)) {
+                commsHandler.writeClusterResourceCount(clusterIdx, resourceCount);
+            }
+            clusterResources[clusterIdx] = 0;
+        }
+    }
+
+    /**
+     * Take log base e of resources to compress into bits. Max value of 15 as we only have 4 bits
+     * @param resourceCount
+     */
+    public int compressResourceCount(int resourceCount) {
+        return Math.max((int)Math.log(resourceCount), 15);
     }
 
     /**
@@ -329,7 +445,7 @@ public class Robot {
     }
 
     public int whichCluster(MapLocation loc) {
-        return ((int) (loc.x / xStep)) + ((int) (loc.y / yStep)) * clusterWidths.length;
+        return whichXLoc[loc.x] + whichYLoc[loc.y];
     }
 
     public int[] computeClusterSizes(int dim) {

@@ -17,7 +17,7 @@ public class Archon extends Robot {
             case 1:
                 firstRound();                
             default:
-                if (currentRound > 200) {
+                if (currentRound > 250) {
                     rc.resign();
                 }
                 mainLoop();
