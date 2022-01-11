@@ -379,7 +379,6 @@ public class CommsHandler {
     }
 
     private boolean writeChunkPortion(int value, int chunkIndex, int beginBit, int numBits) throws GameActionException {
-        System.out.println("Writing " + value + " to startBit " + CHUNK_OFFSETS[chunkIndex] + beginBit + " for " + numBits + " bits");
         return write(value, CHUNK_OFFSETS[chunkIndex] + beginBit, numBits);
     }
 

@@ -85,7 +85,6 @@ public class Archon extends Robot {
     public void build() throws GameActionException {
         // temporary solution to starvation
         double passThreshold = (1 / (double) (numOurArchons - myArchonNum)) + (rc.getTeamLeadAmount(allyTeam) / 1000.0);
-        System.out.println("passThreshold: " + passThreshold);
         boolean pass = rng.nextDouble() > passThreshold;
         if (pass) {
             return;
