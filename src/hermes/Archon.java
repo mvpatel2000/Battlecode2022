@@ -37,6 +37,17 @@ public class Archon extends Robot {
         int mineClusterIndex = 0;
         int exploreClusterIndex = 0;
 
+        // Preserve combat clusters which still have enemies
+        while (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS) {
+            int cluster = commsHandler.readCombatClusterIndex(combatClusterIndex);
+            if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                break;
+            }
+            if (commsHandler.readClusterControlStatus(cluster) != CommsHandler.ControlStatus.THEIRS) {
+                break;
+            }
+            combatClusterIndex++;
+        }
         // Preserve mining clusters which still have resources
         while (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
             int cluster = commsHandler.readMineClusterIndex(mineClusterIndex);
@@ -55,13 +66,30 @@ public class Archon extends Robot {
             exploreClusterIndex++;
         }
 
-        for (int i = 0; i < numClusters; i++) {
+        // Alternate sweeping each half of the clusters every turn
+        int mode = (myArchonNum + currentRound) % 2; 
+        int startIdx = numClusters / 2 * mode;
+        int endIdx = startIdx + numClusters/2;
+
+        for (int i = startIdx; i < endIdx; i++) {
             int controlStatus = commsHandler.readClusterControlStatus(i);
             // Combat cluster
             if (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS 
                 && controlStatus == CommsHandler.ControlStatus.THEIRS) {
                 commsHandler.writeCombatClusterIndex(combatClusterIndex, i);
                 combatClusterIndex++;
+
+                // Preserve combat clusters which still have enemies
+                while (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS) {
+                    int cluster = commsHandler.readCombatClusterIndex(combatClusterIndex);
+                    if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                        break;
+                    }
+                    if (commsHandler.readClusterControlStatus(cluster) != CommsHandler.ControlStatus.THEIRS) {
+                        break;
+                    }
+                    combatClusterIndex++;
+                }
             }
             // Mine cluster
             if (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
