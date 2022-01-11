@@ -466,6 +466,36 @@ public class Robot {
     }
 
     /**
+     * Returns nearest explore cluster or UNDEFINED_CLUSTER_INDEX otherwise
+     * @return
+     * @throws GameActionException
+     */
+    public int getNearestExploreCluster() throws GameActionException {
+        int closestCluster = commsHandler.UNDEFINED_CLUSTER_INDEX;
+        int closestClusterIndex = commsHandler.UNDEFINED_CLUSTER_INDEX;
+        int closestDistance = Integer.MAX_VALUE;
+        for (int i = 0; i < commsHandler.EXPLORE_CLUSTER_SLOTS; i++) {
+            int nearestCluster = commsHandler.readExploreClusterIndex(i);
+            // Break if no more combat clusters exist
+            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                break;
+            }
+            int distance = myLocation.distanceSquaredTo(clusterCenters[nearestCluster]);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestCluster = nearestCluster;
+                closestClusterIndex = i;
+            }
+        }
+        // Claim cluster
+        if (closestClusterIndex != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+            commsHandler.writeExploreClusterClaimStatus(closestClusterIndex, CommsHandler.ClaimStatus.CLAIMED);
+            commsHandler.writeClusterControlStatus(closestCluster, CommsHandler.ControlStatus.EXPLORING);
+        }
+        return closestCluster;
+    }
+
+    /**
      * Get the nearest cluster that satisfies the given control status, encoded as follows:
      * 0: unknown; 1: we control; 2: enemy controls; 3: ??.
      * Get the nearest cluster that satisfies the given control status, encoded by `commsHandler.ControlStatus`.

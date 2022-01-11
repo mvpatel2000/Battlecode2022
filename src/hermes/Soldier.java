@@ -127,11 +127,16 @@ public class Soldier extends Robot {
             }
             // Explore map
             else {
-                exploreMode = true;
-                updateDestinationForExploration();
+                nearestCluster = getNearestExploreCluster();
+                if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                    destination = clusterCenters[nearestCluster];
+                }
             }
+            
             // rc.setIndicatorLine(myLocation, destination, 0, 255, 0);
-            fuzzyMove(destination);
+            if (destination != null) {
+                fuzzyMove(destination);
+            }
         }
     }
 }
