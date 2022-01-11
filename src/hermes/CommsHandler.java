@@ -379,6 +379,7 @@ public class CommsHandler {
     }
 
     private boolean writeChunkPortion(int value, int chunkIndex, int beginBit, int numBits) throws GameActionException {
+        System.out.println("Writing " + value + " to startBit " + CHUNK_OFFSETS[chunkIndex] + beginBit + " for " + numBits + " bits");
         return write(value, CHUNK_OFFSETS[chunkIndex] + beginBit, numBits);
     }
 
@@ -392,7 +393,6 @@ public class CommsHandler {
 
     // TODO: after unit tests pass, remove this and replace all writeSharedArray with rc.writeSharedArray to save bytecode
     private void writeSharedArray(int index, int value) throws GameActionException {
-        // System.out.println("Writing " + (value & MAX_SHARED_ARRAY_ELEM) + " to shared array at index " + index);
         if (unitTest) {
             sharedArray[index] = value & MAX_SHARED_ARRAY_ELEM;
         } else {

@@ -12,9 +12,9 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 250) {
-        //     rc.resign();
-        // }
+        if (currentRound > 10) {
+            rc.resign();
+        }
         if (currentRound <= 3) { // temporary fix to round 1 TLE
             computeArchonNum();
         }
@@ -22,23 +22,23 @@ public class Archon extends Robot {
     }
 
     public void mainLoop() throws GameActionException {
-        setCompressedClusters();
+        setPriorityClusters();
 
         build();
         repair();
     }
 
     /**
-     * Sets the compressed clusters list
+     * Sets the priority clusters list
      * @throws GameActionException
      */
-    public void setCompressedClusters() throws GameActionException {
+    public void setPriorityClusters() throws GameActionException {
         int combatClusterIndex = 0;
-        int miningClusterIndex = 0;
+        int mineClusterIndex = 0;
 
         // Preserve mining clusters which still have resources
-        while (true && miningClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
-            int cluster = commsHandler.readMineClusterIndex(miningClusterIndex);
+        while (true && mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
+            int cluster = commsHandler.readMineClusterIndex(mineClusterIndex);
             if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 break;
             }
@@ -46,24 +46,24 @@ public class Archon extends Robot {
             if (oldResourceCount == 0) {
                 break;
             }
-            miningClusterIndex++;
+            mineClusterIndex++;
         }
 
         for (int i = 0; i < numClusters; i++) {
-            if (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS && commsHandler.readClusterControlStatus(i) == 2) {
+            if (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS && commsHandler.readClusterControlStatus(i) == CommsHandler.ControlStatus.THEIRS) {
                 commsHandler.writeCombatClusterIndex(combatClusterIndex, i);
                 combatClusterIndex++;
             }
-            if (miningClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
+            if (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
                 int resourceCount = commsHandler.readClusterResourceCount(i);
                 if (resourceCount > 0) {
-                    commsHandler.writeMineClusterIndex(miningClusterIndex, i);
-                    commsHandler.writeMineClusterClaimStatus(miningClusterIndex, resourceCount);
-                    miningClusterIndex++;
+                    commsHandler.writeMineClusterIndex(mineClusterIndex, i);
+                    commsHandler.writeMineClusterClaimStatus(mineClusterIndex, resourceCount);
+                    mineClusterIndex++;
 
                     // Preserve mining clusters which still have resources
-                    while (true && miningClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
-                        int cluster = commsHandler.readMineClusterIndex(miningClusterIndex);
+                    while (true && mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
+                        int cluster = commsHandler.readMineClusterIndex(mineClusterIndex);
                         if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
                             break;
                         }
@@ -71,7 +71,7 @@ public class Archon extends Robot {
                         if (oldResourceCount == 0) {
                             break;
                         }
-                        miningClusterIndex++;
+                        mineClusterIndex++;
                     }
                 }
             }

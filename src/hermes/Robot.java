@@ -277,6 +277,7 @@ public class Robot {
             int oldResourceCount = (clusterResources[clusterIdx] - rawResourceCount)/10000000;
             if (oldResourceCount != newResourceCount 
                     && newResourceCount != commsHandler.readClusterResourceCount(clusterIdx)) {
+                System.out.println(newResourceCount);
                 commsHandler.writeClusterResourceCount(clusterIdx, newResourceCount);
             }
             clusterResources[clusterIdx] = newResourceCount * 10000000;
