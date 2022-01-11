@@ -37,7 +37,7 @@ public class Archon extends Robot {
         int mineClusterIndex = 0;
 
         // Preserve mining clusters which still have resources
-        while (true && mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
+        while (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
             int cluster = commsHandler.readMineClusterIndex(mineClusterIndex);
             if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 break;
@@ -62,7 +62,7 @@ public class Archon extends Robot {
                     mineClusterIndex++;
 
                     // Preserve mining clusters which still have resources
-                    while (true && mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
+                    while (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
                         int cluster = commsHandler.readMineClusterIndex(mineClusterIndex);
                         if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
                             break;
