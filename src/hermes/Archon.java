@@ -12,9 +12,9 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 800) {
-        //     rc.resign();
-        // }
+        if (currentRound > 400) {
+            rc.resign();
+        }
         if (currentRound <= 3) { // temporary fix to round 1 TLE
             computeArchonNum();
         }
@@ -56,9 +56,10 @@ public class Archon extends Robot {
         }
 
         for (int i = 0; i < numClusters; i++) {
+            int controlStatus = commsHandler.readClusterControlStatus(i);
             // Combat cluster
             if (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS 
-                && commsHandler.readClusterControlStatus(i) == CommsHandler.ControlStatus.THEIRS) {
+                && controlStatus == CommsHandler.ControlStatus.THEIRS) {
                 commsHandler.writeCombatClusterIndex(combatClusterIndex, i);
                 combatClusterIndex++;
             }
@@ -84,18 +85,17 @@ public class Archon extends Robot {
                 }
             }
             // Explore cluster
-            if (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS) {
-                if (commsHandler.readClusterControlStatus(i) == CommsHandler.ControlStatus.UNKNOWN) {
-                    commsHandler.writeExploreClusterIndex(exploreClusterIndex, i);
-                    commsHandler.writeExploreClusterClaimStatus(exploreClusterIndex, CommsHandler.ClaimStatus.UNCLAIMED);
-                    exploreClusterIndex++;
+            if (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS
+                    && controlStatus == CommsHandler.ControlStatus.UNKNOWN) {
+                commsHandler.writeExploreClusterIndex(exploreClusterIndex, i);
+                commsHandler.writeExploreClusterClaimStatus(exploreClusterIndex, CommsHandler.ClaimStatus.UNCLAIMED);
+                exploreClusterIndex++;
 
-                    // Preserve explore clusters which still have not been claimed
-                    while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS
-                        && commsHandler.readExploreClusterIndex(exploreClusterIndex) != commsHandler.UNDEFINED_CLUSTER_INDEX
-                        && commsHandler.readExploreClusterClaimStatus(exploreClusterIndex) == CommsHandler.ClaimStatus.UNCLAIMED) {
-                        exploreClusterIndex++;
-                    }
+                // Preserve explore clusters which still have not been claimed
+                while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS
+                    && commsHandler.readExploreClusterIndex(exploreClusterIndex) != commsHandler.UNDEFINED_CLUSTER_INDEX
+                    && commsHandler.readExploreClusterClaimStatus(exploreClusterIndex) == CommsHandler.ClaimStatus.UNCLAIMED) {
+                    exploreClusterIndex++;
                 }
             }
         }

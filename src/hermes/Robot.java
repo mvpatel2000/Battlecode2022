@@ -284,14 +284,15 @@ public class Robot {
     }
 
     /**
-     * Take log base e of resources to compress into bits. Max value of 7 as we only have 3 bits
+     * Max value of 7 as we only have 3 bits
      * @param resourceCount
      */
     public int compressResourceCount(int resourceCount) {
-        if (resourceCount == 0) {
-            return 0;
-        }
-        return Math.min((int)Math.log(resourceCount), 7);
+        // if (resourceCount == 0) {
+        //     return 0;
+        // }
+        // return Math.min((int)Math.log(resourceCount), 7);
+        return (resourceCount + 99) / 100;
     }
 
     /**
