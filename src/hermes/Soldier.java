@@ -21,12 +21,12 @@ public class Soldier extends Robot {
     }
 
     /**
-     * Disintegrate to put lead on tile if there's many friendly miners and soldiers, no enemies, and 
+     * Disintegrate to put lead on tile if I'm almost dead, there's many friendly miners and soldiers, no enemies, and 
      * no lead on the tile currently
      * @throws GameActionException
      */
     public void disintegrate() throws GameActionException {
-        if (rc.senseLead(myLocation) == 0) {
+        if (rc.senseLead(myLocation) == 0 && rc.getHealth() <= 10) {
             if (nearbyEnemies.length == 0) {
                 RobotInfo[] adjacentAllies = rc.senseNearbyRobots(2, allyTeam);
                 int adjacentMiners = 0;
