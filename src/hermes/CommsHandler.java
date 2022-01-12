@@ -114,14 +114,14 @@ public class CommsHandler {
         // System.out.println("Total bits used: " + (CHUNK_OFFSETS[CHUNK_OFFSETS.length-1] + CHUNK_SIZES[CHUNK_SIZES.length-1]));
     }
 
-    public CommsHandler() throws GameActionException { // for unit test only
-        unitTest = true;
-        sharedArray = new int[GameConstants.SHARED_ARRAY_LENGTH];
-        for (int j = 0; j < sharedArray.length; j++) {
-            sharedArray[j] = 0;
-        }
-        init();
-    }
+    // public CommsHandler() throws GameActionException { // for unit test only
+    //     unitTest = true;
+    //     sharedArray = new int[GameConstants.SHARED_ARRAY_LENGTH];
+    //     for (int j = 0; j < sharedArray.length; j++) {
+    //         sharedArray[j] = 0;
+    //     }
+    //     init();
+    // }
 
     private void init() throws GameActionException {
         for (int i = 0; i < CHUNK_SIZES.length; i++) { // TODO: remove once we precompute CHUNK_OFFSETS
