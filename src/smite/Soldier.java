@@ -17,17 +17,17 @@ public class Soldier extends Robot {
         // Try to act again if we didn't before moving
         attack();
 
-        disintegrate();
+        // disintegrate();
     }
 
     /**
-     * Disintegrate to put lead on tile if there's many friendly miners and soldiers, no enemies, and 
+     * Disintegrate to put lead on tile if I'm almost dead, there's many friendly miners and soldiers, no enemies, and 
      * no lead on the tile currently
      * @throws GameActionException
      */
     public void disintegrate() throws GameActionException {
-        if (rc.senseLead(myLocation) == 0) {
-            if (rc.senseNearbyRobots(RobotType.SOLDIER.visionRadiusSquared, enemyTeam).length == 0) {
+        if (rc.senseLead(myLocation) == 0 && rc.getHealth() <= 10) {
+            if (nearbyEnemies.length == 0) {
                 RobotInfo[] adjacentAllies = rc.senseNearbyRobots(2, allyTeam);
                 int adjacentMiners = 0;
                 int adjacentSoldiers = 0;
@@ -51,9 +51,8 @@ public class Soldier extends Robot {
      * @throws GameActionException
      */
     public void move() throws GameActionException {
-        RobotInfo[] enemies = rc.senseNearbyRobots(RobotType.SOLDIER.visionRadiusSquared, enemyTeam);
         // Combat move. Kites enemy soldiers if harassing, otherwise pushes
-        if (enemies.length > 0) {
+        if (nearbyEnemies.length > 0) {
             // TODO: Does it ever make sense to not kite?
             boolean holdGround = false;
             // int combatAllies = 0;
@@ -77,7 +76,7 @@ public class Soldier extends Robot {
                         continue;
                     }
                     int score = 0;
-                    for (RobotInfo enemy : enemies) {
+                    for (RobotInfo enemy : nearbyEnemies) {
                         // TODO: Prioritize locking up archons?
                         // Avoid enemy combat units unless holding ground (1000000, highest priority)
                         if (!holdGround 

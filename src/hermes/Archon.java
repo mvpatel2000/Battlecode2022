@@ -159,11 +159,20 @@ public class Archon extends Robot {
             return;
         }
 
-        boolean shouldBuildMiner = turnCount < 20 ? true : (turnCount < 100 ? rng.nextBoolean() : rng.nextDouble() < 0.3);
+        boolean shouldBuildMiner = turnCount < 20 ? true : (turnCount < 100 ? rng.nextDouble() < (0.2 + 0.0001 * mapHeight * mapWidth) : rng.nextDouble() < (0.05 + 0.00005 * mapHeight * mapWidth));
         RobotType toBuild = shouldBuildMiner ? RobotType.MINER : RobotType.SOLDIER;
         // Build builders if lots of lead for watchtowers
         if (rc.getTeamLeadAmount(allyTeam) > 500 && rng.nextDouble() < 0.3) {
             toBuild = RobotType.BUILDER;
+        }
+
+        // override: if there is a visible enemy archon or soldier, build a soldier
+        if (nearbyEnemies.length > 0) {
+            for (RobotInfo enemy : nearbyEnemies) {
+                if (enemy.type == RobotType.SOLDIER || enemy.type == RobotType.ARCHON) {
+                    toBuild = RobotType.SOLDIER;
+                }
+            }
         }
 
         Direction optimalDir = null;
