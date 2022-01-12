@@ -44,8 +44,7 @@ public class Builder extends Robot {
         }
         // Build watchtower if in danger and didn't heal
         if (rc.isActionReady()) {
-            RobotInfo[] enemies = rc.senseNearbyRobots(RobotType.BUILDER.visionRadiusSquared, enemyTeam);
-            if (enemies.length > 0 && rc.getTeamLeadAmount(allyTeam) >= RobotType.WATCHTOWER.buildCostLead) {
+            if (nearbyEnemies.length > 0 && rc.getTeamLeadAmount(allyTeam) >= RobotType.WATCHTOWER.buildCostLead) {
                 Direction optimalDir = null;
                 int optimalRubble = Integer.MAX_VALUE;
                 for (Direction dir : directionsWithoutCenter) {

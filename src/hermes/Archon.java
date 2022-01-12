@@ -159,7 +159,7 @@ public class Archon extends Robot {
             return;
         }
 
-        boolean shouldBuildMiner = turnCount < 20 ? true : (turnCount < 100 ? rng.nextDouble() < (0.3 + 0.0001 * mapHeight * mapWidth) : rng.nextDouble() < (0.1 + 0.0001 * mapHeight * mapWidth));
+        boolean shouldBuildMiner = turnCount < 20 ? true : (turnCount < 100 ? rng.nextDouble() < (0.2 + 0.0001 * mapHeight * mapWidth) : rng.nextDouble() < (0.05 + 0.00005 * mapHeight * mapWidth));
         RobotType toBuild = shouldBuildMiner ? RobotType.MINER : RobotType.SOLDIER;
         // Build builders if lots of lead for watchtowers
         if (rc.getTeamLeadAmount(allyTeam) > 500 && rng.nextDouble() < 0.3) {
