@@ -100,8 +100,23 @@ public class Builder extends Robot {
             }
         }
 
-        updateDestinationForExploration();
+        // Navigate to nearest found enemy
+        int nearestCluster = getNearestCombatCluster();
+        if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+            resetControlStatus(destination);
+            destination = clusterCenters[nearestCluster];
+        }
+        // Explore map. Get new cluster if not in explore mode or close to destination
+        else if (!exploreMode || myLocation.distanceSquaredTo(destination) <= 8) {
+            nearestCluster = getNearestExploreCluster();
+            if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                destination = clusterCenters[nearestCluster];
+            }
+        }
+
         // //rc.setIndicatorLine(myLocation, destination, 0, 0, 255);
-        fuzzyMove(destination);
+        if (destination != null) {
+            fuzzyMove(destination);
+        }
     }
 }

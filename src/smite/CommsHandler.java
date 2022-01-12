@@ -41,6 +41,7 @@ public class CommsHandler {
         public static final int UNKNOWN = 0;
         public static final int OURS = 1;
         public static final int THEIRS = 2;
+        public static final int EXPLORING = 3;
     }
 
     final int ARCHON_INSTRUCTION_BITS = 16; // schema TBD
@@ -54,6 +55,10 @@ public class CommsHandler {
     final int EXPLORE_CLUSTER_BITS = 8; // 1 bit: claim status, 7 bits: cluster index
     final int EXPLORE_CLUSTER_SLOTS = 10;
     final int EXPLORE_CLUSTER_OFFSET = COMBAT_CLUSTER_OFFSET + COMBAT_CLUSTER_SLOTS;
+    public class ClaimStatus {
+        public static final int UNCLAIMED = 0;
+        public static final int CLAIMED = 1;
+    }
 
     final int MINE_CLUSTER_BITS = 10; // 3 bits: claim status, 7 bits: cluster index
     final int MINE_CLUSTER_SLOTS = 10;
@@ -392,7 +397,6 @@ public class CommsHandler {
 
     // TODO: after unit tests pass, remove this and replace all writeSharedArray with rc.writeSharedArray to save bytecode
     private void writeSharedArray(int index, int value) throws GameActionException {
-        // //System.out.println\("Writing " + (value & MAX_SHARED_ARRAY_ELEM) + " to shared array at index " + index);
         if (unitTest) {
             sharedArray[index] = value & MAX_SHARED_ARRAY_ELEM;
         } else {

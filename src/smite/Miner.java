@@ -110,7 +110,7 @@ public class Miner extends Robot {
             fleeingCounter--;
         }
         // Path
-        else {
+        else if (destination != null) {
             fuzzyMove(destination);
             // //rc.setIndicatorLine(myLocation, destination, 255, 0, 0);
         }
@@ -123,14 +123,14 @@ public class Miner extends Robot {
      */
     public void updateDestination() throws GameActionException {
         int requiredLead = currentRound > 20 ? 2 : 1;
+
         // Don't scan if destination still has lead or gold
         if (destination != null && rc.canSenseLocation(destination)
              && (rc.senseLead(destination) > requiredLead || rc.senseGold(destination) > 0)) {
-            exploreMode = false;
             return;
         }      
         
-        // Find nearest resource tile
+        // Set nearby resource tiles as a destination
         MapLocation nearestResource = null;
         int optimalDistance = Integer.MAX_VALUE;
         for (MapLocation tile : rc.senseNearbyLocationsWithLead(RobotType.MINER.visionRadiusSquared, requiredLead)) {
@@ -148,22 +148,28 @@ public class Miner extends Robot {
             }
         }
         if (nearestResource != null) {
+            resetControlStatus(destination);
             destination = nearestResource;
-            exploreMode = false;
+            return;
         }
-        else {
-            // Navigate to nearest resources found
-            int nearestCluster = getNearestMineCluster();
+
+
+        // Navigate to nearest resources found
+        int nearestCluster = getNearestMineCluster();
+        if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+            resetControlStatus(destination);
+            destination = clusterCenters[nearestCluster];
+            return;
+        }
+
+        // Explore map. Get new cluster if not in explore mode or close to destination
+        if (!exploreMode || myLocation.distanceSquaredTo(destination) <= 8) {
+            nearestCluster = getNearestExploreCluster();
             if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 destination = clusterCenters[nearestCluster];
-            }
-            // Explore map
-            else {
-                exploreMode = true;
-                updateDestinationForExploration();
+                return;
             }
         }
-        // //rc.setIndicatorLine(myLocation, destination, 0, 255, 0);
     }
 
     /**

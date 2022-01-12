@@ -12,7 +12,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 250) {
+        // if (currentRound > 400) {
         //     //rc.resign\();
         // }
         if (currentRound <= 3) { // temporary fix to round 1 TLE
@@ -22,60 +22,129 @@ public class Archon extends Robot {
     }
 
     public void mainLoop() throws GameActionException {
-        setCompressedClusters();
+        setPriorityClusters();
 
         build();
         repair();
     }
 
     /**
-     * Sets the compressed clusters list
+     * Sets the priority clusters list
      * @throws GameActionException
      */
-    public void setCompressedClusters() throws GameActionException {
+    public void setPriorityClusters() throws GameActionException {
         int combatClusterIndex = 0;
-        int miningClusterIndex = 0;
+        int mineClusterIndex = 0;
+        int exploreClusterIndex = 0;
 
-        // Preserve mining clusters which still have resources
-        while (true && miningClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
-            int cluster = commsHandler.readMineClusterIndex(miningClusterIndex);
+        // Preserve combat clusters which still have enemies
+        while (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS) {
+            int cluster = commsHandler.readCombatClusterIndex(combatClusterIndex);
             if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 break;
             }
-            int oldResourceCount = commsHandler.readClusterResourceCount(cluster);
-            if (oldResourceCount == 0) {
+            if (commsHandler.readClusterControlStatus(cluster) != CommsHandler.ControlStatus.THEIRS) {
                 break;
             }
-            miningClusterIndex++;
+            combatClusterIndex++;
+        }
+        // Preserve mining clusters which still have resources
+        while (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
+            int cluster = commsHandler.readMineClusterIndex(mineClusterIndex);
+            if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                break;
+            }
+            if (commsHandler.readClusterResourceCount(cluster) == 0) {
+                break;
+            }
+            mineClusterIndex++;
+        }
+        // Preserve explore clusters which still have not been claimed
+        while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS
+                && commsHandler.readExploreClusterIndex(exploreClusterIndex) != commsHandler.UNDEFINED_CLUSTER_INDEX
+                && commsHandler.readExploreClusterClaimStatus(exploreClusterIndex) == CommsHandler.ClaimStatus.UNCLAIMED) {
+            exploreClusterIndex++;
         }
 
-        for (int i = 0; i < numClusters; i++) {
-            if (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS && commsHandler.readClusterControlStatus(i) == 2) {
+        // Alternate sweeping each half of the clusters every turn
+        int mode = (myArchonNum + currentRound) % 3; 
+        int startIdx = 0;
+        int endIdx = 0;
+        switch (mode) {
+            case 0:
+                startIdx = 0;
+                endIdx = numClusters / 3;
+                break;
+            case 1:
+                startIdx = numClusters / 3;
+                endIdx = numClusters * 2 / 3;
+                break;
+            case 2:
+                startIdx = numClusters * 2 / 3;
+                endIdx = numClusters;
+                break;
+            default:
+                //System.out.println\("[Error] Unexpected case in setPriorityQueue!");
+        }
+
+        for (int i = startIdx; i < endIdx; i++) {
+            int controlStatus = commsHandler.readClusterControlStatus(i);
+            // Combat cluster
+            if (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS 
+                && controlStatus == CommsHandler.ControlStatus.THEIRS) {
                 commsHandler.writeCombatClusterIndex(combatClusterIndex, i);
                 combatClusterIndex++;
+
+                // Preserve combat clusters which still have enemies
+                while (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS) {
+                    int cluster = commsHandler.readCombatClusterIndex(combatClusterIndex);
+                    if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                        break;
+                    }
+                    if (commsHandler.readClusterControlStatus(cluster) != CommsHandler.ControlStatus.THEIRS) {
+                        break;
+                    }
+                    combatClusterIndex++;
+                }
             }
-            if (miningClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
+            // Mine cluster
+            if (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
                 int resourceCount = commsHandler.readClusterResourceCount(i);
                 if (resourceCount > 0) {
-                    commsHandler.writeMineClusterIndex(miningClusterIndex, i);
-                    commsHandler.writeMineClusterClaimStatus(miningClusterIndex, resourceCount);
-                    miningClusterIndex++;
+                    commsHandler.writeMineClusterIndex(mineClusterIndex, i);
+                    commsHandler.writeMineClusterClaimStatus(mineClusterIndex, resourceCount);
+                    mineClusterIndex++;
 
                     // Preserve mining clusters which still have resources
-                    while (true && miningClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
-                        int cluster = commsHandler.readMineClusterIndex(miningClusterIndex);
+                    while (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
+                        int cluster = commsHandler.readMineClusterIndex(mineClusterIndex);
                         if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
                             break;
                         }
-                        int oldResourceCount = commsHandler.readClusterResourceCount(cluster);
-                        if (oldResourceCount == 0) {
+                        if (commsHandler.readClusterResourceCount(cluster) == 0) {
                             break;
                         }
-                        miningClusterIndex++;
+                        mineClusterIndex++;
                     }
                 }
             }
+            // Explore cluster
+            if (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS
+                    && controlStatus == CommsHandler.ControlStatus.UNKNOWN) {
+                commsHandler.writeExploreClusterIndex(exploreClusterIndex, i);
+                commsHandler.writeExploreClusterClaimStatus(exploreClusterIndex, CommsHandler.ClaimStatus.UNCLAIMED);
+                exploreClusterIndex++;
+
+                // Preserve explore clusters which still have not been claimed
+                while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS
+                    && commsHandler.readExploreClusterIndex(exploreClusterIndex) != commsHandler.UNDEFINED_CLUSTER_INDEX
+                    && commsHandler.readExploreClusterClaimStatus(exploreClusterIndex) == CommsHandler.ClaimStatus.UNCLAIMED) {
+                    exploreClusterIndex++;
+                }
+            }
         }
+
+        // //rc.setIndicatorString(combatClusterIndex + " " + mineClusterIndex + " " + exploreClusterIndex);
     }
 
     /**
@@ -85,7 +154,6 @@ public class Archon extends Robot {
     public void build() throws GameActionException {
         // temporary solution to starvation
         double passThreshold = (1 / (double) (numOurArchons - myArchonNum)) + (rc.getTeamLeadAmount(allyTeam) / 1000.0);
-        //System.out.println\("passThreshold: " + passThreshold);
         boolean pass = rng.nextDouble() > passThreshold;
         if (pass) {
             return;

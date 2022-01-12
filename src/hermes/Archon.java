@@ -12,9 +12,9 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        if (currentRound > 400) {
-            rc.resign();
-        }
+        // if (currentRound > 400) {
+        //     rc.resign();
+        // }
         if (currentRound <= 3) { // temporary fix to round 1 TLE
             computeArchonNum();
         }
