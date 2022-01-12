@@ -25,7 +25,7 @@ public class Miner extends Robot {
         // Try to act again if we didn't before moving
         mineNearbySquares();
 
-        disintegrate();
+        // disintegrate();
     }
 
     /**
@@ -35,7 +35,7 @@ public class Miner extends Robot {
      */
     public void disintegrate() throws GameActionException {
         if (rc.senseLead(myLocation) == 0) {
-            if (rc.senseNearbyRobots(RobotType.MINER.visionRadiusSquared, enemyTeam).length == 0) {
+            if (nearbyEnemies.length == 0) {
                 RobotInfo[] adjacentAllies = rc.senseNearbyRobots(2, allyTeam);
                 int adjacentMiners = 0;
                 for (RobotInfo ally : adjacentAllies) {
@@ -84,10 +84,9 @@ public class Miner extends Robot {
         updateDestination();
         
         // Find nearest combat enemy to kite
-        RobotInfo[] enemies = rc.senseNearbyRobots(RobotType.MINER.visionRadiusSquared, enemyTeam);
         MapLocation nearestCombatEnemy = null;
         int distanceToEnemy = Integer.MAX_VALUE;
-        for (RobotInfo enemy : enemies) {
+        for (RobotInfo enemy : nearbyEnemies) {
             if (enemy.getType() == RobotType.SOLDIER || enemy.getType() == RobotType.SAGE 
                     || enemy.getType() == RobotType.WATCHTOWER) {
                 int dist = myLocation.distanceSquaredTo(enemy.location);

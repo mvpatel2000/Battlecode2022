@@ -18,6 +18,9 @@ public class Robot {
     int mapWidth;
     int numOurArchons;
 
+    // Cache sensing
+    RobotInfo[] nearbyEnemies;
+
     // Pathing
     MapLocation baseLocation;
     MapLocation destination;
@@ -122,6 +125,7 @@ public class Robot {
         turnCount++;
         currentRound = rc.getRoundNum();
         setClusterStates();
+        nearbyEnemies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, enemyTeam);
 
         // Does turn
         runUnit();
@@ -145,6 +149,11 @@ public class Robot {
      */
     public void setClusterStates() throws GameActionException {
         // int bytecodeUsed = Clock.getBytecodeNum();
+
+        // Ignore if you are a turret it's past your second turn because you don't move
+        if (rc.getMode() == RobotMode.TURRET && turnCount > 2) {
+            return;
+        }
         
         if (turnCount % 2 == 0) {
             setClusterControlStates();
@@ -187,11 +196,10 @@ public class Robot {
         }
 
         // Mark nearby clusters with enemies as hostile
-        RobotInfo[] enemies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, enemyTeam);
         // Process at max 10 enemies
-        int numEnemies = Math.min(enemies.length, 10);
+        int numEnemies = Math.min(nearbyEnemies.length, 10);
         for (int i = 0; i < numEnemies; i++) {
-            RobotInfo enemy = enemies[i];
+            RobotInfo enemy = nearbyEnemies[i];
             // int clusterIdx = whichCluster(enemy.location); Note: Inlined to save bytecode
             int clusterIdx = whichXLoc[enemy.location.x] + whichYLoc[enemy.location.y];
             // Write new status to buffer if we haven't marked as enemy controlled yet
@@ -296,12 +304,12 @@ public class Robot {
     }
 
     /**
-     * Use this function instead of rc.move(). Still need
-     * to verify canMove before calling this.
+     * Use this function instead of rc.move(). Still need to verify canMove before calling this.
      */
     public void move(Direction dir) throws GameActionException {
         rc.move(dir);
         myLocation = myLocation.add(dir);
+        nearbyEnemies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, enemyTeam);
     }
 
     /**
