@@ -387,22 +387,22 @@ public class CommsHandler {
         return write(value, CHUNK_OFFSETS[chunkIndex] + beginBit, numBits);
     }
 
-    // TODO: after unit tests pass, remove this and replace all readSharedArray with rc.readSharedArray to save bytecode
-    private int readSharedArray(int index) throws GameActionException {
-        if (unitTest) {
-            return sharedArray[index];
-        }
-        return rc.readSharedArray(index);
-    }
+    // // done: after unit tests pass, remove this and replace all readSharedArray with rc.readSharedArray to save bytecode
+    // private int readSharedArray(int index) throws GameActionException {
+    //     if (unitTest) {
+    //         return sharedArray[index];
+    //     }
+    //     return rc.readSharedArray(index);
+    // }
 
-    // TODO: after unit tests pass, remove this and replace all writeSharedArray with rc.writeSharedArray to save bytecode
-    private void writeSharedArray(int index, int value) throws GameActionException {
-        if (unitTest) {
-            sharedArray[index] = value & MAX_SHARED_ARRAY_ELEM;
-        } else {
-            rc.writeSharedArray(index, value & MAX_SHARED_ARRAY_ELEM);
-        }
-    }
+    // // done: after unit tests pass, remove this and replace all writeSharedArray with rc.writeSharedArray to save bytecode
+    // private void writeSharedArray(int index, int value) throws GameActionException {
+    //     if (unitTest) {
+    //         sharedArray[index] = value & MAX_SHARED_ARRAY_ELEM;
+    //     } else {
+    //         rc.writeSharedArray(index, value & MAX_SHARED_ARRAY_ELEM);
+    //     }
+    // }
 
     /*
      * Low-level read and write methods based on bit masking.
@@ -426,8 +426,8 @@ public class CommsHandler {
             int bitm = bitmask2(integerBitBegin, integerBitEnd, false);
             value = value << (SHARED_ARRAY_ELEM_SIZE-integerBitBegin-numBits);
             // read value from shared array at arrIndexStart
-            int entry = readSharedArray(arrIndexStart);
-            writeSharedArray(arrIndexStart, (entry & bitm) | value);
+            int entry = rc.readSharedArray(arrIndexStart);
+            rc.writeSharedArray(arrIndexStart, ((entry & bitm) | value) & MAX_SHARED_ARRAY_ELEM);
         } else {
             //if write spans two integers
             int bitm1 = bitmask2(integerBitBegin, SHARED_ARRAY_ELEM_SIZE-1, false);
@@ -440,10 +440,10 @@ public class CommsHandler {
             part1 = part1 >>> part2len;
             part2 = part2 << (SHARED_ARRAY_ELEM_SIZE-part2len);
             
-            int entry1 = readSharedArray(arrIndexStart);
-            int entry2 = readSharedArray(arrIndexEnd);
-            writeSharedArray(arrIndexStart, (entry1 & bitm1) | part1);
-            writeSharedArray(arrIndexEnd, (entry2 & bitm2) | part2);
+            int entry1 = rc.readSharedArray(arrIndexStart);
+            int entry2 = rc.readSharedArray(arrIndexEnd);
+            rc.writeSharedArray(arrIndexStart, ((entry1 & bitm1) | part1) & MAX_SHARED_ARRAY_ELEM);
+            rc.writeSharedArray(arrIndexEnd, ((entry2 & bitm2) | part2) & MAX_SHARED_ARRAY_ELEM);
         }
         return true;
     }
@@ -461,14 +461,14 @@ public class CommsHandler {
         //if read is contained in a single integer
         if(arrIndexStart==arrIndexEnd) {
             int bitm = bitmask2(integerBitBegin, integerBitEnd, true);
-            output = (readSharedArray(arrIndexStart) & bitm) >>> (SHARED_ARRAY_ELEM_SIZE - integerBitBegin - numBits);
+            output = (rc.readSharedArray(arrIndexStart) & bitm) >>> (SHARED_ARRAY_ELEM_SIZE - integerBitBegin - numBits);
         } else {
                 //if the read spans two integers
                 int bitm = bitmask2(integerBitBegin, SHARED_ARRAY_ELEM_SIZE-1, true);
                 int bitm2 = bitmask2(0, integerBitEnd, true);
-                output = (readSharedArray(arrIndexStart) & bitm) >>> (SHARED_ARRAY_ELEM_SIZE - integerBitBegin - numBits + integerBitEnd + 1);
+                output = (rc.readSharedArray(arrIndexStart) & bitm) >>> (SHARED_ARRAY_ELEM_SIZE - integerBitBegin - numBits + integerBitEnd + 1);
                 output = output << integerBitEnd + 1;
-                output |= (readSharedArray(arrIndexEnd) & bitm2) >>> (SHARED_ARRAY_ELEM_SIZE - numBits + SHARED_ARRAY_ELEM_SIZE - integerBitBegin);
+                output |= (rc.readSharedArray(arrIndexEnd) & bitm2) >>> (SHARED_ARRAY_ELEM_SIZE - numBits + SHARED_ARRAY_ELEM_SIZE - integerBitBegin);
         }
         return output;
     }
