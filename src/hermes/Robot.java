@@ -87,7 +87,7 @@ public class Robot {
         clusterControls = new int[numClusters];
         markedClustersBuffer = new int[numClusters];
         destination = null;
-        exploreMode = true; // TODO: This should be set to false if given instructions
+        exploreMode = false;
         priorDestinations = new ArrayList<MapLocation>();
         commsHandler = new CommsHandler(rc);
         numOurArchons = rc.getArchonCount();
@@ -144,17 +144,17 @@ public class Robot {
      * @throws GameActionException
      */
     public void setClusterStates() throws GameActionException {
-        int bytecodeUsed = Clock.getBytecodeNum();
+        // int bytecodeUsed = Clock.getBytecodeNum();
         
-        if (currentRound % 2 == 0) {
+        if (turnCount % 2 == 0) {
             setClusterControlStates();
         }
         else {
             setClusterResourceStates();
         }
 
-        int bytecodeUsed2 = Clock.getBytecodeNum();
-        rc.setIndicatorString("Cluster States: "+(bytecodeUsed2 - bytecodeUsed));
+        // int bytecodeUsed2 = Clock.getBytecodeNum();
+        // rc.setIndicatorString("Cluster States: "+(bytecodeUsed2 - bytecodeUsed));
     }
 
     /**
@@ -374,7 +374,6 @@ public class Robot {
             dxexplore = Math.random() < .5 ? dxexplore : -dxexplore;
             dyexplore = Math.random() < .5 ? dyexplore : -dyexplore;
             destination = new MapLocation(baseLocation.x + dxexplore, baseLocation.y + dyexplore);
-            exploreMode = true;
             for (int i = 0; i < priorDestinations.size(); i++) {
                 if (destination.distanceSquaredTo(priorDestinations.get(i)) < 40) {
                     valid = false;
@@ -492,8 +491,22 @@ public class Robot {
         if (closestClusterIndex != commsHandler.UNDEFINED_CLUSTER_INDEX) {
             commsHandler.writeExploreClusterClaimStatus(closestClusterIndex, CommsHandler.ClaimStatus.CLAIMED);
             commsHandler.writeClusterControlStatus(closestCluster, CommsHandler.ControlStatus.EXPLORING);
+            exploreMode = true;
         }
         return closestCluster;
+    }
+
+    /**
+     * If unit redirects from an exploration, remark the cluster as unknown
+     * @param destination
+     * @throws GameActionException
+     */
+    public void resetControlStatus(MapLocation destination) throws GameActionException {
+        if (exploreMode) {
+            // int cluster = whichCluster(destination);
+            int cluster = whichXLoc[destination.x] + whichYLoc[destination.y];
+            commsHandler.writeClusterControlStatus(cluster, CommsHandler.ControlStatus.UNKNOWN);
+        };
     }
 
     /**

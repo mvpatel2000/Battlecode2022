@@ -67,9 +67,25 @@ public class Archon extends Robot {
         }
 
         // Alternate sweeping each half of the clusters every turn
-        int mode = (myArchonNum + currentRound) % 2; 
-        int startIdx = numClusters / 2 * mode;
-        int endIdx = startIdx + numClusters/2;
+        int mode = (myArchonNum + currentRound) % 3; 
+        int startIdx = 0;
+        int endIdx = 0;
+        switch (mode) {
+            case 0:
+                startIdx = 0;
+                endIdx = numClusters / 3;
+                break;
+            case 1:
+                startIdx = numClusters / 3;
+                endIdx = numClusters * 2 / 3;
+                break;
+            case 2:
+                startIdx = numClusters * 2 / 3;
+                endIdx = numClusters;
+                break;
+            default:
+                System.out.println("[Error] Unexpected case in setPriorityQueue!");
+        }
 
         for (int i = startIdx; i < endIdx; i++) {
             int controlStatus = commsHandler.readClusterControlStatus(i);
@@ -127,6 +143,8 @@ public class Archon extends Robot {
                 }
             }
         }
+
+        // rc.setIndicatorString(combatClusterIndex + " " + mineClusterIndex + " " + exploreClusterIndex);
     }
 
     /**

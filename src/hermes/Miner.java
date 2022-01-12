@@ -148,6 +148,7 @@ public class Miner extends Robot {
             }
         }
         if (nearestResource != null) {
+            resetControlStatus(destination);
             destination = nearestResource;
             return;
         }
@@ -156,15 +157,18 @@ public class Miner extends Robot {
         // Navigate to nearest resources found
         int nearestCluster = getNearestMineCluster();
         if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+            resetControlStatus(destination);
             destination = clusterCenters[nearestCluster];
             return;
         }
 
-        // Explore map
-        nearestCluster = getNearestExploreCluster();
-        if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
-            destination = clusterCenters[nearestCluster];
-            return;
+        // Explore map. Get new cluster if not in explore mode or close to destination
+        if (!exploreMode || myLocation.distanceSquaredTo(destination) <= 8) {
+            nearestCluster = getNearestExploreCluster();
+            if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                destination = clusterCenters[nearestCluster];
+                return;
+            }
         }
     }
 
