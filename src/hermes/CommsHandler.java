@@ -114,14 +114,14 @@ public class CommsHandler {
         // System.out.println("Total bits used: " + (CHUNK_OFFSETS[CHUNK_OFFSETS.length-1] + CHUNK_SIZES[CHUNK_SIZES.length-1]));
     }
 
-    public CommsHandler() throws GameActionException { // for unit test only
-        unitTest = true;
-        sharedArray = new int[GameConstants.SHARED_ARRAY_LENGTH];
-        for (int j = 0; j < sharedArray.length; j++) {
-            sharedArray[j] = 0;
-        }
-        init();
-    }
+    // public CommsHandler() throws GameActionException { // for unit test only
+    //     unitTest = true;
+    //     sharedArray = new int[GameConstants.SHARED_ARRAY_LENGTH];
+    //     for (int j = 0; j < sharedArray.length; j++) {
+    //         sharedArray[j] = 0;
+    //     }
+    //     init();
+    // }
 
     private void init() throws GameActionException {
         for (int i = 0; i < CHUNK_SIZES.length; i++) { // TODO: remove once we precompute CHUNK_OFFSETS
@@ -387,22 +387,22 @@ public class CommsHandler {
         return write(value, CHUNK_OFFSETS[chunkIndex] + beginBit, numBits);
     }
 
-    // TODO: after unit tests pass, remove this and replace all readSharedArray with rc.readSharedArray to save bytecode
-    private int readSharedArray(int index) throws GameActionException {
-        if (unitTest) {
-            return sharedArray[index];
-        }
-        return rc.readSharedArray(index);
-    }
+    // // done: after unit tests pass, remove this and replace all readSharedArray with rc.readSharedArray to save bytecode
+    // private int readSharedArray(int index) throws GameActionException {
+    //     if (unitTest) {
+    //         return sharedArray[index];
+    //     }
+    //     return rc.readSharedArray(index);
+    // }
 
-    // TODO: after unit tests pass, remove this and replace all writeSharedArray with rc.writeSharedArray to save bytecode
-    private void writeSharedArray(int index, int value) throws GameActionException {
-        if (unitTest) {
-            sharedArray[index] = value & MAX_SHARED_ARRAY_ELEM;
-        } else {
-            rc.writeSharedArray(index, value & MAX_SHARED_ARRAY_ELEM);
-        }
-    }
+    // // done: after unit tests pass, remove this and replace all writeSharedArray with rc.writeSharedArray to save bytecode
+    // private void writeSharedArray(int index, int value) throws GameActionException {
+    //     if (unitTest) {
+    //         sharedArray[index] = value & MAX_SHARED_ARRAY_ELEM;
+    //     } else {
+    //         rc.writeSharedArray(index, value & MAX_SHARED_ARRAY_ELEM);
+    //     }
+    // }
 
     /*
      * Low-level read and write methods based on bit masking.
@@ -3018,8 +3018,7 @@ public class CommsHandler {
 
             value = value << (SHARED_ARRAY_ELEM_SIZE-integerBitBegin-numBits);
             // read value from shared array at arrIndexStart
-            int entry = readSharedArray(arrIndexStart);
-            writeSharedArray(arrIndexStart, (entry & bitm) | value);
+            rc.writeSharedArray(arrIndexStart, ((rc.readSharedArray(arrIndexStart) & bitm) | value) & MAX_SHARED_ARRAY_ELEM);
         } 
         // If write spans two integers
         else {
@@ -4093,17 +4092,9 @@ public class CommsHandler {
                 case 1023: bitm2 = -65537; break;
             }    
 
-            int part1 = value;
-            int part2 = value;
-            int part2len = integerBitEnd+1;
-
-            part1 = part1 >>> part2len;
-            part2 = part2 << (SHARED_ARRAY_ELEM_SIZE-part2len);
-            
-            int entry1 = readSharedArray(arrIndexStart);
-            int entry2 = readSharedArray(arrIndexEnd);
-            writeSharedArray(arrIndexStart, (entry1 & bitm1) | part1);
-            writeSharedArray(arrIndexEnd, (entry2 & bitm2) | part2);
+            int part2len = integerBitEnd + 1;            
+            rc.writeSharedArray(arrIndexStart, ((rc.readSharedArray(arrIndexStart) & bitm1) | (value >>> part2len)) & MAX_SHARED_ARRAY_ELEM);
+            rc.writeSharedArray(arrIndexEnd, ((rc.readSharedArray(arrIndexEnd) & bitm2) | (value << (SHARED_ARRAY_ELEM_SIZE-part2len))) & MAX_SHARED_ARRAY_ELEM);
         }
         return true;
     }
@@ -6712,7 +6703,7 @@ public class CommsHandler {
                 case 1023: bitm = 65536; break;
             }
             
-            output = (readSharedArray(arrIndexStart) & bitm) >>> (SHARED_ARRAY_ELEM_SIZE - integerBitBegin - numBits);
+            output = (rc.readSharedArray(arrIndexStart) & bitm) >>> (SHARED_ARRAY_ELEM_SIZE - integerBitBegin - numBits);
         } 
         // If the read spans two integers
         else {
@@ -7786,9 +7777,9 @@ public class CommsHandler {
                 case 1023: bitm2 = 65536; break;
             }
             
-            output = (readSharedArray(arrIndexStart) & bitm1) >>> (SHARED_ARRAY_ELEM_SIZE - integerBitBegin - numBits + integerBitEnd + 1);
+            output = (rc.readSharedArray(arrIndexStart) & bitm1) >>> (SHARED_ARRAY_ELEM_SIZE - integerBitBegin - numBits + integerBitEnd + 1);
             output = output << integerBitEnd + 1;
-            output |= (readSharedArray(arrIndexEnd) & bitm2) >>> (SHARED_ARRAY_ELEM_SIZE - numBits + SHARED_ARRAY_ELEM_SIZE - integerBitBegin);
+            output |= (rc.readSharedArray(arrIndexEnd) & bitm2) >>> (SHARED_ARRAY_ELEM_SIZE - numBits + SHARED_ARRAY_ELEM_SIZE - integerBitBegin);
         }
         return output;
     }
