@@ -55,9 +55,8 @@ public class CommsHandler {
     final int COMBAT_CLUSTER_SLOTS = 5;
     final int COMBAT_CLUSTER_OFFSET = ARCHON_RESERVE_OFFSET + ARCHON_RESERVE_SLOTS;
 
-    final int EXPLORE_CLUSTER_BITS = 7; // 7 bits: cluster index
+    final int EXPLORE_CLUSTER_BITS = 8; // 1 bit: claim status, 7 bits: cluster index
     final int EXPLORE_CLUSTER_SLOTS = 10;
-    final int EXPLORE_CLUSTER_CLAIM_STATUSES_BITS = EXPLORE_CLUSTER_SLOTS;
     final int EXPLORE_CLUSTER_OFFSET = COMBAT_CLUSTER_OFFSET + COMBAT_CLUSTER_SLOTS;
     public class ClaimStatus {
         public static final int UNCLAIMED = 0;
@@ -66,7 +65,7 @@ public class CommsHandler {
 
     final int MINE_CLUSTER_BITS = 10; // 3 bits: claim status, 7 bits: cluster index
     final int MINE_CLUSTER_SLOTS = 10;
-    final int MINE_CLUSTER_OFFSET = EXPLORE_CLUSTER_OFFSET + EXPLORE_CLUSTER_SLOTS + 1;
+    final int MINE_CLUSTER_OFFSET = EXPLORE_CLUSTER_OFFSET + EXPLORE_CLUSTER_SLOTS;
 
     int[] CHUNK_SIZES = {
         OUR_ARCHON_BITS, OUR_ARCHON_BITS, OUR_ARCHON_BITS, OUR_ARCHON_BITS,             // our 4 archons
@@ -91,7 +90,6 @@ public class CommsHandler {
         CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, CLUSTER_BITS, 
         ARCHON_RESERVE_BITS, ARCHON_RESERVE_BITS, ARCHON_RESERVE_BITS, ARCHON_RESERVE_BITS, // each archon can reserve some resources for a future build
         COMBAT_CLUSTER_BITS, COMBAT_CLUSTER_BITS, COMBAT_CLUSTER_BITS, COMBAT_CLUSTER_BITS, COMBAT_CLUSTER_BITS, // up to 5 active combat clusters,
-        EXPLORE_CLUSTER_CLAIM_STATUSES_BITS, // 10 bits for each explore cluster claim status
         EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, // up to 10 active exploration clusters
         EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, 
         MINE_CLUSTER_BITS, MINE_CLUSTER_BITS, MINE_CLUSTER_BITS, MINE_CLUSTER_BITS, MINE_CLUSTER_BITS, // up to 10 active mining clusters
@@ -294,7 +292,7 @@ public class CommsHandler {
      * @throws GameActionException
      */
     public int readExploreClusterClaimStatus(int exploreClusterIndex) throws GameActionException {
-        return readChunkPortion(EXPLORE_CLUSTER_OFFSET, exploreClusterIndex, 1);
+        return readChunkPortion(EXPLORE_CLUSTER_OFFSET + exploreClusterIndex, 0, 1);
     }
 
     /**
@@ -306,30 +304,7 @@ public class CommsHandler {
      * @throws GameActionException
      */
     public boolean writeExploreClusterClaimStatus(int exploreClusterIndex, int claimStatus) throws GameActionException {
-        return writeChunkPortion(claimStatus, EXPLORE_CLUSTER_OFFSET, exploreClusterIndex, 1);
-    }
-
-    /**
-     * Returns all the claim statuses of the explore clusters as a single integer, where each bit in the last
-     * EXPLORE_CLUSTER_SLOTS bits corresponds to a single explore cluster from left to right.
-     * 
-     * @return all the claim statuses of the explore clusters, as an integer with EXPLORE_CLUSTER_SLOTS bits
-     * @throws GameActionException
-     */
-    public int readAllExploreClusterClaimStatuses() throws GameActionException {
-        return readChunkPortion(EXPLORE_CLUSTER_OFFSET, 0, EXPLORE_CLUSTER_SLOTS);
-    }
-
-    /**
-     * Writes all the claim statuses of the explore clusters as a single integer, where each bit in the last
-     * EXPLORE_CLUSTER_SLOTS bits corresponds to a single explore cluster from left to right.
-     * 
-     * @param claimStatuses the claim statuses to write
-     * @return true if the write was successful
-     * @throws GameActionException
-     */
-    public boolean writeAllExploreClusterClaimStatuses(int claimStatuses) throws GameActionException {
-        return writeChunkPortion(claimStatuses, EXPLORE_CLUSTER_OFFSET, 0, EXPLORE_CLUSTER_SLOTS);
+        return writeChunkPortion(claimStatus, EXPLORE_CLUSTER_OFFSET + exploreClusterIndex, 0, 1);
     }
 
     /** 
@@ -341,7 +316,7 @@ public class CommsHandler {
      * @throws GameActionException
      */
     public int readExploreClusterIndex(int exploreClusterIndex) throws GameActionException {
-        return readChunkPortion(EXPLORE_CLUSTER_OFFSET + 1 + exploreClusterIndex, 0, 7);
+        return readChunkPortion(EXPLORE_CLUSTER_OFFSET + exploreClusterIndex, 1, 7);
     }
 
     /**
@@ -353,7 +328,7 @@ public class CommsHandler {
      * @throws GameActionException
      */
     public boolean writeExploreClusterIndex(int exploreClusterIndex, int clusterIndex) throws GameActionException {
-        return writeChunkPortion(clusterIndex, EXPLORE_CLUSTER_OFFSET + 1 + exploreClusterIndex, 0, 7);
+        return writeChunkPortion(clusterIndex, EXPLORE_CLUSTER_OFFSET + exploreClusterIndex, 1, 7);
     }
 
     /** 
