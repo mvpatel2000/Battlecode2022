@@ -7,117 +7,39 @@ public class CommsHandler {
     
     RobotController rc;
 
-    // Max chunk size: 16 bits
-
-    // ********** CHUNK SCHEMA **********
-
-    final int OUR_ARCHON_BITS = 16; // 4 bits: status; 6 bits: x coordinate; 6 bits: y coordinate
     final int OUR_ARCHON_SLOTS = 4;
-    final int OUR_ARCHON_OFFSET = 0;
+    final int MAP_SLOTS = 1;
+    final int CLUSTER_SLOTS = 100;
+    final int COMBAT_CLUSTER_SLOTS = 5;
+    final int EXPLORE_CLUSTER_SLOTS = 10;
+    final int MINE_CLUSTER_SLOTS = 10;
+
     public class ArchonStatus {
         public static final int DEAD = 0;
         public static final int STANDBY = 1;
         public static final int UNDER_ATTACK = 2;
     }
-
-    final int ENEMY_ARCHON_BITS = 13; // schema TBD
-    final int ENEMY_ARCHON_SLOTS = 4;
-    final int ENEMY_ARCHON_OFFSET = OUR_ARCHON_OFFSET + OUR_ARCHON_SLOTS;
-
-    final int MAP_SYMMETRY_BITS = 12; // 2 bits: symmetry
-    final int MAP_SYMMETRY_SLOTS = 1;
-    final int MAP_SYMMETRY_OFFSET = ENEMY_ARCHON_OFFSET + ENEMY_ARCHON_SLOTS;
     public class MapSymmetry {
         public static final int UNKNOWN = 0;
         public static final int HORIZONTAL = 1;
         public static final int VERTICAL = 2;
         public static final int ROTATIONAL = 3;
     }
-
-    final int CLUSTER_BITS = 5; // 2 bits: cluster control status; 3 bits: resource count.
-    final int CLUSTER_SLOTS = 100;
-    final int CLUSTER_OFFSET = MAP_SYMMETRY_OFFSET + MAP_SYMMETRY_SLOTS;
     public class ControlStatus {
         public static final int UNKNOWN = 0;
         public static final int OURS = 1;
         public static final int THEIRS = 2;
         public static final int EXPLORING = 3;
     }
-    final int CLUSTER_FILLER_BITS = 1;
-    final int CLUSTER_FILLER_SLOTS = 33;
-    final int[] CLUSTER_IDX_WITH_FILLERS = {0, 1, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14, 16, 17, 18, 20, 21, 22, 24, 25, 26, 28, 29, 30, 32, 33, 34, 36, 37, 38, 40, 41, 42, 44, 45, 46, 48, 49, 50, 52, 53, 54, 56, 57, 58, 60, 61, 62, 64, 65, 66, 68, 69, 70, 72, 73, 74, 76, 77, 78, 80, 81, 82, 84, 85, 86, 88, 89, 90, 92, 93, 94, 96, 97, 98, 100, 101, 102, 104, 105, 106, 108, 109, 110, 112, 113, 114, 116, 117, 118, 120, 121, 122, 124, 125, 126, 128, 129, 130, 132};
-
-    final int ARCHON_RESERVE_BITS = 5; // reserve the resources for a miner, builder, soldier, or sage, with a priority level from 0-3
-    final int ARCHON_RESERVE_SLOTS = 4;
-    final int ARCHON_RESERVE_OFFSET = CLUSTER_OFFSET + CLUSTER_SLOTS + CLUSTER_FILLER_SLOTS;
-
-    final int COMBAT_CLUSTER_BITS = 7; // 7 bits: cluster index
-    final int COMBAT_CLUSTER_SLOTS = 5;
-    final int COMBAT_CLUSTER_OFFSET = ARCHON_RESERVE_OFFSET + ARCHON_RESERVE_SLOTS;
-
-    final int EXPLORE_CLUSTER_BITS = 8; // 1 bit: claim status, 7 bits: cluster index
-    final int EXPLORE_CLUSTER_SLOTS = 10;
-    final int EXPLORE_CLUSTER_OFFSET = COMBAT_CLUSTER_OFFSET + COMBAT_CLUSTER_SLOTS;
     public class ClaimStatus {
         public static final int UNCLAIMED = 0;
         public static final int CLAIMED = 1;
     }
 
-    final int MINE_CLUSTER_BITS = 10; // 3 bits: claim status, 7 bits: cluster index
-    final int MINE_CLUSTER_SLOTS = 10;
-    final int MINE_CLUSTER_OFFSET = EXPLORE_CLUSTER_OFFSET + EXPLORE_CLUSTER_SLOTS;
-
-    int[] CHUNK_SIZES = {
-        OUR_ARCHON_BITS, OUR_ARCHON_BITS, OUR_ARCHON_BITS, OUR_ARCHON_BITS,             // our 4 archons
-        ENEMY_ARCHON_BITS, ENEMY_ARCHON_BITS, ENEMY_ARCHON_BITS, ENEMY_ARCHON_BITS,     // enemy 4 archons
-        MAP_SYMMETRY_BITS,
-        CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, // 100 clusters and 33 fillers
-        CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, 
-        CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, 
-        CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, 
-        CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, 
-        CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, 
-        CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, 
-        CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, 
-        CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, 
-        CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, 
-        CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, 
-        CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, 
-        CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, 
-        CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, 
-        CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, 
-        CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, 
-        CLUSTER_BITS, CLUSTER_BITS, CLUSTER_BITS, CLUSTER_FILLER_BITS, CLUSTER_BITS, 
-        ARCHON_RESERVE_BITS, ARCHON_RESERVE_BITS, ARCHON_RESERVE_BITS, ARCHON_RESERVE_BITS, // each archon can reserve some resources for a future build
-        COMBAT_CLUSTER_BITS, COMBAT_CLUSTER_BITS, COMBAT_CLUSTER_BITS, COMBAT_CLUSTER_BITS, COMBAT_CLUSTER_BITS, // up to 5 active combat clusters,
-        EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, // up to 10 active exploration clusters
-        EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, EXPLORE_CLUSTER_BITS, 
-        MINE_CLUSTER_BITS, MINE_CLUSTER_BITS, MINE_CLUSTER_BITS, MINE_CLUSTER_BITS, MINE_CLUSTER_BITS, // up to 10 active mining clusters
-        MINE_CLUSTER_BITS, MINE_CLUSTER_BITS, MINE_CLUSTER_BITS, MINE_CLUSTER_BITS, MINE_CLUSTER_BITS, 
-        // TODO: add more
-    };
-    int[] CHUNK_OFFSETS = new int[CHUNK_SIZES.length]; // TODO: precompute prefix sums of CHUNK_SIZES
-
-    final int SHARED_ARRAY_ELEM_SIZE = 16;
-    final int SHARED_ARRAY_ELEM_LOG2 = 4;
-    final int MAX_SHARED_ARRAY_ELEM = 65535;
-
     final int UNDEFINED_CLUSTER_INDEX = 127;
-
-    // for unit test only
-    boolean unitTest = false;
-    int[] sharedArray;
 
     public CommsHandler(RobotController rc) throws GameActionException {
         this.rc = rc;
-        init();
-        // //System.out.println\("Total bits used: " + (CHUNK_OFFSETS[CHUNK_OFFSETS.length-1] + CHUNK_SIZES[CHUNK_SIZES.length-1]));
-    }
-
-    private void init() throws GameActionException {
-        for (int i = 0; i < CHUNK_SIZES.length; i++) { // TODO: remove once we precompute CHUNK_OFFSETS
-            CHUNK_OFFSETS[i] = (i == 0) ? 0 : CHUNK_OFFSETS[i-1] + CHUNK_SIZES[i-1];
-        }
     }
 
     /**
@@ -136,9837 +58,2208 @@ public class CommsHandler {
         }
     }
 
-    /**
-     * Returns the status of the given friendly archon, encoded as follows:
-     * 0: archon does not exist; 1: archon alive and on standby; 2-15: TBD
-     * 
-     * @return status of the given archon
-     * @param archonNum the archon number
-     */
-    public int readOurArchonStatus(int archonNum) throws GameActionException {
-        return readChunkPortion(OUR_ARCHON_OFFSET + archonNum, 0, 4);
+    public MapLocation getOurArchonLocation(int idx) throws GameActionException {
+        return new MapLocation(readOurArchonXCoord(idx), readOurArchonYCoord(idx));
     }
 
-    /**
-     * Writes the status of the given friendly archon, encoded as follows:
-     * 0: archon does not exist; 1: archon alive and on standby; 2-15: TBD
-     * 
-     * @return true if the write was successful
-     * @param archonNum the archon number
-     * @param status the status to write
-     */
-    public boolean writeOurArchonStatus(int archonNum, int status) throws GameActionException {
-        return writeChunkPortion(status, OUR_ARCHON_OFFSET + archonNum, 0, 4);
+    public void writeOurArchonLocation(int idx, MapLocation loc) throws GameActionException {
+        writeOurArchonXCoord(idx, loc.x);
+        writeOurArchonYCoord(idx, loc.y);
     }
 
-    /**
-     * Returns the MapLocation of the specified friendly archon.
-     *
-     * @param archonNum the archon number
-     * @return the MapLocation of the specified archon
-     * @throws GameActionException
-     */
-    public MapLocation readOurArchonLocation(int archonNum) throws GameActionException {
-        return new MapLocation(readChunkPortion(OUR_ARCHON_OFFSET + archonNum, 4, 6), readChunkPortion(OUR_ARCHON_OFFSET + archonNum, 10, 6));
+
+    public int readOurArchonStatus(int idx) throws GameActionException {
+        switch (idx) {
+            case 0:
+                return (rc.readSharedArray(0) & 61440) >>> 12;
+            case 1:
+                return (rc.readSharedArray(1) & 61440) >>> 12;
+            case 2:
+                return (rc.readSharedArray(2) & 61440) >>> 12;
+            case 3:
+                return (rc.readSharedArray(3) & 61440) >>> 12;
+            default:
+                return -1;
+        }
     }
 
-    /**
-     * Writes the MapLocation of the specified friendly archon.
-     *
-     * @param archonNum the archon number
-     * @param loc the MapLocation to write
-     * @return true if the write was successful
-     * @throws GameActionException
-     */
-    public boolean writeOurArchonLocation(int archonNum, MapLocation loc) throws GameActionException {
-        return writeChunkPortion(loc.x, OUR_ARCHON_OFFSET + archonNum, 4, 6) && writeChunkPortion(loc.y, OUR_ARCHON_OFFSET + archonNum, 10, 6);
+    public void writeOurArchonStatus(int idx, int value) throws GameActionException {
+        switch (idx) {
+            case 0:
+                rc.writeSharedArray(0, (rc.readSharedArray(0) & 4095) | (value << 12));
+                break;
+            case 1:
+                rc.writeSharedArray(1, (rc.readSharedArray(1) & 4095) | (value << 12));
+                break;
+            case 2:
+                rc.writeSharedArray(2, (rc.readSharedArray(2) & 4095) | (value << 12));
+                break;
+            case 3:
+                rc.writeSharedArray(3, (rc.readSharedArray(3) & 4095) | (value << 12));
+                break;
+        }
     }
 
-    /**
-     * Returns the symmetry of the map, encoded via MapSymmetry enum.
-     *
-     * @return the symmetry of the map
-     * @throws GameActionException
-     */
+    public int readOurArchonXCoord(int idx) throws GameActionException {
+        switch (idx) {
+            case 0:
+                return (rc.readSharedArray(0) & 4032) >>> 6;
+            case 1:
+                return (rc.readSharedArray(1) & 4032) >>> 6;
+            case 2:
+                return (rc.readSharedArray(2) & 4032) >>> 6;
+            case 3:
+                return (rc.readSharedArray(3) & 4032) >>> 6;
+            default:
+                return -1;
+        }
+    }
+
+    public void writeOurArchonXCoord(int idx, int value) throws GameActionException {
+        switch (idx) {
+            case 0:
+                rc.writeSharedArray(0, (rc.readSharedArray(0) & 61503) | (value << 6));
+                break;
+            case 1:
+                rc.writeSharedArray(1, (rc.readSharedArray(1) & 61503) | (value << 6));
+                break;
+            case 2:
+                rc.writeSharedArray(2, (rc.readSharedArray(2) & 61503) | (value << 6));
+                break;
+            case 3:
+                rc.writeSharedArray(3, (rc.readSharedArray(3) & 61503) | (value << 6));
+                break;
+        }
+    }
+
+    public int readOurArchonYCoord(int idx) throws GameActionException {
+        switch (idx) {
+            case 0:
+                return (rc.readSharedArray(0) & 63);
+            case 1:
+                return (rc.readSharedArray(1) & 63);
+            case 2:
+                return (rc.readSharedArray(2) & 63);
+            case 3:
+                return (rc.readSharedArray(3) & 63);
+            default:
+                return -1;
+        }
+    }
+
+    public void writeOurArchonYCoord(int idx, int value) throws GameActionException {
+        switch (idx) {
+            case 0:
+                rc.writeSharedArray(0, (rc.readSharedArray(0) & 65472) | (value));
+                break;
+            case 1:
+                rc.writeSharedArray(1, (rc.readSharedArray(1) & 65472) | (value));
+                break;
+            case 2:
+                rc.writeSharedArray(2, (rc.readSharedArray(2) & 65472) | (value));
+                break;
+            case 3:
+                rc.writeSharedArray(3, (rc.readSharedArray(3) & 65472) | (value));
+                break;
+        }
+    }
+
+    public int readOurArchonAll(int idx) throws GameActionException {
+        switch (idx) {
+            case 0:
+                return (rc.readSharedArray(0) & 65535);
+            case 1:
+                return (rc.readSharedArray(1) & 65535);
+            case 2:
+                return (rc.readSharedArray(2) & 65535);
+            case 3:
+                return (rc.readSharedArray(3) & 65535);
+            default:
+                return -1;
+        }
+    }
+
+    public void writeOurArchonAll(int idx, int value) throws GameActionException {
+        switch (idx) {
+            case 0:
+                rc.writeSharedArray(0, (rc.readSharedArray(0) & 0) | (value));
+                break;
+            case 1:
+                rc.writeSharedArray(1, (rc.readSharedArray(1) & 0) | (value));
+                break;
+            case 2:
+                rc.writeSharedArray(2, (rc.readSharedArray(2) & 0) | (value));
+                break;
+            case 3:
+                rc.writeSharedArray(3, (rc.readSharedArray(3) & 0) | (value));
+                break;
+        }
+    }
+
     public int readMapSymmetry() throws GameActionException {
-        return readChunkPortion(MAP_SYMMETRY_OFFSET, 0, 2);
+        return (rc.readSharedArray(4) & 49152) >>> 14;
     }
 
-    /**
-     * Writes the symmetry of the map, encoded via MapSymmetry enum.
-     *
-     * @param symmetry the symmetry to write
-     * @return true if the write was successful
-     * @throws GameActionException
-     */
-    public boolean writeMapSymmetry(int symmetry) throws GameActionException {
-        return writeChunkPortion(symmetry, MAP_SYMMETRY_OFFSET, 0, 2);
+    public void writeMapSymmetry(int value) throws GameActionException {
+        rc.writeSharedArray(4, (rc.readSharedArray(4) & 16383) | (value << 14));
     }
 
-    /**
-     * Returns the cluster control status of the specified cluster, encoded via ControlStatus enum.
-     *
-     * @param clusterNum the cluster number
-     * @return the cluster control status of the specified cluster
-     * @throws GameActionException
-     */
-    public int readClusterControlStatus(int clusterIdx) throws GameActionException {
-        return readChunkPortion(CLUSTER_OFFSET + CLUSTER_IDX_WITH_FILLERS[clusterIdx], 0, 2);
+    public int readMapAll() throws GameActionException {
+        return (rc.readSharedArray(4) & 49152) >>> 14;
     }
 
-    /**
-     * Writes the cluster control status of the specified cluster, encoded via ControlStatus enum.
-     *
-     * @param clusterNum the cluster number
-     * @param status the cluster control status to write
-     * @return true if the write was successful
-     * @throws GameActionException
-     */
-    public boolean writeClusterControlStatus(int clusterIdx, int status) throws GameActionException {
-        return writeChunkPortion(status, CLUSTER_OFFSET + CLUSTER_IDX_WITH_FILLERS[clusterIdx], 0, 2);
+    public void writeMapAll(int value) throws GameActionException {
+        rc.writeSharedArray(4, (rc.readSharedArray(4) & 16383) | (value << 14));
     }
 
-    /**
-     * Returns the number of resources in the specified cluster, encoded in the range [1, 7].
-     * Returns 0 if the resource count is unknown.
-     *
-     * @param clusterNum the cluster number
-     * @return the encoded number of resources in the specified cluster
-     * @throws GameActionException
-     */
-    public int readClusterResourceCount(int clusterIdx) throws GameActionException {
-        return readChunkPortion(CLUSTER_OFFSET + CLUSTER_IDX_WITH_FILLERS[clusterIdx], 2, 3);
-    }
-
-    /**
-     * Writes the number of resources in the specified cluster, encoded in the range [1, 7].
-     * Returns 0 if the resource count is unknown.
-     * 
-     * @param clusterNum the cluster number
-     * @param count the encoded number of resources to write
-     * @return true if the write was successful
-     * @throws GameActionException
-     */
-    public boolean writeClusterResourceCount(int clusterIdx, int count) throws GameActionException {
-        return writeChunkPortion(count, CLUSTER_OFFSET + CLUSTER_IDX_WITH_FILLERS[clusterIdx], 2, 3);
-    }
-
-    /**
-     * Returns the cluster index of the specified combat cluster.
-     * Returns UNDEFINED_CLUSTER_INDEX if the combat cluster is not set.
-     * 
-     * @param combatClusterIndex the combat cluster index, in the range [0, COMBAT_CLUSTER_SLOTS - 1]
-     * @return the cluster index of the specified combat cluster
-     * @throws GameActionException
-     */
-    public int readCombatClusterIndex(int combatClusterIndex) throws GameActionException {
-        return readChunkPortion(COMBAT_CLUSTER_OFFSET + combatClusterIndex, 0, 7);
-    }
-
-    /**
-     * Writes the cluster index of the specified combat cluster.
-     * 
-     * @param combatClusterIndex the combat cluster index, in the range [0, COMBAT_CLUSTER_SLOTS - 1]
-     * @param clusterIndex the cluster index to write
-     * @return true if the write was successful
-     * @throws GameActionException
-     */
-    public boolean writeCombatClusterIndex(int combatClusterIndex, int clusterIndex) throws GameActionException {
-        return writeChunkPortion(clusterIndex, COMBAT_CLUSTER_OFFSET + combatClusterIndex, 0, 7);
-    }
-
-    /**
-     * Reads all of an explore cluster
-     * @param exploreClusterIndex
-     * @return
-     * @throws GameActionException
-     */
-    public int readExploreClusterAll(int exploreClusterIndex) throws GameActionException {
-        return readChunkPortion(EXPLORE_CLUSTER_OFFSET + exploreClusterIndex, 0, 8);
-    }
-
-    /**
-     * Writes all of an explore cluster
-     * @param exploreClusterIndex
-     * @return
-     * @throws GameActionException
-     */
-    public boolean writeExploreClusterAll(int exploreClusterIndex, int data) throws GameActionException {
-        return writeChunkPortion(data, EXPLORE_CLUSTER_OFFSET + exploreClusterIndex, 0, 8);
-    }
-
-    /**
-     * Returns the claim status of the specified exploration cluster; 0: unclaimed, 1: claimed.
-     * 
-     * @param exploreClusterIndex the exploration cluster index, in the range [0, EXPLORE_CLUSTER_SLOTS - 1]
-     * @return the claim status of the specified exploration cluster
-     * @throws GameActionException
-     */
-    public int readExploreClusterClaimStatus(int exploreClusterIndex) throws GameActionException {
-        return readChunkPortion(EXPLORE_CLUSTER_OFFSET + exploreClusterIndex, 0, 1);
-    }
-
-    /**
-     * Writes the claim status of the specified exploration cluster; 0: unclaimed, 1: claimed.
-     * 
-     * @param exploreClusterIndex the exploration cluster index, in the range [0, EXPLORE_CLUSTER_SLOTS - 1]
-     * @param claimStatus the claim status to write
-     * @return true if the write was successful
-     * @throws GameActionException
-     */
-    public boolean writeExploreClusterClaimStatus(int exploreClusterIndex, int claimStatus) throws GameActionException {
-        return writeChunkPortion(claimStatus, EXPLORE_CLUSTER_OFFSET + exploreClusterIndex, 0, 1);
-    }
-
-    /** 
-     * Returns the cluster index of the specified exploration cluster.
-     * Returns UNDEFINED_CLUSTER_INDEX if the exploration cluster is not set.
-     * 
-     * @param exploreClusterIndex the exploration cluster index, in the range [0, EXPLORE_CLUSTER_SLOTS - 1]
-     * @return the cluster index of the specified exploration cluster
-     * @throws GameActionException
-     */
-    public int readExploreClusterIndex(int exploreClusterIndex) throws GameActionException {
-        return readChunkPortion(EXPLORE_CLUSTER_OFFSET + exploreClusterIndex, 1, 7);
-    }
-
-    /**
-     * Writes the cluster index of the specified exploration cluster.
-     * 
-     * @param exploreClusterIndex the exploration cluster index, in the range [0, EXPLORE_CLUSTER_SLOTS - 1]
-     * @param clusterIndex the cluster index to write
-     * @return true if the write was successful
-     * @throws GameActionException
-     */
-    public boolean writeExploreClusterIndex(int exploreClusterIndex, int clusterIndex) throws GameActionException {
-        return writeChunkPortion(clusterIndex, EXPLORE_CLUSTER_OFFSET + exploreClusterIndex, 1, 7);
-    }
-
-    /**
-     * Reads all of mine cluster
-     * @param mineClusterIndex
-     * @return
-     * @throws GameActionException
-     */
-    public int readMineClusterAll(int mineClusterIndex) throws GameActionException {
-        return readChunkPortion(MINE_CLUSTER_OFFSET + mineClusterIndex, 0, 10);
-    }
-
-    /**
-     * Writes all of mine cluster
-     * @param mineClusterIndex
-     * @return
-     * @throws GameActionException
-     */
-    public boolean writeMineClusterAll(int mineClusterIndex, int data) throws GameActionException {
-        return writeChunkPortion(data, MINE_CLUSTER_OFFSET + mineClusterIndex, 0, 10);
-    }
-
-    /** 
-     * Returns the claim status of the specified mining cluster, in the range [0, 7].
-     * 
-     * @param mineClusterIndex the mining cluster index, in the range [0, MINE_CLUSTER_SLOTS - 1]
-     * @return the claim status of the specified mining cluster
-     * @throws GameActionException
-     */
-    public int readMineClusterClaimStatus(int mineClusterIndex) throws GameActionException {
-        return readChunkPortion(MINE_CLUSTER_OFFSET + mineClusterIndex, 0, 3);
-    }
-
-    /**
-     * Writes the claim status of the specified mining cluster, in the range [0, 7].
-     * 
-     * @param mineClusterIndex the mining cluster index, in the range [0, MINE_CLUSTER_SLOTS - 1]
-     * @param claimStatus the claim status to write
-     * @return true if the write was successful
-     * @throws GameActionException
-     */
-    public boolean writeMineClusterClaimStatus(int mineClusterIndex, int claimStatus) throws GameActionException {
-        return writeChunkPortion(claimStatus, MINE_CLUSTER_OFFSET + mineClusterIndex, 0, 3);
-    }
-
-    /**
-     * Returns the cluster index of the specified mining cluster.
-     * Returns UNDEFINED_CLUSTER_INDEX if the mining cluster is not set.
-     * 
-     * @param mineClusterIndex the mining cluster index, in the range [0, MINE_CLUSTER_SLOTS - 1]
-     * @return the cluster index of the specified mining cluster
-     * @throws GameActionException
-     */
-    public int readMineClusterIndex(int mineClusterIndex) throws GameActionException {
-        return readChunkPortion(MINE_CLUSTER_OFFSET + mineClusterIndex, 3, 7);
-    }
-
-    /**
-     * Writes the cluster index of the specified mining cluster.
-     * 
-     * @param mineClusterIndex the mining cluster index, in the range [0, MINE_CLUSTER_SLOTS - 1]
-     * @param clusterIndex the cluster index to write
-     * @return true if the write was successful
-     * @throws GameActionException
-     */
-    public boolean writeMineClusterIndex(int mineClusterIndex, int clusterIndex) throws GameActionException {
-        return writeChunkPortion(clusterIndex, MINE_CLUSTER_OFFSET + mineClusterIndex, 3, 7);
-    }
-
-    private int readChunk(int chunkIndex) throws GameActionException { // Implements lazy reading from the main shared array
-        return read(CHUNK_OFFSETS[chunkIndex], CHUNK_SIZES[chunkIndex]);
-    }
-
-    private boolean writeChunk(int chunkIndex, int value) throws GameActionException {
-        return write(value, CHUNK_OFFSETS[chunkIndex], CHUNK_SIZES[chunkIndex]);
-    }
-
-    private int readChunkPortion(int chunkIndex, int beginBit, int numBits) throws GameActionException { // Implements lazy reading from the main shared array
-        return read(CHUNK_OFFSETS[chunkIndex] + beginBit, numBits);
-    }
-
-    private boolean writeChunkPortion(int value, int chunkIndex, int beginBit, int numBits) throws GameActionException {
-        return write(value, CHUNK_OFFSETS[chunkIndex] + beginBit, numBits);
-    }
-
-    // // done: after unit tests pass, remove this and replace all readSharedArray with rc.readSharedArray to save bytecode
-    // private int readSharedArray(int index) throws GameActionException {
-    //     if (unitTest) {
-    //         return sharedArray[index];
-    //     }
-    //     return rc.readSharedArray(index);
-    // }
-
-    // // done: after unit tests pass, remove this and replace all writeSharedArray with rc.writeSharedArray to save bytecode
-    // private void writeSharedArray(int index, int value) throws GameActionException {
-    //     if (unitTest) {
-    //         sharedArray[index] = value & MAX_SHARED_ARRAY_ELEM;
-    //     } else {
-    //         rc.writeSharedArray(index, value & MAX_SHARED_ARRAY_ELEM);
-    //     }
-    // }
-
-    /*
-     * Low-level read and write methods based on bit masking.
-     * Reading and writing are supported for any number of length 0-SHARED_ARRAY_ELEM_SIZE bits (inclusive)
-     * Takes constant time regardless of length of number written.
-     */
-
-    //Can only write numbers of length 0 to SHARED_ARRAY_ELEM_SIZE
-    //It is up to the caller to provide enough bits to write the number
-    //Otherwise, the function will not work. It will only write the first numBits
-    //digits.
-    //If providing a number with excess bits (value >> 2^numBits), the number will be
-    //at the right end of the slot (the excess bits will be turned into leading zeros).
-    public boolean write(int value, int beginBit, int numBits) throws GameActionException {
-        int arrIndexStart = (beginBit)>>>SHARED_ARRAY_ELEM_LOG2;
-        int sumMinusOne = numBits + beginBit - 1;
-        int arrIndexEnd = sumMinusOne>>>SHARED_ARRAY_ELEM_LOG2;
-
-        // integerBitBegin and integerBitEnd will be set in the switch statements, in-line for speedup
-        // int integerBitBegin = whichBit2(arrIndexStart, beginBit);
-        // int integerBitEnd = whichBit2(arrIndexEnd, sumMinusOne);
-        int integerBitBegin = 0;
-        int integerBitEnd = 0;
-        switch (beginBit + arrIndexStart*2000) {
-            case 0: integerBitBegin = 0; break;
-            case 1: integerBitBegin = 1; break;
-            case 2: integerBitBegin = 2; break;
-            case 3: integerBitBegin = 3; break;
-            case 4: integerBitBegin = 4; break;
-            case 5: integerBitBegin = 5; break;
-            case 6: integerBitBegin = 6; break;
-            case 7: integerBitBegin = 7; break;
-            case 8: integerBitBegin = 8; break;
-            case 9: integerBitBegin = 9; break;
-            case 10: integerBitBegin = 10; break;
-            case 11: integerBitBegin = 11; break;
-            case 12: integerBitBegin = 12; break;
-            case 13: integerBitBegin = 13; break;
-            case 14: integerBitBegin = 14; break;
-            case 15: integerBitBegin = 15; break;
-            case 2016: integerBitBegin = 0; break;
-            case 2017: integerBitBegin = 1; break;
-            case 2018: integerBitBegin = 2; break;
-            case 2019: integerBitBegin = 3; break;
-            case 2020: integerBitBegin = 4; break;
-            case 2021: integerBitBegin = 5; break;
-            case 2022: integerBitBegin = 6; break;
-            case 2023: integerBitBegin = 7; break;
-            case 2024: integerBitBegin = 8; break;
-            case 2025: integerBitBegin = 9; break;
-            case 2026: integerBitBegin = 10; break;
-            case 2027: integerBitBegin = 11; break;
-            case 2028: integerBitBegin = 12; break;
-            case 2029: integerBitBegin = 13; break;
-            case 2030: integerBitBegin = 14; break;
-            case 2031: integerBitBegin = 15; break;
-            case 4032: integerBitBegin = 0; break;
-            case 4033: integerBitBegin = 1; break;
-            case 4034: integerBitBegin = 2; break;
-            case 4035: integerBitBegin = 3; break;
-            case 4036: integerBitBegin = 4; break;
-            case 4037: integerBitBegin = 5; break;
-            case 4038: integerBitBegin = 6; break;
-            case 4039: integerBitBegin = 7; break;
-            case 4040: integerBitBegin = 8; break;
-            case 4041: integerBitBegin = 9; break;
-            case 4042: integerBitBegin = 10; break;
-            case 4043: integerBitBegin = 11; break;
-            case 4044: integerBitBegin = 12; break;
-            case 4045: integerBitBegin = 13; break;
-            case 4046: integerBitBegin = 14; break;
-            case 4047: integerBitBegin = 15; break;
-            case 6048: integerBitBegin = 0; break;
-            case 6049: integerBitBegin = 1; break;
-            case 6050: integerBitBegin = 2; break;
-            case 6051: integerBitBegin = 3; break;
-            case 6052: integerBitBegin = 4; break;
-            case 6053: integerBitBegin = 5; break;
-            case 6054: integerBitBegin = 6; break;
-            case 6055: integerBitBegin = 7; break;
-            case 6056: integerBitBegin = 8; break;
-            case 6057: integerBitBegin = 9; break;
-            case 6058: integerBitBegin = 10; break;
-            case 6059: integerBitBegin = 11; break;
-            case 6060: integerBitBegin = 12; break;
-            case 6061: integerBitBegin = 13; break;
-            case 6062: integerBitBegin = 14; break;
-            case 6063: integerBitBegin = 15; break;
-            case 8064: integerBitBegin = 0; break;
-            case 8065: integerBitBegin = 1; break;
-            case 8066: integerBitBegin = 2; break;
-            case 8067: integerBitBegin = 3; break;
-            case 8068: integerBitBegin = 4; break;
-            case 8069: integerBitBegin = 5; break;
-            case 8070: integerBitBegin = 6; break;
-            case 8071: integerBitBegin = 7; break;
-            case 8072: integerBitBegin = 8; break;
-            case 8073: integerBitBegin = 9; break;
-            case 8074: integerBitBegin = 10; break;
-            case 8075: integerBitBegin = 11; break;
-            case 8076: integerBitBegin = 12; break;
-            case 8077: integerBitBegin = 13; break;
-            case 8078: integerBitBegin = 14; break;
-            case 8079: integerBitBegin = 15; break;
-            case 10080: integerBitBegin = 0; break;
-            case 10081: integerBitBegin = 1; break;
-            case 10082: integerBitBegin = 2; break;
-            case 10083: integerBitBegin = 3; break;
-            case 10084: integerBitBegin = 4; break;
-            case 10085: integerBitBegin = 5; break;
-            case 10086: integerBitBegin = 6; break;
-            case 10087: integerBitBegin = 7; break;
-            case 10088: integerBitBegin = 8; break;
-            case 10089: integerBitBegin = 9; break;
-            case 10090: integerBitBegin = 10; break;
-            case 10091: integerBitBegin = 11; break;
-            case 10092: integerBitBegin = 12; break;
-            case 10093: integerBitBegin = 13; break;
-            case 10094: integerBitBegin = 14; break;
-            case 10095: integerBitBegin = 15; break;
-            case 12096: integerBitBegin = 0; break;
-            case 12097: integerBitBegin = 1; break;
-            case 12098: integerBitBegin = 2; break;
-            case 12099: integerBitBegin = 3; break;
-            case 12100: integerBitBegin = 4; break;
-            case 12101: integerBitBegin = 5; break;
-            case 12102: integerBitBegin = 6; break;
-            case 12103: integerBitBegin = 7; break;
-            case 12104: integerBitBegin = 8; break;
-            case 12105: integerBitBegin = 9; break;
-            case 12106: integerBitBegin = 10; break;
-            case 12107: integerBitBegin = 11; break;
-            case 12108: integerBitBegin = 12; break;
-            case 12109: integerBitBegin = 13; break;
-            case 12110: integerBitBegin = 14; break;
-            case 12111: integerBitBegin = 15; break;
-            case 14112: integerBitBegin = 0; break;
-            case 14113: integerBitBegin = 1; break;
-            case 14114: integerBitBegin = 2; break;
-            case 14115: integerBitBegin = 3; break;
-            case 14116: integerBitBegin = 4; break;
-            case 14117: integerBitBegin = 5; break;
-            case 14118: integerBitBegin = 6; break;
-            case 14119: integerBitBegin = 7; break;
-            case 14120: integerBitBegin = 8; break;
-            case 14121: integerBitBegin = 9; break;
-            case 14122: integerBitBegin = 10; break;
-            case 14123: integerBitBegin = 11; break;
-            case 14124: integerBitBegin = 12; break;
-            case 14125: integerBitBegin = 13; break;
-            case 14126: integerBitBegin = 14; break;
-            case 14127: integerBitBegin = 15; break;
-            case 16128: integerBitBegin = 0; break;
-            case 16129: integerBitBegin = 1; break;
-            case 16130: integerBitBegin = 2; break;
-            case 16131: integerBitBegin = 3; break;
-            case 16132: integerBitBegin = 4; break;
-            case 16133: integerBitBegin = 5; break;
-            case 16134: integerBitBegin = 6; break;
-            case 16135: integerBitBegin = 7; break;
-            case 16136: integerBitBegin = 8; break;
-            case 16137: integerBitBegin = 9; break;
-            case 16138: integerBitBegin = 10; break;
-            case 16139: integerBitBegin = 11; break;
-            case 16140: integerBitBegin = 12; break;
-            case 16141: integerBitBegin = 13; break;
-            case 16142: integerBitBegin = 14; break;
-            case 16143: integerBitBegin = 15; break;
-            case 18144: integerBitBegin = 0; break;
-            case 18145: integerBitBegin = 1; break;
-            case 18146: integerBitBegin = 2; break;
-            case 18147: integerBitBegin = 3; break;
-            case 18148: integerBitBegin = 4; break;
-            case 18149: integerBitBegin = 5; break;
-            case 18150: integerBitBegin = 6; break;
-            case 18151: integerBitBegin = 7; break;
-            case 18152: integerBitBegin = 8; break;
-            case 18153: integerBitBegin = 9; break;
-            case 18154: integerBitBegin = 10; break;
-            case 18155: integerBitBegin = 11; break;
-            case 18156: integerBitBegin = 12; break;
-            case 18157: integerBitBegin = 13; break;
-            case 18158: integerBitBegin = 14; break;
-            case 18159: integerBitBegin = 15; break;
-            case 20160: integerBitBegin = 0; break;
-            case 20161: integerBitBegin = 1; break;
-            case 20162: integerBitBegin = 2; break;
-            case 20163: integerBitBegin = 3; break;
-            case 20164: integerBitBegin = 4; break;
-            case 20165: integerBitBegin = 5; break;
-            case 20166: integerBitBegin = 6; break;
-            case 20167: integerBitBegin = 7; break;
-            case 20168: integerBitBegin = 8; break;
-            case 20169: integerBitBegin = 9; break;
-            case 20170: integerBitBegin = 10; break;
-            case 20171: integerBitBegin = 11; break;
-            case 20172: integerBitBegin = 12; break;
-            case 20173: integerBitBegin = 13; break;
-            case 20174: integerBitBegin = 14; break;
-            case 20175: integerBitBegin = 15; break;
-            case 22176: integerBitBegin = 0; break;
-            case 22177: integerBitBegin = 1; break;
-            case 22178: integerBitBegin = 2; break;
-            case 22179: integerBitBegin = 3; break;
-            case 22180: integerBitBegin = 4; break;
-            case 22181: integerBitBegin = 5; break;
-            case 22182: integerBitBegin = 6; break;
-            case 22183: integerBitBegin = 7; break;
-            case 22184: integerBitBegin = 8; break;
-            case 22185: integerBitBegin = 9; break;
-            case 22186: integerBitBegin = 10; break;
-            case 22187: integerBitBegin = 11; break;
-            case 22188: integerBitBegin = 12; break;
-            case 22189: integerBitBegin = 13; break;
-            case 22190: integerBitBegin = 14; break;
-            case 22191: integerBitBegin = 15; break;
-            case 24192: integerBitBegin = 0; break;
-            case 24193: integerBitBegin = 1; break;
-            case 24194: integerBitBegin = 2; break;
-            case 24195: integerBitBegin = 3; break;
-            case 24196: integerBitBegin = 4; break;
-            case 24197: integerBitBegin = 5; break;
-            case 24198: integerBitBegin = 6; break;
-            case 24199: integerBitBegin = 7; break;
-            case 24200: integerBitBegin = 8; break;
-            case 24201: integerBitBegin = 9; break;
-            case 24202: integerBitBegin = 10; break;
-            case 24203: integerBitBegin = 11; break;
-            case 24204: integerBitBegin = 12; break;
-            case 24205: integerBitBegin = 13; break;
-            case 24206: integerBitBegin = 14; break;
-            case 24207: integerBitBegin = 15; break;
-            case 26208: integerBitBegin = 0; break;
-            case 26209: integerBitBegin = 1; break;
-            case 26210: integerBitBegin = 2; break;
-            case 26211: integerBitBegin = 3; break;
-            case 26212: integerBitBegin = 4; break;
-            case 26213: integerBitBegin = 5; break;
-            case 26214: integerBitBegin = 6; break;
-            case 26215: integerBitBegin = 7; break;
-            case 26216: integerBitBegin = 8; break;
-            case 26217: integerBitBegin = 9; break;
-            case 26218: integerBitBegin = 10; break;
-            case 26219: integerBitBegin = 11; break;
-            case 26220: integerBitBegin = 12; break;
-            case 26221: integerBitBegin = 13; break;
-            case 26222: integerBitBegin = 14; break;
-            case 26223: integerBitBegin = 15; break;
-            case 28224: integerBitBegin = 0; break;
-            case 28225: integerBitBegin = 1; break;
-            case 28226: integerBitBegin = 2; break;
-            case 28227: integerBitBegin = 3; break;
-            case 28228: integerBitBegin = 4; break;
-            case 28229: integerBitBegin = 5; break;
-            case 28230: integerBitBegin = 6; break;
-            case 28231: integerBitBegin = 7; break;
-            case 28232: integerBitBegin = 8; break;
-            case 28233: integerBitBegin = 9; break;
-            case 28234: integerBitBegin = 10; break;
-            case 28235: integerBitBegin = 11; break;
-            case 28236: integerBitBegin = 12; break;
-            case 28237: integerBitBegin = 13; break;
-            case 28238: integerBitBegin = 14; break;
-            case 28239: integerBitBegin = 15; break;
-            case 30240: integerBitBegin = 0; break;
-            case 30241: integerBitBegin = 1; break;
-            case 30242: integerBitBegin = 2; break;
-            case 30243: integerBitBegin = 3; break;
-            case 30244: integerBitBegin = 4; break;
-            case 30245: integerBitBegin = 5; break;
-            case 30246: integerBitBegin = 6; break;
-            case 30247: integerBitBegin = 7; break;
-            case 30248: integerBitBegin = 8; break;
-            case 30249: integerBitBegin = 9; break;
-            case 30250: integerBitBegin = 10; break;
-            case 30251: integerBitBegin = 11; break;
-            case 30252: integerBitBegin = 12; break;
-            case 30253: integerBitBegin = 13; break;
-            case 30254: integerBitBegin = 14; break;
-            case 30255: integerBitBegin = 15; break;
-            case 32256: integerBitBegin = 0; break;
-            case 32257: integerBitBegin = 1; break;
-            case 32258: integerBitBegin = 2; break;
-            case 32259: integerBitBegin = 3; break;
-            case 32260: integerBitBegin = 4; break;
-            case 32261: integerBitBegin = 5; break;
-            case 32262: integerBitBegin = 6; break;
-            case 32263: integerBitBegin = 7; break;
-            case 32264: integerBitBegin = 8; break;
-            case 32265: integerBitBegin = 9; break;
-            case 32266: integerBitBegin = 10; break;
-            case 32267: integerBitBegin = 11; break;
-            case 32268: integerBitBegin = 12; break;
-            case 32269: integerBitBegin = 13; break;
-            case 32270: integerBitBegin = 14; break;
-            case 32271: integerBitBegin = 15; break;
-            case 34272: integerBitBegin = 0; break;
-            case 34273: integerBitBegin = 1; break;
-            case 34274: integerBitBegin = 2; break;
-            case 34275: integerBitBegin = 3; break;
-            case 34276: integerBitBegin = 4; break;
-            case 34277: integerBitBegin = 5; break;
-            case 34278: integerBitBegin = 6; break;
-            case 34279: integerBitBegin = 7; break;
-            case 34280: integerBitBegin = 8; break;
-            case 34281: integerBitBegin = 9; break;
-            case 34282: integerBitBegin = 10; break;
-            case 34283: integerBitBegin = 11; break;
-            case 34284: integerBitBegin = 12; break;
-            case 34285: integerBitBegin = 13; break;
-            case 34286: integerBitBegin = 14; break;
-            case 34287: integerBitBegin = 15; break;
-            case 36288: integerBitBegin = 0; break;
-            case 36289: integerBitBegin = 1; break;
-            case 36290: integerBitBegin = 2; break;
-            case 36291: integerBitBegin = 3; break;
-            case 36292: integerBitBegin = 4; break;
-            case 36293: integerBitBegin = 5; break;
-            case 36294: integerBitBegin = 6; break;
-            case 36295: integerBitBegin = 7; break;
-            case 36296: integerBitBegin = 8; break;
-            case 36297: integerBitBegin = 9; break;
-            case 36298: integerBitBegin = 10; break;
-            case 36299: integerBitBegin = 11; break;
-            case 36300: integerBitBegin = 12; break;
-            case 36301: integerBitBegin = 13; break;
-            case 36302: integerBitBegin = 14; break;
-            case 36303: integerBitBegin = 15; break;
-            case 38304: integerBitBegin = 0; break;
-            case 38305: integerBitBegin = 1; break;
-            case 38306: integerBitBegin = 2; break;
-            case 38307: integerBitBegin = 3; break;
-            case 38308: integerBitBegin = 4; break;
-            case 38309: integerBitBegin = 5; break;
-            case 38310: integerBitBegin = 6; break;
-            case 38311: integerBitBegin = 7; break;
-            case 38312: integerBitBegin = 8; break;
-            case 38313: integerBitBegin = 9; break;
-            case 38314: integerBitBegin = 10; break;
-            case 38315: integerBitBegin = 11; break;
-            case 38316: integerBitBegin = 12; break;
-            case 38317: integerBitBegin = 13; break;
-            case 38318: integerBitBegin = 14; break;
-            case 38319: integerBitBegin = 15; break;
-            case 40320: integerBitBegin = 0; break;
-            case 40321: integerBitBegin = 1; break;
-            case 40322: integerBitBegin = 2; break;
-            case 40323: integerBitBegin = 3; break;
-            case 40324: integerBitBegin = 4; break;
-            case 40325: integerBitBegin = 5; break;
-            case 40326: integerBitBegin = 6; break;
-            case 40327: integerBitBegin = 7; break;
-            case 40328: integerBitBegin = 8; break;
-            case 40329: integerBitBegin = 9; break;
-            case 40330: integerBitBegin = 10; break;
-            case 40331: integerBitBegin = 11; break;
-            case 40332: integerBitBegin = 12; break;
-            case 40333: integerBitBegin = 13; break;
-            case 40334: integerBitBegin = 14; break;
-            case 40335: integerBitBegin = 15; break;
-            case 42336: integerBitBegin = 0; break;
-            case 42337: integerBitBegin = 1; break;
-            case 42338: integerBitBegin = 2; break;
-            case 42339: integerBitBegin = 3; break;
-            case 42340: integerBitBegin = 4; break;
-            case 42341: integerBitBegin = 5; break;
-            case 42342: integerBitBegin = 6; break;
-            case 42343: integerBitBegin = 7; break;
-            case 42344: integerBitBegin = 8; break;
-            case 42345: integerBitBegin = 9; break;
-            case 42346: integerBitBegin = 10; break;
-            case 42347: integerBitBegin = 11; break;
-            case 42348: integerBitBegin = 12; break;
-            case 42349: integerBitBegin = 13; break;
-            case 42350: integerBitBegin = 14; break;
-            case 42351: integerBitBegin = 15; break;
-            case 44352: integerBitBegin = 0; break;
-            case 44353: integerBitBegin = 1; break;
-            case 44354: integerBitBegin = 2; break;
-            case 44355: integerBitBegin = 3; break;
-            case 44356: integerBitBegin = 4; break;
-            case 44357: integerBitBegin = 5; break;
-            case 44358: integerBitBegin = 6; break;
-            case 44359: integerBitBegin = 7; break;
-            case 44360: integerBitBegin = 8; break;
-            case 44361: integerBitBegin = 9; break;
-            case 44362: integerBitBegin = 10; break;
-            case 44363: integerBitBegin = 11; break;
-            case 44364: integerBitBegin = 12; break;
-            case 44365: integerBitBegin = 13; break;
-            case 44366: integerBitBegin = 14; break;
-            case 44367: integerBitBegin = 15; break;
-            case 46368: integerBitBegin = 0; break;
-            case 46369: integerBitBegin = 1; break;
-            case 46370: integerBitBegin = 2; break;
-            case 46371: integerBitBegin = 3; break;
-            case 46372: integerBitBegin = 4; break;
-            case 46373: integerBitBegin = 5; break;
-            case 46374: integerBitBegin = 6; break;
-            case 46375: integerBitBegin = 7; break;
-            case 46376: integerBitBegin = 8; break;
-            case 46377: integerBitBegin = 9; break;
-            case 46378: integerBitBegin = 10; break;
-            case 46379: integerBitBegin = 11; break;
-            case 46380: integerBitBegin = 12; break;
-            case 46381: integerBitBegin = 13; break;
-            case 46382: integerBitBegin = 14; break;
-            case 46383: integerBitBegin = 15; break;
-            case 48384: integerBitBegin = 0; break;
-            case 48385: integerBitBegin = 1; break;
-            case 48386: integerBitBegin = 2; break;
-            case 48387: integerBitBegin = 3; break;
-            case 48388: integerBitBegin = 4; break;
-            case 48389: integerBitBegin = 5; break;
-            case 48390: integerBitBegin = 6; break;
-            case 48391: integerBitBegin = 7; break;
-            case 48392: integerBitBegin = 8; break;
-            case 48393: integerBitBegin = 9; break;
-            case 48394: integerBitBegin = 10; break;
-            case 48395: integerBitBegin = 11; break;
-            case 48396: integerBitBegin = 12; break;
-            case 48397: integerBitBegin = 13; break;
-            case 48398: integerBitBegin = 14; break;
-            case 48399: integerBitBegin = 15; break;
-            case 50400: integerBitBegin = 0; break;
-            case 50401: integerBitBegin = 1; break;
-            case 50402: integerBitBegin = 2; break;
-            case 50403: integerBitBegin = 3; break;
-            case 50404: integerBitBegin = 4; break;
-            case 50405: integerBitBegin = 5; break;
-            case 50406: integerBitBegin = 6; break;
-            case 50407: integerBitBegin = 7; break;
-            case 50408: integerBitBegin = 8; break;
-            case 50409: integerBitBegin = 9; break;
-            case 50410: integerBitBegin = 10; break;
-            case 50411: integerBitBegin = 11; break;
-            case 50412: integerBitBegin = 12; break;
-            case 50413: integerBitBegin = 13; break;
-            case 50414: integerBitBegin = 14; break;
-            case 50415: integerBitBegin = 15; break;
-            case 52416: integerBitBegin = 0; break;
-            case 52417: integerBitBegin = 1; break;
-            case 52418: integerBitBegin = 2; break;
-            case 52419: integerBitBegin = 3; break;
-            case 52420: integerBitBegin = 4; break;
-            case 52421: integerBitBegin = 5; break;
-            case 52422: integerBitBegin = 6; break;
-            case 52423: integerBitBegin = 7; break;
-            case 52424: integerBitBegin = 8; break;
-            case 52425: integerBitBegin = 9; break;
-            case 52426: integerBitBegin = 10; break;
-            case 52427: integerBitBegin = 11; break;
-            case 52428: integerBitBegin = 12; break;
-            case 52429: integerBitBegin = 13; break;
-            case 52430: integerBitBegin = 14; break;
-            case 52431: integerBitBegin = 15; break;
-            case 54432: integerBitBegin = 0; break;
-            case 54433: integerBitBegin = 1; break;
-            case 54434: integerBitBegin = 2; break;
-            case 54435: integerBitBegin = 3; break;
-            case 54436: integerBitBegin = 4; break;
-            case 54437: integerBitBegin = 5; break;
-            case 54438: integerBitBegin = 6; break;
-            case 54439: integerBitBegin = 7; break;
-            case 54440: integerBitBegin = 8; break;
-            case 54441: integerBitBegin = 9; break;
-            case 54442: integerBitBegin = 10; break;
-            case 54443: integerBitBegin = 11; break;
-            case 54444: integerBitBegin = 12; break;
-            case 54445: integerBitBegin = 13; break;
-            case 54446: integerBitBegin = 14; break;
-            case 54447: integerBitBegin = 15; break;
-            case 56448: integerBitBegin = 0; break;
-            case 56449: integerBitBegin = 1; break;
-            case 56450: integerBitBegin = 2; break;
-            case 56451: integerBitBegin = 3; break;
-            case 56452: integerBitBegin = 4; break;
-            case 56453: integerBitBegin = 5; break;
-            case 56454: integerBitBegin = 6; break;
-            case 56455: integerBitBegin = 7; break;
-            case 56456: integerBitBegin = 8; break;
-            case 56457: integerBitBegin = 9; break;
-            case 56458: integerBitBegin = 10; break;
-            case 56459: integerBitBegin = 11; break;
-            case 56460: integerBitBegin = 12; break;
-            case 56461: integerBitBegin = 13; break;
-            case 56462: integerBitBegin = 14; break;
-            case 56463: integerBitBegin = 15; break;
-            case 58464: integerBitBegin = 0; break;
-            case 58465: integerBitBegin = 1; break;
-            case 58466: integerBitBegin = 2; break;
-            case 58467: integerBitBegin = 3; break;
-            case 58468: integerBitBegin = 4; break;
-            case 58469: integerBitBegin = 5; break;
-            case 58470: integerBitBegin = 6; break;
-            case 58471: integerBitBegin = 7; break;
-            case 58472: integerBitBegin = 8; break;
-            case 58473: integerBitBegin = 9; break;
-            case 58474: integerBitBegin = 10; break;
-            case 58475: integerBitBegin = 11; break;
-            case 58476: integerBitBegin = 12; break;
-            case 58477: integerBitBegin = 13; break;
-            case 58478: integerBitBegin = 14; break;
-            case 58479: integerBitBegin = 15; break;
-            case 60480: integerBitBegin = 0; break;
-            case 60481: integerBitBegin = 1; break;
-            case 60482: integerBitBegin = 2; break;
-            case 60483: integerBitBegin = 3; break;
-            case 60484: integerBitBegin = 4; break;
-            case 60485: integerBitBegin = 5; break;
-            case 60486: integerBitBegin = 6; break;
-            case 60487: integerBitBegin = 7; break;
-            case 60488: integerBitBegin = 8; break;
-            case 60489: integerBitBegin = 9; break;
-            case 60490: integerBitBegin = 10; break;
-            case 60491: integerBitBegin = 11; break;
-            case 60492: integerBitBegin = 12; break;
-            case 60493: integerBitBegin = 13; break;
-            case 60494: integerBitBegin = 14; break;
-            case 60495: integerBitBegin = 15; break;
-            case 62496: integerBitBegin = 0; break;
-            case 62497: integerBitBegin = 1; break;
-            case 62498: integerBitBegin = 2; break;
-            case 62499: integerBitBegin = 3; break;
-            case 62500: integerBitBegin = 4; break;
-            case 62501: integerBitBegin = 5; break;
-            case 62502: integerBitBegin = 6; break;
-            case 62503: integerBitBegin = 7; break;
-            case 62504: integerBitBegin = 8; break;
-            case 62505: integerBitBegin = 9; break;
-            case 62506: integerBitBegin = 10; break;
-            case 62507: integerBitBegin = 11; break;
-            case 62508: integerBitBegin = 12; break;
-            case 62509: integerBitBegin = 13; break;
-            case 62510: integerBitBegin = 14; break;
-            case 62511: integerBitBegin = 15; break;
-            case 64512: integerBitBegin = 0; break;
-            case 64513: integerBitBegin = 1; break;
-            case 64514: integerBitBegin = 2; break;
-            case 64515: integerBitBegin = 3; break;
-            case 64516: integerBitBegin = 4; break;
-            case 64517: integerBitBegin = 5; break;
-            case 64518: integerBitBegin = 6; break;
-            case 64519: integerBitBegin = 7; break;
-            case 64520: integerBitBegin = 8; break;
-            case 64521: integerBitBegin = 9; break;
-            case 64522: integerBitBegin = 10; break;
-            case 64523: integerBitBegin = 11; break;
-            case 64524: integerBitBegin = 12; break;
-            case 64525: integerBitBegin = 13; break;
-            case 64526: integerBitBegin = 14; break;
-            case 64527: integerBitBegin = 15; break;
-            case 66528: integerBitBegin = 0; break;
-            case 66529: integerBitBegin = 1; break;
-            case 66530: integerBitBegin = 2; break;
-            case 66531: integerBitBegin = 3; break;
-            case 66532: integerBitBegin = 4; break;
-            case 66533: integerBitBegin = 5; break;
-            case 66534: integerBitBegin = 6; break;
-            case 66535: integerBitBegin = 7; break;
-            case 66536: integerBitBegin = 8; break;
-            case 66537: integerBitBegin = 9; break;
-            case 66538: integerBitBegin = 10; break;
-            case 66539: integerBitBegin = 11; break;
-            case 66540: integerBitBegin = 12; break;
-            case 66541: integerBitBegin = 13; break;
-            case 66542: integerBitBegin = 14; break;
-            case 66543: integerBitBegin = 15; break;
-            case 68544: integerBitBegin = 0; break;
-            case 68545: integerBitBegin = 1; break;
-            case 68546: integerBitBegin = 2; break;
-            case 68547: integerBitBegin = 3; break;
-            case 68548: integerBitBegin = 4; break;
-            case 68549: integerBitBegin = 5; break;
-            case 68550: integerBitBegin = 6; break;
-            case 68551: integerBitBegin = 7; break;
-            case 68552: integerBitBegin = 8; break;
-            case 68553: integerBitBegin = 9; break;
-            case 68554: integerBitBegin = 10; break;
-            case 68555: integerBitBegin = 11; break;
-            case 68556: integerBitBegin = 12; break;
-            case 68557: integerBitBegin = 13; break;
-            case 68558: integerBitBegin = 14; break;
-            case 68559: integerBitBegin = 15; break;
-            case 70560: integerBitBegin = 0; break;
-            case 70561: integerBitBegin = 1; break;
-            case 70562: integerBitBegin = 2; break;
-            case 70563: integerBitBegin = 3; break;
-            case 70564: integerBitBegin = 4; break;
-            case 70565: integerBitBegin = 5; break;
-            case 70566: integerBitBegin = 6; break;
-            case 70567: integerBitBegin = 7; break;
-            case 70568: integerBitBegin = 8; break;
-            case 70569: integerBitBegin = 9; break;
-            case 70570: integerBitBegin = 10; break;
-            case 70571: integerBitBegin = 11; break;
-            case 70572: integerBitBegin = 12; break;
-            case 70573: integerBitBegin = 13; break;
-            case 70574: integerBitBegin = 14; break;
-            case 70575: integerBitBegin = 15; break;
-            case 72576: integerBitBegin = 0; break;
-            case 72577: integerBitBegin = 1; break;
-            case 72578: integerBitBegin = 2; break;
-            case 72579: integerBitBegin = 3; break;
-            case 72580: integerBitBegin = 4; break;
-            case 72581: integerBitBegin = 5; break;
-            case 72582: integerBitBegin = 6; break;
-            case 72583: integerBitBegin = 7; break;
-            case 72584: integerBitBegin = 8; break;
-            case 72585: integerBitBegin = 9; break;
-            case 72586: integerBitBegin = 10; break;
-            case 72587: integerBitBegin = 11; break;
-            case 72588: integerBitBegin = 12; break;
-            case 72589: integerBitBegin = 13; break;
-            case 72590: integerBitBegin = 14; break;
-            case 72591: integerBitBegin = 15; break;
-            case 74592: integerBitBegin = 0; break;
-            case 74593: integerBitBegin = 1; break;
-            case 74594: integerBitBegin = 2; break;
-            case 74595: integerBitBegin = 3; break;
-            case 74596: integerBitBegin = 4; break;
-            case 74597: integerBitBegin = 5; break;
-            case 74598: integerBitBegin = 6; break;
-            case 74599: integerBitBegin = 7; break;
-            case 74600: integerBitBegin = 8; break;
-            case 74601: integerBitBegin = 9; break;
-            case 74602: integerBitBegin = 10; break;
-            case 74603: integerBitBegin = 11; break;
-            case 74604: integerBitBegin = 12; break;
-            case 74605: integerBitBegin = 13; break;
-            case 74606: integerBitBegin = 14; break;
-            case 74607: integerBitBegin = 15; break;
-            case 76608: integerBitBegin = 0; break;
-            case 76609: integerBitBegin = 1; break;
-            case 76610: integerBitBegin = 2; break;
-            case 76611: integerBitBegin = 3; break;
-            case 76612: integerBitBegin = 4; break;
-            case 76613: integerBitBegin = 5; break;
-            case 76614: integerBitBegin = 6; break;
-            case 76615: integerBitBegin = 7; break;
-            case 76616: integerBitBegin = 8; break;
-            case 76617: integerBitBegin = 9; break;
-            case 76618: integerBitBegin = 10; break;
-            case 76619: integerBitBegin = 11; break;
-            case 76620: integerBitBegin = 12; break;
-            case 76621: integerBitBegin = 13; break;
-            case 76622: integerBitBegin = 14; break;
-            case 76623: integerBitBegin = 15; break;
-            case 78624: integerBitBegin = 0; break;
-            case 78625: integerBitBegin = 1; break;
-            case 78626: integerBitBegin = 2; break;
-            case 78627: integerBitBegin = 3; break;
-            case 78628: integerBitBegin = 4; break;
-            case 78629: integerBitBegin = 5; break;
-            case 78630: integerBitBegin = 6; break;
-            case 78631: integerBitBegin = 7; break;
-            case 78632: integerBitBegin = 8; break;
-            case 78633: integerBitBegin = 9; break;
-            case 78634: integerBitBegin = 10; break;
-            case 78635: integerBitBegin = 11; break;
-            case 78636: integerBitBegin = 12; break;
-            case 78637: integerBitBegin = 13; break;
-            case 78638: integerBitBegin = 14; break;
-            case 78639: integerBitBegin = 15; break;
-            case 80640: integerBitBegin = 0; break;
-            case 80641: integerBitBegin = 1; break;
-            case 80642: integerBitBegin = 2; break;
-            case 80643: integerBitBegin = 3; break;
-            case 80644: integerBitBegin = 4; break;
-            case 80645: integerBitBegin = 5; break;
-            case 80646: integerBitBegin = 6; break;
-            case 80647: integerBitBegin = 7; break;
-            case 80648: integerBitBegin = 8; break;
-            case 80649: integerBitBegin = 9; break;
-            case 80650: integerBitBegin = 10; break;
-            case 80651: integerBitBegin = 11; break;
-            case 80652: integerBitBegin = 12; break;
-            case 80653: integerBitBegin = 13; break;
-            case 80654: integerBitBegin = 14; break;
-            case 80655: integerBitBegin = 15; break;
-            case 82656: integerBitBegin = 0; break;
-            case 82657: integerBitBegin = 1; break;
-            case 82658: integerBitBegin = 2; break;
-            case 82659: integerBitBegin = 3; break;
-            case 82660: integerBitBegin = 4; break;
-            case 82661: integerBitBegin = 5; break;
-            case 82662: integerBitBegin = 6; break;
-            case 82663: integerBitBegin = 7; break;
-            case 82664: integerBitBegin = 8; break;
-            case 82665: integerBitBegin = 9; break;
-            case 82666: integerBitBegin = 10; break;
-            case 82667: integerBitBegin = 11; break;
-            case 82668: integerBitBegin = 12; break;
-            case 82669: integerBitBegin = 13; break;
-            case 82670: integerBitBegin = 14; break;
-            case 82671: integerBitBegin = 15; break;
-            case 84672: integerBitBegin = 0; break;
-            case 84673: integerBitBegin = 1; break;
-            case 84674: integerBitBegin = 2; break;
-            case 84675: integerBitBegin = 3; break;
-            case 84676: integerBitBegin = 4; break;
-            case 84677: integerBitBegin = 5; break;
-            case 84678: integerBitBegin = 6; break;
-            case 84679: integerBitBegin = 7; break;
-            case 84680: integerBitBegin = 8; break;
-            case 84681: integerBitBegin = 9; break;
-            case 84682: integerBitBegin = 10; break;
-            case 84683: integerBitBegin = 11; break;
-            case 84684: integerBitBegin = 12; break;
-            case 84685: integerBitBegin = 13; break;
-            case 84686: integerBitBegin = 14; break;
-            case 84687: integerBitBegin = 15; break;
-            case 86688: integerBitBegin = 0; break;
-            case 86689: integerBitBegin = 1; break;
-            case 86690: integerBitBegin = 2; break;
-            case 86691: integerBitBegin = 3; break;
-            case 86692: integerBitBegin = 4; break;
-            case 86693: integerBitBegin = 5; break;
-            case 86694: integerBitBegin = 6; break;
-            case 86695: integerBitBegin = 7; break;
-            case 86696: integerBitBegin = 8; break;
-            case 86697: integerBitBegin = 9; break;
-            case 86698: integerBitBegin = 10; break;
-            case 86699: integerBitBegin = 11; break;
-            case 86700: integerBitBegin = 12; break;
-            case 86701: integerBitBegin = 13; break;
-            case 86702: integerBitBegin = 14; break;
-            case 86703: integerBitBegin = 15; break;
-            case 88704: integerBitBegin = 0; break;
-            case 88705: integerBitBegin = 1; break;
-            case 88706: integerBitBegin = 2; break;
-            case 88707: integerBitBegin = 3; break;
-            case 88708: integerBitBegin = 4; break;
-            case 88709: integerBitBegin = 5; break;
-            case 88710: integerBitBegin = 6; break;
-            case 88711: integerBitBegin = 7; break;
-            case 88712: integerBitBegin = 8; break;
-            case 88713: integerBitBegin = 9; break;
-            case 88714: integerBitBegin = 10; break;
-            case 88715: integerBitBegin = 11; break;
-            case 88716: integerBitBegin = 12; break;
-            case 88717: integerBitBegin = 13; break;
-            case 88718: integerBitBegin = 14; break;
-            case 88719: integerBitBegin = 15; break;
-            case 90720: integerBitBegin = 0; break;
-            case 90721: integerBitBegin = 1; break;
-            case 90722: integerBitBegin = 2; break;
-            case 90723: integerBitBegin = 3; break;
-            case 90724: integerBitBegin = 4; break;
-            case 90725: integerBitBegin = 5; break;
-            case 90726: integerBitBegin = 6; break;
-            case 90727: integerBitBegin = 7; break;
-            case 90728: integerBitBegin = 8; break;
-            case 90729: integerBitBegin = 9; break;
-            case 90730: integerBitBegin = 10; break;
-            case 90731: integerBitBegin = 11; break;
-            case 90732: integerBitBegin = 12; break;
-            case 90733: integerBitBegin = 13; break;
-            case 90734: integerBitBegin = 14; break;
-            case 90735: integerBitBegin = 15; break;
-            case 92736: integerBitBegin = 0; break;
-            case 92737: integerBitBegin = 1; break;
-            case 92738: integerBitBegin = 2; break;
-            case 92739: integerBitBegin = 3; break;
-            case 92740: integerBitBegin = 4; break;
-            case 92741: integerBitBegin = 5; break;
-            case 92742: integerBitBegin = 6; break;
-            case 92743: integerBitBegin = 7; break;
-            case 92744: integerBitBegin = 8; break;
-            case 92745: integerBitBegin = 9; break;
-            case 92746: integerBitBegin = 10; break;
-            case 92747: integerBitBegin = 11; break;
-            case 92748: integerBitBegin = 12; break;
-            case 92749: integerBitBegin = 13; break;
-            case 92750: integerBitBegin = 14; break;
-            case 92751: integerBitBegin = 15; break;
-            case 94752: integerBitBegin = 0; break;
-            case 94753: integerBitBegin = 1; break;
-            case 94754: integerBitBegin = 2; break;
-            case 94755: integerBitBegin = 3; break;
-            case 94756: integerBitBegin = 4; break;
-            case 94757: integerBitBegin = 5; break;
-            case 94758: integerBitBegin = 6; break;
-            case 94759: integerBitBegin = 7; break;
-            case 94760: integerBitBegin = 8; break;
-            case 94761: integerBitBegin = 9; break;
-            case 94762: integerBitBegin = 10; break;
-            case 94763: integerBitBegin = 11; break;
-            case 94764: integerBitBegin = 12; break;
-            case 94765: integerBitBegin = 13; break;
-            case 94766: integerBitBegin = 14; break;
-            case 94767: integerBitBegin = 15; break;
-            case 96768: integerBitBegin = 0; break;
-            case 96769: integerBitBegin = 1; break;
-            case 96770: integerBitBegin = 2; break;
-            case 96771: integerBitBegin = 3; break;
-            case 96772: integerBitBegin = 4; break;
-            case 96773: integerBitBegin = 5; break;
-            case 96774: integerBitBegin = 6; break;
-            case 96775: integerBitBegin = 7; break;
-            case 96776: integerBitBegin = 8; break;
-            case 96777: integerBitBegin = 9; break;
-            case 96778: integerBitBegin = 10; break;
-            case 96779: integerBitBegin = 11; break;
-            case 96780: integerBitBegin = 12; break;
-            case 96781: integerBitBegin = 13; break;
-            case 96782: integerBitBegin = 14; break;
-            case 96783: integerBitBegin = 15; break;
-            case 98784: integerBitBegin = 0; break;
-            case 98785: integerBitBegin = 1; break;
-            case 98786: integerBitBegin = 2; break;
-            case 98787: integerBitBegin = 3; break;
-            case 98788: integerBitBegin = 4; break;
-            case 98789: integerBitBegin = 5; break;
-            case 98790: integerBitBegin = 6; break;
-            case 98791: integerBitBegin = 7; break;
-            case 98792: integerBitBegin = 8; break;
-            case 98793: integerBitBegin = 9; break;
-            case 98794: integerBitBegin = 10; break;
-            case 98795: integerBitBegin = 11; break;
-            case 98796: integerBitBegin = 12; break;
-            case 98797: integerBitBegin = 13; break;
-            case 98798: integerBitBegin = 14; break;
-            case 98799: integerBitBegin = 15; break;
-            case 100800: integerBitBegin = 0; break;
-            case 100801: integerBitBegin = 1; break;
-            case 100802: integerBitBegin = 2; break;
-            case 100803: integerBitBegin = 3; break;
-            case 100804: integerBitBegin = 4; break;
-            case 100805: integerBitBegin = 5; break;
-            case 100806: integerBitBegin = 6; break;
-            case 100807: integerBitBegin = 7; break;
-            case 100808: integerBitBegin = 8; break;
-            case 100809: integerBitBegin = 9; break;
-            case 100810: integerBitBegin = 10; break;
-            case 100811: integerBitBegin = 11; break;
-            case 100812: integerBitBegin = 12; break;
-            case 100813: integerBitBegin = 13; break;
-            case 100814: integerBitBegin = 14; break;
-            case 100815: integerBitBegin = 15; break;
-            case 102816: integerBitBegin = 0; break;
-            case 102817: integerBitBegin = 1; break;
-            case 102818: integerBitBegin = 2; break;
-            case 102819: integerBitBegin = 3; break;
-            case 102820: integerBitBegin = 4; break;
-            case 102821: integerBitBegin = 5; break;
-            case 102822: integerBitBegin = 6; break;
-            case 102823: integerBitBegin = 7; break;
-            case 102824: integerBitBegin = 8; break;
-            case 102825: integerBitBegin = 9; break;
-            case 102826: integerBitBegin = 10; break;
-            case 102827: integerBitBegin = 11; break;
-            case 102828: integerBitBegin = 12; break;
-            case 102829: integerBitBegin = 13; break;
-            case 102830: integerBitBegin = 14; break;
-            case 102831: integerBitBegin = 15; break;
-            case 104832: integerBitBegin = 0; break;
-            case 104833: integerBitBegin = 1; break;
-            case 104834: integerBitBegin = 2; break;
-            case 104835: integerBitBegin = 3; break;
-            case 104836: integerBitBegin = 4; break;
-            case 104837: integerBitBegin = 5; break;
-            case 104838: integerBitBegin = 6; break;
-            case 104839: integerBitBegin = 7; break;
-            case 104840: integerBitBegin = 8; break;
-            case 104841: integerBitBegin = 9; break;
-            case 104842: integerBitBegin = 10; break;
-            case 104843: integerBitBegin = 11; break;
-            case 104844: integerBitBegin = 12; break;
-            case 104845: integerBitBegin = 13; break;
-            case 104846: integerBitBegin = 14; break;
-            case 104847: integerBitBegin = 15; break;
-            case 106848: integerBitBegin = 0; break;
-            case 106849: integerBitBegin = 1; break;
-            case 106850: integerBitBegin = 2; break;
-            case 106851: integerBitBegin = 3; break;
-            case 106852: integerBitBegin = 4; break;
-            case 106853: integerBitBegin = 5; break;
-            case 106854: integerBitBegin = 6; break;
-            case 106855: integerBitBegin = 7; break;
-            case 106856: integerBitBegin = 8; break;
-            case 106857: integerBitBegin = 9; break;
-            case 106858: integerBitBegin = 10; break;
-            case 106859: integerBitBegin = 11; break;
-            case 106860: integerBitBegin = 12; break;
-            case 106861: integerBitBegin = 13; break;
-            case 106862: integerBitBegin = 14; break;
-            case 106863: integerBitBegin = 15; break;
-            case 108864: integerBitBegin = 0; break;
-            case 108865: integerBitBegin = 1; break;
-            case 108866: integerBitBegin = 2; break;
-            case 108867: integerBitBegin = 3; break;
-            case 108868: integerBitBegin = 4; break;
-            case 108869: integerBitBegin = 5; break;
-            case 108870: integerBitBegin = 6; break;
-            case 108871: integerBitBegin = 7; break;
-            case 108872: integerBitBegin = 8; break;
-            case 108873: integerBitBegin = 9; break;
-            case 108874: integerBitBegin = 10; break;
-            case 108875: integerBitBegin = 11; break;
-            case 108876: integerBitBegin = 12; break;
-            case 108877: integerBitBegin = 13; break;
-            case 108878: integerBitBegin = 14; break;
-            case 108879: integerBitBegin = 15; break;
-            case 110880: integerBitBegin = 0; break;
-            case 110881: integerBitBegin = 1; break;
-            case 110882: integerBitBegin = 2; break;
-            case 110883: integerBitBegin = 3; break;
-            case 110884: integerBitBegin = 4; break;
-            case 110885: integerBitBegin = 5; break;
-            case 110886: integerBitBegin = 6; break;
-            case 110887: integerBitBegin = 7; break;
-            case 110888: integerBitBegin = 8; break;
-            case 110889: integerBitBegin = 9; break;
-            case 110890: integerBitBegin = 10; break;
-            case 110891: integerBitBegin = 11; break;
-            case 110892: integerBitBegin = 12; break;
-            case 110893: integerBitBegin = 13; break;
-            case 110894: integerBitBegin = 14; break;
-            case 110895: integerBitBegin = 15; break;
-            case 112896: integerBitBegin = 0; break;
-            case 112897: integerBitBegin = 1; break;
-            case 112898: integerBitBegin = 2; break;
-            case 112899: integerBitBegin = 3; break;
-            case 112900: integerBitBegin = 4; break;
-            case 112901: integerBitBegin = 5; break;
-            case 112902: integerBitBegin = 6; break;
-            case 112903: integerBitBegin = 7; break;
-            case 112904: integerBitBegin = 8; break;
-            case 112905: integerBitBegin = 9; break;
-            case 112906: integerBitBegin = 10; break;
-            case 112907: integerBitBegin = 11; break;
-            case 112908: integerBitBegin = 12; break;
-            case 112909: integerBitBegin = 13; break;
-            case 112910: integerBitBegin = 14; break;
-            case 112911: integerBitBegin = 15; break;
-            case 114912: integerBitBegin = 0; break;
-            case 114913: integerBitBegin = 1; break;
-            case 114914: integerBitBegin = 2; break;
-            case 114915: integerBitBegin = 3; break;
-            case 114916: integerBitBegin = 4; break;
-            case 114917: integerBitBegin = 5; break;
-            case 114918: integerBitBegin = 6; break;
-            case 114919: integerBitBegin = 7; break;
-            case 114920: integerBitBegin = 8; break;
-            case 114921: integerBitBegin = 9; break;
-            case 114922: integerBitBegin = 10; break;
-            case 114923: integerBitBegin = 11; break;
-            case 114924: integerBitBegin = 12; break;
-            case 114925: integerBitBegin = 13; break;
-            case 114926: integerBitBegin = 14; break;
-            case 114927: integerBitBegin = 15; break;
-            case 116928: integerBitBegin = 0; break;
-            case 116929: integerBitBegin = 1; break;
-            case 116930: integerBitBegin = 2; break;
-            case 116931: integerBitBegin = 3; break;
-            case 116932: integerBitBegin = 4; break;
-            case 116933: integerBitBegin = 5; break;
-            case 116934: integerBitBegin = 6; break;
-            case 116935: integerBitBegin = 7; break;
-            case 116936: integerBitBegin = 8; break;
-            case 116937: integerBitBegin = 9; break;
-            case 116938: integerBitBegin = 10; break;
-            case 116939: integerBitBegin = 11; break;
-            case 116940: integerBitBegin = 12; break;
-            case 116941: integerBitBegin = 13; break;
-            case 116942: integerBitBegin = 14; break;
-            case 116943: integerBitBegin = 15; break;
-            case 118944: integerBitBegin = 0; break;
-            case 118945: integerBitBegin = 1; break;
-            case 118946: integerBitBegin = 2; break;
-            case 118947: integerBitBegin = 3; break;
-            case 118948: integerBitBegin = 4; break;
-            case 118949: integerBitBegin = 5; break;
-            case 118950: integerBitBegin = 6; break;
-            case 118951: integerBitBegin = 7; break;
-            case 118952: integerBitBegin = 8; break;
-            case 118953: integerBitBegin = 9; break;
-            case 118954: integerBitBegin = 10; break;
-            case 118955: integerBitBegin = 11; break;
-            case 118956: integerBitBegin = 12; break;
-            case 118957: integerBitBegin = 13; break;
-            case 118958: integerBitBegin = 14; break;
-            case 118959: integerBitBegin = 15; break;
-            case 120960: integerBitBegin = 0; break;
-            case 120961: integerBitBegin = 1; break;
-            case 120962: integerBitBegin = 2; break;
-            case 120963: integerBitBegin = 3; break;
-            case 120964: integerBitBegin = 4; break;
-            case 120965: integerBitBegin = 5; break;
-            case 120966: integerBitBegin = 6; break;
-            case 120967: integerBitBegin = 7; break;
-            case 120968: integerBitBegin = 8; break;
-            case 120969: integerBitBegin = 9; break;
-            case 120970: integerBitBegin = 10; break;
-            case 120971: integerBitBegin = 11; break;
-            case 120972: integerBitBegin = 12; break;
-            case 120973: integerBitBegin = 13; break;
-            case 120974: integerBitBegin = 14; break;
-            case 120975: integerBitBegin = 15; break;
-            case 122976: integerBitBegin = 0; break;
-            case 122977: integerBitBegin = 1; break;
-            case 122978: integerBitBegin = 2; break;
-            case 122979: integerBitBegin = 3; break;
-            case 122980: integerBitBegin = 4; break;
-            case 122981: integerBitBegin = 5; break;
-            case 122982: integerBitBegin = 6; break;
-            case 122983: integerBitBegin = 7; break;
-            case 122984: integerBitBegin = 8; break;
-            case 122985: integerBitBegin = 9; break;
-            case 122986: integerBitBegin = 10; break;
-            case 122987: integerBitBegin = 11; break;
-            case 122988: integerBitBegin = 12; break;
-            case 122989: integerBitBegin = 13; break;
-            case 122990: integerBitBegin = 14; break;
-            case 122991: integerBitBegin = 15; break;
-            case 124992: integerBitBegin = 0; break;
-            case 124993: integerBitBegin = 1; break;
-            case 124994: integerBitBegin = 2; break;
-            case 124995: integerBitBegin = 3; break;
-            case 124996: integerBitBegin = 4; break;
-            case 124997: integerBitBegin = 5; break;
-            case 124998: integerBitBegin = 6; break;
-            case 124999: integerBitBegin = 7; break;
-            case 125000: integerBitBegin = 8; break;
-            case 125001: integerBitBegin = 9; break;
-            case 125002: integerBitBegin = 10; break;
-            case 125003: integerBitBegin = 11; break;
-            case 125004: integerBitBegin = 12; break;
-            case 125005: integerBitBegin = 13; break;
-            case 125006: integerBitBegin = 14; break;
-            case 125007: integerBitBegin = 15; break;
-            case 127008: integerBitBegin = 0; break;
-            case 127009: integerBitBegin = 1; break;
-            case 127010: integerBitBegin = 2; break;
-            case 127011: integerBitBegin = 3; break;
-            case 127012: integerBitBegin = 4; break;
-            case 127013: integerBitBegin = 5; break;
-            case 127014: integerBitBegin = 6; break;
-            case 127015: integerBitBegin = 7; break;
-            case 127016: integerBitBegin = 8; break;
-            case 127017: integerBitBegin = 9; break;
-            case 127018: integerBitBegin = 10; break;
-            case 127019: integerBitBegin = 11; break;
-            case 127020: integerBitBegin = 12; break;
-            case 127021: integerBitBegin = 13; break;
-            case 127022: integerBitBegin = 14; break;
-            case 127023: integerBitBegin = 15; break;
-        }       
-        switch (sumMinusOne + arrIndexEnd*2000) {
-            case 0: integerBitEnd = 0; break;
-            case 1: integerBitEnd = 1; break;
-            case 2: integerBitEnd = 2; break;
-            case 3: integerBitEnd = 3; break;
-            case 4: integerBitEnd = 4; break;
-            case 5: integerBitEnd = 5; break;
-            case 6: integerBitEnd = 6; break;
-            case 7: integerBitEnd = 7; break;
-            case 8: integerBitEnd = 8; break;
-            case 9: integerBitEnd = 9; break;
-            case 10: integerBitEnd = 10; break;
-            case 11: integerBitEnd = 11; break;
-            case 12: integerBitEnd = 12; break;
-            case 13: integerBitEnd = 13; break;
-            case 14: integerBitEnd = 14; break;
-            case 15: integerBitEnd = 15; break;
-            case 2016: integerBitEnd = 0; break;
-            case 2017: integerBitEnd = 1; break;
-            case 2018: integerBitEnd = 2; break;
-            case 2019: integerBitEnd = 3; break;
-            case 2020: integerBitEnd = 4; break;
-            case 2021: integerBitEnd = 5; break;
-            case 2022: integerBitEnd = 6; break;
-            case 2023: integerBitEnd = 7; break;
-            case 2024: integerBitEnd = 8; break;
-            case 2025: integerBitEnd = 9; break;
-            case 2026: integerBitEnd = 10; break;
-            case 2027: integerBitEnd = 11; break;
-            case 2028: integerBitEnd = 12; break;
-            case 2029: integerBitEnd = 13; break;
-            case 2030: integerBitEnd = 14; break;
-            case 2031: integerBitEnd = 15; break;
-            case 4032: integerBitEnd = 0; break;
-            case 4033: integerBitEnd = 1; break;
-            case 4034: integerBitEnd = 2; break;
-            case 4035: integerBitEnd = 3; break;
-            case 4036: integerBitEnd = 4; break;
-            case 4037: integerBitEnd = 5; break;
-            case 4038: integerBitEnd = 6; break;
-            case 4039: integerBitEnd = 7; break;
-            case 4040: integerBitEnd = 8; break;
-            case 4041: integerBitEnd = 9; break;
-            case 4042: integerBitEnd = 10; break;
-            case 4043: integerBitEnd = 11; break;
-            case 4044: integerBitEnd = 12; break;
-            case 4045: integerBitEnd = 13; break;
-            case 4046: integerBitEnd = 14; break;
-            case 4047: integerBitEnd = 15; break;
-            case 6048: integerBitEnd = 0; break;
-            case 6049: integerBitEnd = 1; break;
-            case 6050: integerBitEnd = 2; break;
-            case 6051: integerBitEnd = 3; break;
-            case 6052: integerBitEnd = 4; break;
-            case 6053: integerBitEnd = 5; break;
-            case 6054: integerBitEnd = 6; break;
-            case 6055: integerBitEnd = 7; break;
-            case 6056: integerBitEnd = 8; break;
-            case 6057: integerBitEnd = 9; break;
-            case 6058: integerBitEnd = 10; break;
-            case 6059: integerBitEnd = 11; break;
-            case 6060: integerBitEnd = 12; break;
-            case 6061: integerBitEnd = 13; break;
-            case 6062: integerBitEnd = 14; break;
-            case 6063: integerBitEnd = 15; break;
-            case 8064: integerBitEnd = 0; break;
-            case 8065: integerBitEnd = 1; break;
-            case 8066: integerBitEnd = 2; break;
-            case 8067: integerBitEnd = 3; break;
-            case 8068: integerBitEnd = 4; break;
-            case 8069: integerBitEnd = 5; break;
-            case 8070: integerBitEnd = 6; break;
-            case 8071: integerBitEnd = 7; break;
-            case 8072: integerBitEnd = 8; break;
-            case 8073: integerBitEnd = 9; break;
-            case 8074: integerBitEnd = 10; break;
-            case 8075: integerBitEnd = 11; break;
-            case 8076: integerBitEnd = 12; break;
-            case 8077: integerBitEnd = 13; break;
-            case 8078: integerBitEnd = 14; break;
-            case 8079: integerBitEnd = 15; break;
-            case 10080: integerBitEnd = 0; break;
-            case 10081: integerBitEnd = 1; break;
-            case 10082: integerBitEnd = 2; break;
-            case 10083: integerBitEnd = 3; break;
-            case 10084: integerBitEnd = 4; break;
-            case 10085: integerBitEnd = 5; break;
-            case 10086: integerBitEnd = 6; break;
-            case 10087: integerBitEnd = 7; break;
-            case 10088: integerBitEnd = 8; break;
-            case 10089: integerBitEnd = 9; break;
-            case 10090: integerBitEnd = 10; break;
-            case 10091: integerBitEnd = 11; break;
-            case 10092: integerBitEnd = 12; break;
-            case 10093: integerBitEnd = 13; break;
-            case 10094: integerBitEnd = 14; break;
-            case 10095: integerBitEnd = 15; break;
-            case 12096: integerBitEnd = 0; break;
-            case 12097: integerBitEnd = 1; break;
-            case 12098: integerBitEnd = 2; break;
-            case 12099: integerBitEnd = 3; break;
-            case 12100: integerBitEnd = 4; break;
-            case 12101: integerBitEnd = 5; break;
-            case 12102: integerBitEnd = 6; break;
-            case 12103: integerBitEnd = 7; break;
-            case 12104: integerBitEnd = 8; break;
-            case 12105: integerBitEnd = 9; break;
-            case 12106: integerBitEnd = 10; break;
-            case 12107: integerBitEnd = 11; break;
-            case 12108: integerBitEnd = 12; break;
-            case 12109: integerBitEnd = 13; break;
-            case 12110: integerBitEnd = 14; break;
-            case 12111: integerBitEnd = 15; break;
-            case 14112: integerBitEnd = 0; break;
-            case 14113: integerBitEnd = 1; break;
-            case 14114: integerBitEnd = 2; break;
-            case 14115: integerBitEnd = 3; break;
-            case 14116: integerBitEnd = 4; break;
-            case 14117: integerBitEnd = 5; break;
-            case 14118: integerBitEnd = 6; break;
-            case 14119: integerBitEnd = 7; break;
-            case 14120: integerBitEnd = 8; break;
-            case 14121: integerBitEnd = 9; break;
-            case 14122: integerBitEnd = 10; break;
-            case 14123: integerBitEnd = 11; break;
-            case 14124: integerBitEnd = 12; break;
-            case 14125: integerBitEnd = 13; break;
-            case 14126: integerBitEnd = 14; break;
-            case 14127: integerBitEnd = 15; break;
-            case 16128: integerBitEnd = 0; break;
-            case 16129: integerBitEnd = 1; break;
-            case 16130: integerBitEnd = 2; break;
-            case 16131: integerBitEnd = 3; break;
-            case 16132: integerBitEnd = 4; break;
-            case 16133: integerBitEnd = 5; break;
-            case 16134: integerBitEnd = 6; break;
-            case 16135: integerBitEnd = 7; break;
-            case 16136: integerBitEnd = 8; break;
-            case 16137: integerBitEnd = 9; break;
-            case 16138: integerBitEnd = 10; break;
-            case 16139: integerBitEnd = 11; break;
-            case 16140: integerBitEnd = 12; break;
-            case 16141: integerBitEnd = 13; break;
-            case 16142: integerBitEnd = 14; break;
-            case 16143: integerBitEnd = 15; break;
-            case 18144: integerBitEnd = 0; break;
-            case 18145: integerBitEnd = 1; break;
-            case 18146: integerBitEnd = 2; break;
-            case 18147: integerBitEnd = 3; break;
-            case 18148: integerBitEnd = 4; break;
-            case 18149: integerBitEnd = 5; break;
-            case 18150: integerBitEnd = 6; break;
-            case 18151: integerBitEnd = 7; break;
-            case 18152: integerBitEnd = 8; break;
-            case 18153: integerBitEnd = 9; break;
-            case 18154: integerBitEnd = 10; break;
-            case 18155: integerBitEnd = 11; break;
-            case 18156: integerBitEnd = 12; break;
-            case 18157: integerBitEnd = 13; break;
-            case 18158: integerBitEnd = 14; break;
-            case 18159: integerBitEnd = 15; break;
-            case 20160: integerBitEnd = 0; break;
-            case 20161: integerBitEnd = 1; break;
-            case 20162: integerBitEnd = 2; break;
-            case 20163: integerBitEnd = 3; break;
-            case 20164: integerBitEnd = 4; break;
-            case 20165: integerBitEnd = 5; break;
-            case 20166: integerBitEnd = 6; break;
-            case 20167: integerBitEnd = 7; break;
-            case 20168: integerBitEnd = 8; break;
-            case 20169: integerBitEnd = 9; break;
-            case 20170: integerBitEnd = 10; break;
-            case 20171: integerBitEnd = 11; break;
-            case 20172: integerBitEnd = 12; break;
-            case 20173: integerBitEnd = 13; break;
-            case 20174: integerBitEnd = 14; break;
-            case 20175: integerBitEnd = 15; break;
-            case 22176: integerBitEnd = 0; break;
-            case 22177: integerBitEnd = 1; break;
-            case 22178: integerBitEnd = 2; break;
-            case 22179: integerBitEnd = 3; break;
-            case 22180: integerBitEnd = 4; break;
-            case 22181: integerBitEnd = 5; break;
-            case 22182: integerBitEnd = 6; break;
-            case 22183: integerBitEnd = 7; break;
-            case 22184: integerBitEnd = 8; break;
-            case 22185: integerBitEnd = 9; break;
-            case 22186: integerBitEnd = 10; break;
-            case 22187: integerBitEnd = 11; break;
-            case 22188: integerBitEnd = 12; break;
-            case 22189: integerBitEnd = 13; break;
-            case 22190: integerBitEnd = 14; break;
-            case 22191: integerBitEnd = 15; break;
-            case 24192: integerBitEnd = 0; break;
-            case 24193: integerBitEnd = 1; break;
-            case 24194: integerBitEnd = 2; break;
-            case 24195: integerBitEnd = 3; break;
-            case 24196: integerBitEnd = 4; break;
-            case 24197: integerBitEnd = 5; break;
-            case 24198: integerBitEnd = 6; break;
-            case 24199: integerBitEnd = 7; break;
-            case 24200: integerBitEnd = 8; break;
-            case 24201: integerBitEnd = 9; break;
-            case 24202: integerBitEnd = 10; break;
-            case 24203: integerBitEnd = 11; break;
-            case 24204: integerBitEnd = 12; break;
-            case 24205: integerBitEnd = 13; break;
-            case 24206: integerBitEnd = 14; break;
-            case 24207: integerBitEnd = 15; break;
-            case 26208: integerBitEnd = 0; break;
-            case 26209: integerBitEnd = 1; break;
-            case 26210: integerBitEnd = 2; break;
-            case 26211: integerBitEnd = 3; break;
-            case 26212: integerBitEnd = 4; break;
-            case 26213: integerBitEnd = 5; break;
-            case 26214: integerBitEnd = 6; break;
-            case 26215: integerBitEnd = 7; break;
-            case 26216: integerBitEnd = 8; break;
-            case 26217: integerBitEnd = 9; break;
-            case 26218: integerBitEnd = 10; break;
-            case 26219: integerBitEnd = 11; break;
-            case 26220: integerBitEnd = 12; break;
-            case 26221: integerBitEnd = 13; break;
-            case 26222: integerBitEnd = 14; break;
-            case 26223: integerBitEnd = 15; break;
-            case 28224: integerBitEnd = 0; break;
-            case 28225: integerBitEnd = 1; break;
-            case 28226: integerBitEnd = 2; break;
-            case 28227: integerBitEnd = 3; break;
-            case 28228: integerBitEnd = 4; break;
-            case 28229: integerBitEnd = 5; break;
-            case 28230: integerBitEnd = 6; break;
-            case 28231: integerBitEnd = 7; break;
-            case 28232: integerBitEnd = 8; break;
-            case 28233: integerBitEnd = 9; break;
-            case 28234: integerBitEnd = 10; break;
-            case 28235: integerBitEnd = 11; break;
-            case 28236: integerBitEnd = 12; break;
-            case 28237: integerBitEnd = 13; break;
-            case 28238: integerBitEnd = 14; break;
-            case 28239: integerBitEnd = 15; break;
-            case 30240: integerBitEnd = 0; break;
-            case 30241: integerBitEnd = 1; break;
-            case 30242: integerBitEnd = 2; break;
-            case 30243: integerBitEnd = 3; break;
-            case 30244: integerBitEnd = 4; break;
-            case 30245: integerBitEnd = 5; break;
-            case 30246: integerBitEnd = 6; break;
-            case 30247: integerBitEnd = 7; break;
-            case 30248: integerBitEnd = 8; break;
-            case 30249: integerBitEnd = 9; break;
-            case 30250: integerBitEnd = 10; break;
-            case 30251: integerBitEnd = 11; break;
-            case 30252: integerBitEnd = 12; break;
-            case 30253: integerBitEnd = 13; break;
-            case 30254: integerBitEnd = 14; break;
-            case 30255: integerBitEnd = 15; break;
-            case 32256: integerBitEnd = 0; break;
-            case 32257: integerBitEnd = 1; break;
-            case 32258: integerBitEnd = 2; break;
-            case 32259: integerBitEnd = 3; break;
-            case 32260: integerBitEnd = 4; break;
-            case 32261: integerBitEnd = 5; break;
-            case 32262: integerBitEnd = 6; break;
-            case 32263: integerBitEnd = 7; break;
-            case 32264: integerBitEnd = 8; break;
-            case 32265: integerBitEnd = 9; break;
-            case 32266: integerBitEnd = 10; break;
-            case 32267: integerBitEnd = 11; break;
-            case 32268: integerBitEnd = 12; break;
-            case 32269: integerBitEnd = 13; break;
-            case 32270: integerBitEnd = 14; break;
-            case 32271: integerBitEnd = 15; break;
-            case 34272: integerBitEnd = 0; break;
-            case 34273: integerBitEnd = 1; break;
-            case 34274: integerBitEnd = 2; break;
-            case 34275: integerBitEnd = 3; break;
-            case 34276: integerBitEnd = 4; break;
-            case 34277: integerBitEnd = 5; break;
-            case 34278: integerBitEnd = 6; break;
-            case 34279: integerBitEnd = 7; break;
-            case 34280: integerBitEnd = 8; break;
-            case 34281: integerBitEnd = 9; break;
-            case 34282: integerBitEnd = 10; break;
-            case 34283: integerBitEnd = 11; break;
-            case 34284: integerBitEnd = 12; break;
-            case 34285: integerBitEnd = 13; break;
-            case 34286: integerBitEnd = 14; break;
-            case 34287: integerBitEnd = 15; break;
-            case 36288: integerBitEnd = 0; break;
-            case 36289: integerBitEnd = 1; break;
-            case 36290: integerBitEnd = 2; break;
-            case 36291: integerBitEnd = 3; break;
-            case 36292: integerBitEnd = 4; break;
-            case 36293: integerBitEnd = 5; break;
-            case 36294: integerBitEnd = 6; break;
-            case 36295: integerBitEnd = 7; break;
-            case 36296: integerBitEnd = 8; break;
-            case 36297: integerBitEnd = 9; break;
-            case 36298: integerBitEnd = 10; break;
-            case 36299: integerBitEnd = 11; break;
-            case 36300: integerBitEnd = 12; break;
-            case 36301: integerBitEnd = 13; break;
-            case 36302: integerBitEnd = 14; break;
-            case 36303: integerBitEnd = 15; break;
-            case 38304: integerBitEnd = 0; break;
-            case 38305: integerBitEnd = 1; break;
-            case 38306: integerBitEnd = 2; break;
-            case 38307: integerBitEnd = 3; break;
-            case 38308: integerBitEnd = 4; break;
-            case 38309: integerBitEnd = 5; break;
-            case 38310: integerBitEnd = 6; break;
-            case 38311: integerBitEnd = 7; break;
-            case 38312: integerBitEnd = 8; break;
-            case 38313: integerBitEnd = 9; break;
-            case 38314: integerBitEnd = 10; break;
-            case 38315: integerBitEnd = 11; break;
-            case 38316: integerBitEnd = 12; break;
-            case 38317: integerBitEnd = 13; break;
-            case 38318: integerBitEnd = 14; break;
-            case 38319: integerBitEnd = 15; break;
-            case 40320: integerBitEnd = 0; break;
-            case 40321: integerBitEnd = 1; break;
-            case 40322: integerBitEnd = 2; break;
-            case 40323: integerBitEnd = 3; break;
-            case 40324: integerBitEnd = 4; break;
-            case 40325: integerBitEnd = 5; break;
-            case 40326: integerBitEnd = 6; break;
-            case 40327: integerBitEnd = 7; break;
-            case 40328: integerBitEnd = 8; break;
-            case 40329: integerBitEnd = 9; break;
-            case 40330: integerBitEnd = 10; break;
-            case 40331: integerBitEnd = 11; break;
-            case 40332: integerBitEnd = 12; break;
-            case 40333: integerBitEnd = 13; break;
-            case 40334: integerBitEnd = 14; break;
-            case 40335: integerBitEnd = 15; break;
-            case 42336: integerBitEnd = 0; break;
-            case 42337: integerBitEnd = 1; break;
-            case 42338: integerBitEnd = 2; break;
-            case 42339: integerBitEnd = 3; break;
-            case 42340: integerBitEnd = 4; break;
-            case 42341: integerBitEnd = 5; break;
-            case 42342: integerBitEnd = 6; break;
-            case 42343: integerBitEnd = 7; break;
-            case 42344: integerBitEnd = 8; break;
-            case 42345: integerBitEnd = 9; break;
-            case 42346: integerBitEnd = 10; break;
-            case 42347: integerBitEnd = 11; break;
-            case 42348: integerBitEnd = 12; break;
-            case 42349: integerBitEnd = 13; break;
-            case 42350: integerBitEnd = 14; break;
-            case 42351: integerBitEnd = 15; break;
-            case 44352: integerBitEnd = 0; break;
-            case 44353: integerBitEnd = 1; break;
-            case 44354: integerBitEnd = 2; break;
-            case 44355: integerBitEnd = 3; break;
-            case 44356: integerBitEnd = 4; break;
-            case 44357: integerBitEnd = 5; break;
-            case 44358: integerBitEnd = 6; break;
-            case 44359: integerBitEnd = 7; break;
-            case 44360: integerBitEnd = 8; break;
-            case 44361: integerBitEnd = 9; break;
-            case 44362: integerBitEnd = 10; break;
-            case 44363: integerBitEnd = 11; break;
-            case 44364: integerBitEnd = 12; break;
-            case 44365: integerBitEnd = 13; break;
-            case 44366: integerBitEnd = 14; break;
-            case 44367: integerBitEnd = 15; break;
-            case 46368: integerBitEnd = 0; break;
-            case 46369: integerBitEnd = 1; break;
-            case 46370: integerBitEnd = 2; break;
-            case 46371: integerBitEnd = 3; break;
-            case 46372: integerBitEnd = 4; break;
-            case 46373: integerBitEnd = 5; break;
-            case 46374: integerBitEnd = 6; break;
-            case 46375: integerBitEnd = 7; break;
-            case 46376: integerBitEnd = 8; break;
-            case 46377: integerBitEnd = 9; break;
-            case 46378: integerBitEnd = 10; break;
-            case 46379: integerBitEnd = 11; break;
-            case 46380: integerBitEnd = 12; break;
-            case 46381: integerBitEnd = 13; break;
-            case 46382: integerBitEnd = 14; break;
-            case 46383: integerBitEnd = 15; break;
-            case 48384: integerBitEnd = 0; break;
-            case 48385: integerBitEnd = 1; break;
-            case 48386: integerBitEnd = 2; break;
-            case 48387: integerBitEnd = 3; break;
-            case 48388: integerBitEnd = 4; break;
-            case 48389: integerBitEnd = 5; break;
-            case 48390: integerBitEnd = 6; break;
-            case 48391: integerBitEnd = 7; break;
-            case 48392: integerBitEnd = 8; break;
-            case 48393: integerBitEnd = 9; break;
-            case 48394: integerBitEnd = 10; break;
-            case 48395: integerBitEnd = 11; break;
-            case 48396: integerBitEnd = 12; break;
-            case 48397: integerBitEnd = 13; break;
-            case 48398: integerBitEnd = 14; break;
-            case 48399: integerBitEnd = 15; break;
-            case 50400: integerBitEnd = 0; break;
-            case 50401: integerBitEnd = 1; break;
-            case 50402: integerBitEnd = 2; break;
-            case 50403: integerBitEnd = 3; break;
-            case 50404: integerBitEnd = 4; break;
-            case 50405: integerBitEnd = 5; break;
-            case 50406: integerBitEnd = 6; break;
-            case 50407: integerBitEnd = 7; break;
-            case 50408: integerBitEnd = 8; break;
-            case 50409: integerBitEnd = 9; break;
-            case 50410: integerBitEnd = 10; break;
-            case 50411: integerBitEnd = 11; break;
-            case 50412: integerBitEnd = 12; break;
-            case 50413: integerBitEnd = 13; break;
-            case 50414: integerBitEnd = 14; break;
-            case 50415: integerBitEnd = 15; break;
-            case 52416: integerBitEnd = 0; break;
-            case 52417: integerBitEnd = 1; break;
-            case 52418: integerBitEnd = 2; break;
-            case 52419: integerBitEnd = 3; break;
-            case 52420: integerBitEnd = 4; break;
-            case 52421: integerBitEnd = 5; break;
-            case 52422: integerBitEnd = 6; break;
-            case 52423: integerBitEnd = 7; break;
-            case 52424: integerBitEnd = 8; break;
-            case 52425: integerBitEnd = 9; break;
-            case 52426: integerBitEnd = 10; break;
-            case 52427: integerBitEnd = 11; break;
-            case 52428: integerBitEnd = 12; break;
-            case 52429: integerBitEnd = 13; break;
-            case 52430: integerBitEnd = 14; break;
-            case 52431: integerBitEnd = 15; break;
-            case 54432: integerBitEnd = 0; break;
-            case 54433: integerBitEnd = 1; break;
-            case 54434: integerBitEnd = 2; break;
-            case 54435: integerBitEnd = 3; break;
-            case 54436: integerBitEnd = 4; break;
-            case 54437: integerBitEnd = 5; break;
-            case 54438: integerBitEnd = 6; break;
-            case 54439: integerBitEnd = 7; break;
-            case 54440: integerBitEnd = 8; break;
-            case 54441: integerBitEnd = 9; break;
-            case 54442: integerBitEnd = 10; break;
-            case 54443: integerBitEnd = 11; break;
-            case 54444: integerBitEnd = 12; break;
-            case 54445: integerBitEnd = 13; break;
-            case 54446: integerBitEnd = 14; break;
-            case 54447: integerBitEnd = 15; break;
-            case 56448: integerBitEnd = 0; break;
-            case 56449: integerBitEnd = 1; break;
-            case 56450: integerBitEnd = 2; break;
-            case 56451: integerBitEnd = 3; break;
-            case 56452: integerBitEnd = 4; break;
-            case 56453: integerBitEnd = 5; break;
-            case 56454: integerBitEnd = 6; break;
-            case 56455: integerBitEnd = 7; break;
-            case 56456: integerBitEnd = 8; break;
-            case 56457: integerBitEnd = 9; break;
-            case 56458: integerBitEnd = 10; break;
-            case 56459: integerBitEnd = 11; break;
-            case 56460: integerBitEnd = 12; break;
-            case 56461: integerBitEnd = 13; break;
-            case 56462: integerBitEnd = 14; break;
-            case 56463: integerBitEnd = 15; break;
-            case 58464: integerBitEnd = 0; break;
-            case 58465: integerBitEnd = 1; break;
-            case 58466: integerBitEnd = 2; break;
-            case 58467: integerBitEnd = 3; break;
-            case 58468: integerBitEnd = 4; break;
-            case 58469: integerBitEnd = 5; break;
-            case 58470: integerBitEnd = 6; break;
-            case 58471: integerBitEnd = 7; break;
-            case 58472: integerBitEnd = 8; break;
-            case 58473: integerBitEnd = 9; break;
-            case 58474: integerBitEnd = 10; break;
-            case 58475: integerBitEnd = 11; break;
-            case 58476: integerBitEnd = 12; break;
-            case 58477: integerBitEnd = 13; break;
-            case 58478: integerBitEnd = 14; break;
-            case 58479: integerBitEnd = 15; break;
-            case 60480: integerBitEnd = 0; break;
-            case 60481: integerBitEnd = 1; break;
-            case 60482: integerBitEnd = 2; break;
-            case 60483: integerBitEnd = 3; break;
-            case 60484: integerBitEnd = 4; break;
-            case 60485: integerBitEnd = 5; break;
-            case 60486: integerBitEnd = 6; break;
-            case 60487: integerBitEnd = 7; break;
-            case 60488: integerBitEnd = 8; break;
-            case 60489: integerBitEnd = 9; break;
-            case 60490: integerBitEnd = 10; break;
-            case 60491: integerBitEnd = 11; break;
-            case 60492: integerBitEnd = 12; break;
-            case 60493: integerBitEnd = 13; break;
-            case 60494: integerBitEnd = 14; break;
-            case 60495: integerBitEnd = 15; break;
-            case 62496: integerBitEnd = 0; break;
-            case 62497: integerBitEnd = 1; break;
-            case 62498: integerBitEnd = 2; break;
-            case 62499: integerBitEnd = 3; break;
-            case 62500: integerBitEnd = 4; break;
-            case 62501: integerBitEnd = 5; break;
-            case 62502: integerBitEnd = 6; break;
-            case 62503: integerBitEnd = 7; break;
-            case 62504: integerBitEnd = 8; break;
-            case 62505: integerBitEnd = 9; break;
-            case 62506: integerBitEnd = 10; break;
-            case 62507: integerBitEnd = 11; break;
-            case 62508: integerBitEnd = 12; break;
-            case 62509: integerBitEnd = 13; break;
-            case 62510: integerBitEnd = 14; break;
-            case 62511: integerBitEnd = 15; break;
-            case 64512: integerBitEnd = 0; break;
-            case 64513: integerBitEnd = 1; break;
-            case 64514: integerBitEnd = 2; break;
-            case 64515: integerBitEnd = 3; break;
-            case 64516: integerBitEnd = 4; break;
-            case 64517: integerBitEnd = 5; break;
-            case 64518: integerBitEnd = 6; break;
-            case 64519: integerBitEnd = 7; break;
-            case 64520: integerBitEnd = 8; break;
-            case 64521: integerBitEnd = 9; break;
-            case 64522: integerBitEnd = 10; break;
-            case 64523: integerBitEnd = 11; break;
-            case 64524: integerBitEnd = 12; break;
-            case 64525: integerBitEnd = 13; break;
-            case 64526: integerBitEnd = 14; break;
-            case 64527: integerBitEnd = 15; break;
-            case 66528: integerBitEnd = 0; break;
-            case 66529: integerBitEnd = 1; break;
-            case 66530: integerBitEnd = 2; break;
-            case 66531: integerBitEnd = 3; break;
-            case 66532: integerBitEnd = 4; break;
-            case 66533: integerBitEnd = 5; break;
-            case 66534: integerBitEnd = 6; break;
-            case 66535: integerBitEnd = 7; break;
-            case 66536: integerBitEnd = 8; break;
-            case 66537: integerBitEnd = 9; break;
-            case 66538: integerBitEnd = 10; break;
-            case 66539: integerBitEnd = 11; break;
-            case 66540: integerBitEnd = 12; break;
-            case 66541: integerBitEnd = 13; break;
-            case 66542: integerBitEnd = 14; break;
-            case 66543: integerBitEnd = 15; break;
-            case 68544: integerBitEnd = 0; break;
-            case 68545: integerBitEnd = 1; break;
-            case 68546: integerBitEnd = 2; break;
-            case 68547: integerBitEnd = 3; break;
-            case 68548: integerBitEnd = 4; break;
-            case 68549: integerBitEnd = 5; break;
-            case 68550: integerBitEnd = 6; break;
-            case 68551: integerBitEnd = 7; break;
-            case 68552: integerBitEnd = 8; break;
-            case 68553: integerBitEnd = 9; break;
-            case 68554: integerBitEnd = 10; break;
-            case 68555: integerBitEnd = 11; break;
-            case 68556: integerBitEnd = 12; break;
-            case 68557: integerBitEnd = 13; break;
-            case 68558: integerBitEnd = 14; break;
-            case 68559: integerBitEnd = 15; break;
-            case 70560: integerBitEnd = 0; break;
-            case 70561: integerBitEnd = 1; break;
-            case 70562: integerBitEnd = 2; break;
-            case 70563: integerBitEnd = 3; break;
-            case 70564: integerBitEnd = 4; break;
-            case 70565: integerBitEnd = 5; break;
-            case 70566: integerBitEnd = 6; break;
-            case 70567: integerBitEnd = 7; break;
-            case 70568: integerBitEnd = 8; break;
-            case 70569: integerBitEnd = 9; break;
-            case 70570: integerBitEnd = 10; break;
-            case 70571: integerBitEnd = 11; break;
-            case 70572: integerBitEnd = 12; break;
-            case 70573: integerBitEnd = 13; break;
-            case 70574: integerBitEnd = 14; break;
-            case 70575: integerBitEnd = 15; break;
-            case 72576: integerBitEnd = 0; break;
-            case 72577: integerBitEnd = 1; break;
-            case 72578: integerBitEnd = 2; break;
-            case 72579: integerBitEnd = 3; break;
-            case 72580: integerBitEnd = 4; break;
-            case 72581: integerBitEnd = 5; break;
-            case 72582: integerBitEnd = 6; break;
-            case 72583: integerBitEnd = 7; break;
-            case 72584: integerBitEnd = 8; break;
-            case 72585: integerBitEnd = 9; break;
-            case 72586: integerBitEnd = 10; break;
-            case 72587: integerBitEnd = 11; break;
-            case 72588: integerBitEnd = 12; break;
-            case 72589: integerBitEnd = 13; break;
-            case 72590: integerBitEnd = 14; break;
-            case 72591: integerBitEnd = 15; break;
-            case 74592: integerBitEnd = 0; break;
-            case 74593: integerBitEnd = 1; break;
-            case 74594: integerBitEnd = 2; break;
-            case 74595: integerBitEnd = 3; break;
-            case 74596: integerBitEnd = 4; break;
-            case 74597: integerBitEnd = 5; break;
-            case 74598: integerBitEnd = 6; break;
-            case 74599: integerBitEnd = 7; break;
-            case 74600: integerBitEnd = 8; break;
-            case 74601: integerBitEnd = 9; break;
-            case 74602: integerBitEnd = 10; break;
-            case 74603: integerBitEnd = 11; break;
-            case 74604: integerBitEnd = 12; break;
-            case 74605: integerBitEnd = 13; break;
-            case 74606: integerBitEnd = 14; break;
-            case 74607: integerBitEnd = 15; break;
-            case 76608: integerBitEnd = 0; break;
-            case 76609: integerBitEnd = 1; break;
-            case 76610: integerBitEnd = 2; break;
-            case 76611: integerBitEnd = 3; break;
-            case 76612: integerBitEnd = 4; break;
-            case 76613: integerBitEnd = 5; break;
-            case 76614: integerBitEnd = 6; break;
-            case 76615: integerBitEnd = 7; break;
-            case 76616: integerBitEnd = 8; break;
-            case 76617: integerBitEnd = 9; break;
-            case 76618: integerBitEnd = 10; break;
-            case 76619: integerBitEnd = 11; break;
-            case 76620: integerBitEnd = 12; break;
-            case 76621: integerBitEnd = 13; break;
-            case 76622: integerBitEnd = 14; break;
-            case 76623: integerBitEnd = 15; break;
-            case 78624: integerBitEnd = 0; break;
-            case 78625: integerBitEnd = 1; break;
-            case 78626: integerBitEnd = 2; break;
-            case 78627: integerBitEnd = 3; break;
-            case 78628: integerBitEnd = 4; break;
-            case 78629: integerBitEnd = 5; break;
-            case 78630: integerBitEnd = 6; break;
-            case 78631: integerBitEnd = 7; break;
-            case 78632: integerBitEnd = 8; break;
-            case 78633: integerBitEnd = 9; break;
-            case 78634: integerBitEnd = 10; break;
-            case 78635: integerBitEnd = 11; break;
-            case 78636: integerBitEnd = 12; break;
-            case 78637: integerBitEnd = 13; break;
-            case 78638: integerBitEnd = 14; break;
-            case 78639: integerBitEnd = 15; break;
-            case 80640: integerBitEnd = 0; break;
-            case 80641: integerBitEnd = 1; break;
-            case 80642: integerBitEnd = 2; break;
-            case 80643: integerBitEnd = 3; break;
-            case 80644: integerBitEnd = 4; break;
-            case 80645: integerBitEnd = 5; break;
-            case 80646: integerBitEnd = 6; break;
-            case 80647: integerBitEnd = 7; break;
-            case 80648: integerBitEnd = 8; break;
-            case 80649: integerBitEnd = 9; break;
-            case 80650: integerBitEnd = 10; break;
-            case 80651: integerBitEnd = 11; break;
-            case 80652: integerBitEnd = 12; break;
-            case 80653: integerBitEnd = 13; break;
-            case 80654: integerBitEnd = 14; break;
-            case 80655: integerBitEnd = 15; break;
-            case 82656: integerBitEnd = 0; break;
-            case 82657: integerBitEnd = 1; break;
-            case 82658: integerBitEnd = 2; break;
-            case 82659: integerBitEnd = 3; break;
-            case 82660: integerBitEnd = 4; break;
-            case 82661: integerBitEnd = 5; break;
-            case 82662: integerBitEnd = 6; break;
-            case 82663: integerBitEnd = 7; break;
-            case 82664: integerBitEnd = 8; break;
-            case 82665: integerBitEnd = 9; break;
-            case 82666: integerBitEnd = 10; break;
-            case 82667: integerBitEnd = 11; break;
-            case 82668: integerBitEnd = 12; break;
-            case 82669: integerBitEnd = 13; break;
-            case 82670: integerBitEnd = 14; break;
-            case 82671: integerBitEnd = 15; break;
-            case 84672: integerBitEnd = 0; break;
-            case 84673: integerBitEnd = 1; break;
-            case 84674: integerBitEnd = 2; break;
-            case 84675: integerBitEnd = 3; break;
-            case 84676: integerBitEnd = 4; break;
-            case 84677: integerBitEnd = 5; break;
-            case 84678: integerBitEnd = 6; break;
-            case 84679: integerBitEnd = 7; break;
-            case 84680: integerBitEnd = 8; break;
-            case 84681: integerBitEnd = 9; break;
-            case 84682: integerBitEnd = 10; break;
-            case 84683: integerBitEnd = 11; break;
-            case 84684: integerBitEnd = 12; break;
-            case 84685: integerBitEnd = 13; break;
-            case 84686: integerBitEnd = 14; break;
-            case 84687: integerBitEnd = 15; break;
-            case 86688: integerBitEnd = 0; break;
-            case 86689: integerBitEnd = 1; break;
-            case 86690: integerBitEnd = 2; break;
-            case 86691: integerBitEnd = 3; break;
-            case 86692: integerBitEnd = 4; break;
-            case 86693: integerBitEnd = 5; break;
-            case 86694: integerBitEnd = 6; break;
-            case 86695: integerBitEnd = 7; break;
-            case 86696: integerBitEnd = 8; break;
-            case 86697: integerBitEnd = 9; break;
-            case 86698: integerBitEnd = 10; break;
-            case 86699: integerBitEnd = 11; break;
-            case 86700: integerBitEnd = 12; break;
-            case 86701: integerBitEnd = 13; break;
-            case 86702: integerBitEnd = 14; break;
-            case 86703: integerBitEnd = 15; break;
-            case 88704: integerBitEnd = 0; break;
-            case 88705: integerBitEnd = 1; break;
-            case 88706: integerBitEnd = 2; break;
-            case 88707: integerBitEnd = 3; break;
-            case 88708: integerBitEnd = 4; break;
-            case 88709: integerBitEnd = 5; break;
-            case 88710: integerBitEnd = 6; break;
-            case 88711: integerBitEnd = 7; break;
-            case 88712: integerBitEnd = 8; break;
-            case 88713: integerBitEnd = 9; break;
-            case 88714: integerBitEnd = 10; break;
-            case 88715: integerBitEnd = 11; break;
-            case 88716: integerBitEnd = 12; break;
-            case 88717: integerBitEnd = 13; break;
-            case 88718: integerBitEnd = 14; break;
-            case 88719: integerBitEnd = 15; break;
-            case 90720: integerBitEnd = 0; break;
-            case 90721: integerBitEnd = 1; break;
-            case 90722: integerBitEnd = 2; break;
-            case 90723: integerBitEnd = 3; break;
-            case 90724: integerBitEnd = 4; break;
-            case 90725: integerBitEnd = 5; break;
-            case 90726: integerBitEnd = 6; break;
-            case 90727: integerBitEnd = 7; break;
-            case 90728: integerBitEnd = 8; break;
-            case 90729: integerBitEnd = 9; break;
-            case 90730: integerBitEnd = 10; break;
-            case 90731: integerBitEnd = 11; break;
-            case 90732: integerBitEnd = 12; break;
-            case 90733: integerBitEnd = 13; break;
-            case 90734: integerBitEnd = 14; break;
-            case 90735: integerBitEnd = 15; break;
-            case 92736: integerBitEnd = 0; break;
-            case 92737: integerBitEnd = 1; break;
-            case 92738: integerBitEnd = 2; break;
-            case 92739: integerBitEnd = 3; break;
-            case 92740: integerBitEnd = 4; break;
-            case 92741: integerBitEnd = 5; break;
-            case 92742: integerBitEnd = 6; break;
-            case 92743: integerBitEnd = 7; break;
-            case 92744: integerBitEnd = 8; break;
-            case 92745: integerBitEnd = 9; break;
-            case 92746: integerBitEnd = 10; break;
-            case 92747: integerBitEnd = 11; break;
-            case 92748: integerBitEnd = 12; break;
-            case 92749: integerBitEnd = 13; break;
-            case 92750: integerBitEnd = 14; break;
-            case 92751: integerBitEnd = 15; break;
-            case 94752: integerBitEnd = 0; break;
-            case 94753: integerBitEnd = 1; break;
-            case 94754: integerBitEnd = 2; break;
-            case 94755: integerBitEnd = 3; break;
-            case 94756: integerBitEnd = 4; break;
-            case 94757: integerBitEnd = 5; break;
-            case 94758: integerBitEnd = 6; break;
-            case 94759: integerBitEnd = 7; break;
-            case 94760: integerBitEnd = 8; break;
-            case 94761: integerBitEnd = 9; break;
-            case 94762: integerBitEnd = 10; break;
-            case 94763: integerBitEnd = 11; break;
-            case 94764: integerBitEnd = 12; break;
-            case 94765: integerBitEnd = 13; break;
-            case 94766: integerBitEnd = 14; break;
-            case 94767: integerBitEnd = 15; break;
-            case 96768: integerBitEnd = 0; break;
-            case 96769: integerBitEnd = 1; break;
-            case 96770: integerBitEnd = 2; break;
-            case 96771: integerBitEnd = 3; break;
-            case 96772: integerBitEnd = 4; break;
-            case 96773: integerBitEnd = 5; break;
-            case 96774: integerBitEnd = 6; break;
-            case 96775: integerBitEnd = 7; break;
-            case 96776: integerBitEnd = 8; break;
-            case 96777: integerBitEnd = 9; break;
-            case 96778: integerBitEnd = 10; break;
-            case 96779: integerBitEnd = 11; break;
-            case 96780: integerBitEnd = 12; break;
-            case 96781: integerBitEnd = 13; break;
-            case 96782: integerBitEnd = 14; break;
-            case 96783: integerBitEnd = 15; break;
-            case 98784: integerBitEnd = 0; break;
-            case 98785: integerBitEnd = 1; break;
-            case 98786: integerBitEnd = 2; break;
-            case 98787: integerBitEnd = 3; break;
-            case 98788: integerBitEnd = 4; break;
-            case 98789: integerBitEnd = 5; break;
-            case 98790: integerBitEnd = 6; break;
-            case 98791: integerBitEnd = 7; break;
-            case 98792: integerBitEnd = 8; break;
-            case 98793: integerBitEnd = 9; break;
-            case 98794: integerBitEnd = 10; break;
-            case 98795: integerBitEnd = 11; break;
-            case 98796: integerBitEnd = 12; break;
-            case 98797: integerBitEnd = 13; break;
-            case 98798: integerBitEnd = 14; break;
-            case 98799: integerBitEnd = 15; break;
-            case 100800: integerBitEnd = 0; break;
-            case 100801: integerBitEnd = 1; break;
-            case 100802: integerBitEnd = 2; break;
-            case 100803: integerBitEnd = 3; break;
-            case 100804: integerBitEnd = 4; break;
-            case 100805: integerBitEnd = 5; break;
-            case 100806: integerBitEnd = 6; break;
-            case 100807: integerBitEnd = 7; break;
-            case 100808: integerBitEnd = 8; break;
-            case 100809: integerBitEnd = 9; break;
-            case 100810: integerBitEnd = 10; break;
-            case 100811: integerBitEnd = 11; break;
-            case 100812: integerBitEnd = 12; break;
-            case 100813: integerBitEnd = 13; break;
-            case 100814: integerBitEnd = 14; break;
-            case 100815: integerBitEnd = 15; break;
-            case 102816: integerBitEnd = 0; break;
-            case 102817: integerBitEnd = 1; break;
-            case 102818: integerBitEnd = 2; break;
-            case 102819: integerBitEnd = 3; break;
-            case 102820: integerBitEnd = 4; break;
-            case 102821: integerBitEnd = 5; break;
-            case 102822: integerBitEnd = 6; break;
-            case 102823: integerBitEnd = 7; break;
-            case 102824: integerBitEnd = 8; break;
-            case 102825: integerBitEnd = 9; break;
-            case 102826: integerBitEnd = 10; break;
-            case 102827: integerBitEnd = 11; break;
-            case 102828: integerBitEnd = 12; break;
-            case 102829: integerBitEnd = 13; break;
-            case 102830: integerBitEnd = 14; break;
-            case 102831: integerBitEnd = 15; break;
-            case 104832: integerBitEnd = 0; break;
-            case 104833: integerBitEnd = 1; break;
-            case 104834: integerBitEnd = 2; break;
-            case 104835: integerBitEnd = 3; break;
-            case 104836: integerBitEnd = 4; break;
-            case 104837: integerBitEnd = 5; break;
-            case 104838: integerBitEnd = 6; break;
-            case 104839: integerBitEnd = 7; break;
-            case 104840: integerBitEnd = 8; break;
-            case 104841: integerBitEnd = 9; break;
-            case 104842: integerBitEnd = 10; break;
-            case 104843: integerBitEnd = 11; break;
-            case 104844: integerBitEnd = 12; break;
-            case 104845: integerBitEnd = 13; break;
-            case 104846: integerBitEnd = 14; break;
-            case 104847: integerBitEnd = 15; break;
-            case 106848: integerBitEnd = 0; break;
-            case 106849: integerBitEnd = 1; break;
-            case 106850: integerBitEnd = 2; break;
-            case 106851: integerBitEnd = 3; break;
-            case 106852: integerBitEnd = 4; break;
-            case 106853: integerBitEnd = 5; break;
-            case 106854: integerBitEnd = 6; break;
-            case 106855: integerBitEnd = 7; break;
-            case 106856: integerBitEnd = 8; break;
-            case 106857: integerBitEnd = 9; break;
-            case 106858: integerBitEnd = 10; break;
-            case 106859: integerBitEnd = 11; break;
-            case 106860: integerBitEnd = 12; break;
-            case 106861: integerBitEnd = 13; break;
-            case 106862: integerBitEnd = 14; break;
-            case 106863: integerBitEnd = 15; break;
-            case 108864: integerBitEnd = 0; break;
-            case 108865: integerBitEnd = 1; break;
-            case 108866: integerBitEnd = 2; break;
-            case 108867: integerBitEnd = 3; break;
-            case 108868: integerBitEnd = 4; break;
-            case 108869: integerBitEnd = 5; break;
-            case 108870: integerBitEnd = 6; break;
-            case 108871: integerBitEnd = 7; break;
-            case 108872: integerBitEnd = 8; break;
-            case 108873: integerBitEnd = 9; break;
-            case 108874: integerBitEnd = 10; break;
-            case 108875: integerBitEnd = 11; break;
-            case 108876: integerBitEnd = 12; break;
-            case 108877: integerBitEnd = 13; break;
-            case 108878: integerBitEnd = 14; break;
-            case 108879: integerBitEnd = 15; break;
-            case 110880: integerBitEnd = 0; break;
-            case 110881: integerBitEnd = 1; break;
-            case 110882: integerBitEnd = 2; break;
-            case 110883: integerBitEnd = 3; break;
-            case 110884: integerBitEnd = 4; break;
-            case 110885: integerBitEnd = 5; break;
-            case 110886: integerBitEnd = 6; break;
-            case 110887: integerBitEnd = 7; break;
-            case 110888: integerBitEnd = 8; break;
-            case 110889: integerBitEnd = 9; break;
-            case 110890: integerBitEnd = 10; break;
-            case 110891: integerBitEnd = 11; break;
-            case 110892: integerBitEnd = 12; break;
-            case 110893: integerBitEnd = 13; break;
-            case 110894: integerBitEnd = 14; break;
-            case 110895: integerBitEnd = 15; break;
-            case 112896: integerBitEnd = 0; break;
-            case 112897: integerBitEnd = 1; break;
-            case 112898: integerBitEnd = 2; break;
-            case 112899: integerBitEnd = 3; break;
-            case 112900: integerBitEnd = 4; break;
-            case 112901: integerBitEnd = 5; break;
-            case 112902: integerBitEnd = 6; break;
-            case 112903: integerBitEnd = 7; break;
-            case 112904: integerBitEnd = 8; break;
-            case 112905: integerBitEnd = 9; break;
-            case 112906: integerBitEnd = 10; break;
-            case 112907: integerBitEnd = 11; break;
-            case 112908: integerBitEnd = 12; break;
-            case 112909: integerBitEnd = 13; break;
-            case 112910: integerBitEnd = 14; break;
-            case 112911: integerBitEnd = 15; break;
-            case 114912: integerBitEnd = 0; break;
-            case 114913: integerBitEnd = 1; break;
-            case 114914: integerBitEnd = 2; break;
-            case 114915: integerBitEnd = 3; break;
-            case 114916: integerBitEnd = 4; break;
-            case 114917: integerBitEnd = 5; break;
-            case 114918: integerBitEnd = 6; break;
-            case 114919: integerBitEnd = 7; break;
-            case 114920: integerBitEnd = 8; break;
-            case 114921: integerBitEnd = 9; break;
-            case 114922: integerBitEnd = 10; break;
-            case 114923: integerBitEnd = 11; break;
-            case 114924: integerBitEnd = 12; break;
-            case 114925: integerBitEnd = 13; break;
-            case 114926: integerBitEnd = 14; break;
-            case 114927: integerBitEnd = 15; break;
-            case 116928: integerBitEnd = 0; break;
-            case 116929: integerBitEnd = 1; break;
-            case 116930: integerBitEnd = 2; break;
-            case 116931: integerBitEnd = 3; break;
-            case 116932: integerBitEnd = 4; break;
-            case 116933: integerBitEnd = 5; break;
-            case 116934: integerBitEnd = 6; break;
-            case 116935: integerBitEnd = 7; break;
-            case 116936: integerBitEnd = 8; break;
-            case 116937: integerBitEnd = 9; break;
-            case 116938: integerBitEnd = 10; break;
-            case 116939: integerBitEnd = 11; break;
-            case 116940: integerBitEnd = 12; break;
-            case 116941: integerBitEnd = 13; break;
-            case 116942: integerBitEnd = 14; break;
-            case 116943: integerBitEnd = 15; break;
-            case 118944: integerBitEnd = 0; break;
-            case 118945: integerBitEnd = 1; break;
-            case 118946: integerBitEnd = 2; break;
-            case 118947: integerBitEnd = 3; break;
-            case 118948: integerBitEnd = 4; break;
-            case 118949: integerBitEnd = 5; break;
-            case 118950: integerBitEnd = 6; break;
-            case 118951: integerBitEnd = 7; break;
-            case 118952: integerBitEnd = 8; break;
-            case 118953: integerBitEnd = 9; break;
-            case 118954: integerBitEnd = 10; break;
-            case 118955: integerBitEnd = 11; break;
-            case 118956: integerBitEnd = 12; break;
-            case 118957: integerBitEnd = 13; break;
-            case 118958: integerBitEnd = 14; break;
-            case 118959: integerBitEnd = 15; break;
-            case 120960: integerBitEnd = 0; break;
-            case 120961: integerBitEnd = 1; break;
-            case 120962: integerBitEnd = 2; break;
-            case 120963: integerBitEnd = 3; break;
-            case 120964: integerBitEnd = 4; break;
-            case 120965: integerBitEnd = 5; break;
-            case 120966: integerBitEnd = 6; break;
-            case 120967: integerBitEnd = 7; break;
-            case 120968: integerBitEnd = 8; break;
-            case 120969: integerBitEnd = 9; break;
-            case 120970: integerBitEnd = 10; break;
-            case 120971: integerBitEnd = 11; break;
-            case 120972: integerBitEnd = 12; break;
-            case 120973: integerBitEnd = 13; break;
-            case 120974: integerBitEnd = 14; break;
-            case 120975: integerBitEnd = 15; break;
-            case 122976: integerBitEnd = 0; break;
-            case 122977: integerBitEnd = 1; break;
-            case 122978: integerBitEnd = 2; break;
-            case 122979: integerBitEnd = 3; break;
-            case 122980: integerBitEnd = 4; break;
-            case 122981: integerBitEnd = 5; break;
-            case 122982: integerBitEnd = 6; break;
-            case 122983: integerBitEnd = 7; break;
-            case 122984: integerBitEnd = 8; break;
-            case 122985: integerBitEnd = 9; break;
-            case 122986: integerBitEnd = 10; break;
-            case 122987: integerBitEnd = 11; break;
-            case 122988: integerBitEnd = 12; break;
-            case 122989: integerBitEnd = 13; break;
-            case 122990: integerBitEnd = 14; break;
-            case 122991: integerBitEnd = 15; break;
-            case 124992: integerBitEnd = 0; break;
-            case 124993: integerBitEnd = 1; break;
-            case 124994: integerBitEnd = 2; break;
-            case 124995: integerBitEnd = 3; break;
-            case 124996: integerBitEnd = 4; break;
-            case 124997: integerBitEnd = 5; break;
-            case 124998: integerBitEnd = 6; break;
-            case 124999: integerBitEnd = 7; break;
-            case 125000: integerBitEnd = 8; break;
-            case 125001: integerBitEnd = 9; break;
-            case 125002: integerBitEnd = 10; break;
-            case 125003: integerBitEnd = 11; break;
-            case 125004: integerBitEnd = 12; break;
-            case 125005: integerBitEnd = 13; break;
-            case 125006: integerBitEnd = 14; break;
-            case 125007: integerBitEnd = 15; break;
-            case 127008: integerBitEnd = 0; break;
-            case 127009: integerBitEnd = 1; break;
-            case 127010: integerBitEnd = 2; break;
-            case 127011: integerBitEnd = 3; break;
-            case 127012: integerBitEnd = 4; break;
-            case 127013: integerBitEnd = 5; break;
-            case 127014: integerBitEnd = 6; break;
-            case 127015: integerBitEnd = 7; break;
-            case 127016: integerBitEnd = 8; break;
-            case 127017: integerBitEnd = 9; break;
-            case 127018: integerBitEnd = 10; break;
-            case 127019: integerBitEnd = 11; break;
-            case 127020: integerBitEnd = 12; break;
-            case 127021: integerBitEnd = 13; break;
-            case 127022: integerBitEnd = 14; break;
-            case 127023: integerBitEnd = 15; break;
+    public int readClusterControlStatus(int idx) throws GameActionException {
+        switch (idx) {
+            case 0:
+                return (rc.readSharedArray(4) & 12288) >>> 12;
+            case 1:
+                return (rc.readSharedArray(4) & 384) >>> 7;
+            case 2:
+                return (rc.readSharedArray(4) & 12) >>> 2;
+            case 3:
+                return (rc.readSharedArray(5) & 24576) >>> 13;
+            case 4:
+                return (rc.readSharedArray(5) & 768) >>> 8;
+            case 5:
+                return (rc.readSharedArray(5) & 24) >>> 3;
+            case 6:
+                return (rc.readSharedArray(6) & 49152) >>> 14;
+            case 7:
+                return (rc.readSharedArray(6) & 1536) >>> 9;
+            case 8:
+                return (rc.readSharedArray(6) & 48) >>> 4;
+            case 9:
+                return ((rc.readSharedArray(6) & 1) << 1) + ((rc.readSharedArray(7) & 32768) >>> 15);
+            case 10:
+                return (rc.readSharedArray(7) & 3072) >>> 10;
+            case 11:
+                return (rc.readSharedArray(7) & 96) >>> 5;
+            case 12:
+                return (rc.readSharedArray(7) & 3);
+            case 13:
+                return (rc.readSharedArray(8) & 6144) >>> 11;
+            case 14:
+                return (rc.readSharedArray(8) & 192) >>> 6;
+            case 15:
+                return (rc.readSharedArray(8) & 6) >>> 1;
+            case 16:
+                return (rc.readSharedArray(9) & 12288) >>> 12;
+            case 17:
+                return (rc.readSharedArray(9) & 384) >>> 7;
+            case 18:
+                return (rc.readSharedArray(9) & 12) >>> 2;
+            case 19:
+                return (rc.readSharedArray(10) & 24576) >>> 13;
+            case 20:
+                return (rc.readSharedArray(10) & 768) >>> 8;
+            case 21:
+                return (rc.readSharedArray(10) & 24) >>> 3;
+            case 22:
+                return (rc.readSharedArray(11) & 49152) >>> 14;
+            case 23:
+                return (rc.readSharedArray(11) & 1536) >>> 9;
+            case 24:
+                return (rc.readSharedArray(11) & 48) >>> 4;
+            case 25:
+                return ((rc.readSharedArray(11) & 1) << 1) + ((rc.readSharedArray(12) & 32768) >>> 15);
+            case 26:
+                return (rc.readSharedArray(12) & 3072) >>> 10;
+            case 27:
+                return (rc.readSharedArray(12) & 96) >>> 5;
+            case 28:
+                return (rc.readSharedArray(12) & 3);
+            case 29:
+                return (rc.readSharedArray(13) & 6144) >>> 11;
+            case 30:
+                return (rc.readSharedArray(13) & 192) >>> 6;
+            case 31:
+                return (rc.readSharedArray(13) & 6) >>> 1;
+            case 32:
+                return (rc.readSharedArray(14) & 12288) >>> 12;
+            case 33:
+                return (rc.readSharedArray(14) & 384) >>> 7;
+            case 34:
+                return (rc.readSharedArray(14) & 12) >>> 2;
+            case 35:
+                return (rc.readSharedArray(15) & 24576) >>> 13;
+            case 36:
+                return (rc.readSharedArray(15) & 768) >>> 8;
+            case 37:
+                return (rc.readSharedArray(15) & 24) >>> 3;
+            case 38:
+                return (rc.readSharedArray(16) & 49152) >>> 14;
+            case 39:
+                return (rc.readSharedArray(16) & 1536) >>> 9;
+            case 40:
+                return (rc.readSharedArray(16) & 48) >>> 4;
+            case 41:
+                return ((rc.readSharedArray(16) & 1) << 1) + ((rc.readSharedArray(17) & 32768) >>> 15);
+            case 42:
+                return (rc.readSharedArray(17) & 3072) >>> 10;
+            case 43:
+                return (rc.readSharedArray(17) & 96) >>> 5;
+            case 44:
+                return (rc.readSharedArray(17) & 3);
+            case 45:
+                return (rc.readSharedArray(18) & 6144) >>> 11;
+            case 46:
+                return (rc.readSharedArray(18) & 192) >>> 6;
+            case 47:
+                return (rc.readSharedArray(18) & 6) >>> 1;
+            case 48:
+                return (rc.readSharedArray(19) & 12288) >>> 12;
+            case 49:
+                return (rc.readSharedArray(19) & 384) >>> 7;
+            case 50:
+                return (rc.readSharedArray(19) & 12) >>> 2;
+            case 51:
+                return (rc.readSharedArray(20) & 24576) >>> 13;
+            case 52:
+                return (rc.readSharedArray(20) & 768) >>> 8;
+            case 53:
+                return (rc.readSharedArray(20) & 24) >>> 3;
+            case 54:
+                return (rc.readSharedArray(21) & 49152) >>> 14;
+            case 55:
+                return (rc.readSharedArray(21) & 1536) >>> 9;
+            case 56:
+                return (rc.readSharedArray(21) & 48) >>> 4;
+            case 57:
+                return ((rc.readSharedArray(21) & 1) << 1) + ((rc.readSharedArray(22) & 32768) >>> 15);
+            case 58:
+                return (rc.readSharedArray(22) & 3072) >>> 10;
+            case 59:
+                return (rc.readSharedArray(22) & 96) >>> 5;
+            case 60:
+                return (rc.readSharedArray(22) & 3);
+            case 61:
+                return (rc.readSharedArray(23) & 6144) >>> 11;
+            case 62:
+                return (rc.readSharedArray(23) & 192) >>> 6;
+            case 63:
+                return (rc.readSharedArray(23) & 6) >>> 1;
+            case 64:
+                return (rc.readSharedArray(24) & 12288) >>> 12;
+            case 65:
+                return (rc.readSharedArray(24) & 384) >>> 7;
+            case 66:
+                return (rc.readSharedArray(24) & 12) >>> 2;
+            case 67:
+                return (rc.readSharedArray(25) & 24576) >>> 13;
+            case 68:
+                return (rc.readSharedArray(25) & 768) >>> 8;
+            case 69:
+                return (rc.readSharedArray(25) & 24) >>> 3;
+            case 70:
+                return (rc.readSharedArray(26) & 49152) >>> 14;
+            case 71:
+                return (rc.readSharedArray(26) & 1536) >>> 9;
+            case 72:
+                return (rc.readSharedArray(26) & 48) >>> 4;
+            case 73:
+                return ((rc.readSharedArray(26) & 1) << 1) + ((rc.readSharedArray(27) & 32768) >>> 15);
+            case 74:
+                return (rc.readSharedArray(27) & 3072) >>> 10;
+            case 75:
+                return (rc.readSharedArray(27) & 96) >>> 5;
+            case 76:
+                return (rc.readSharedArray(27) & 3);
+            case 77:
+                return (rc.readSharedArray(28) & 6144) >>> 11;
+            case 78:
+                return (rc.readSharedArray(28) & 192) >>> 6;
+            case 79:
+                return (rc.readSharedArray(28) & 6) >>> 1;
+            case 80:
+                return (rc.readSharedArray(29) & 12288) >>> 12;
+            case 81:
+                return (rc.readSharedArray(29) & 384) >>> 7;
+            case 82:
+                return (rc.readSharedArray(29) & 12) >>> 2;
+            case 83:
+                return (rc.readSharedArray(30) & 24576) >>> 13;
+            case 84:
+                return (rc.readSharedArray(30) & 768) >>> 8;
+            case 85:
+                return (rc.readSharedArray(30) & 24) >>> 3;
+            case 86:
+                return (rc.readSharedArray(31) & 49152) >>> 14;
+            case 87:
+                return (rc.readSharedArray(31) & 1536) >>> 9;
+            case 88:
+                return (rc.readSharedArray(31) & 48) >>> 4;
+            case 89:
+                return ((rc.readSharedArray(31) & 1) << 1) + ((rc.readSharedArray(32) & 32768) >>> 15);
+            case 90:
+                return (rc.readSharedArray(32) & 3072) >>> 10;
+            case 91:
+                return (rc.readSharedArray(32) & 96) >>> 5;
+            case 92:
+                return (rc.readSharedArray(32) & 3);
+            case 93:
+                return (rc.readSharedArray(33) & 6144) >>> 11;
+            case 94:
+                return (rc.readSharedArray(33) & 192) >>> 6;
+            case 95:
+                return (rc.readSharedArray(33) & 6) >>> 1;
+            case 96:
+                return (rc.readSharedArray(34) & 12288) >>> 12;
+            case 97:
+                return (rc.readSharedArray(34) & 384) >>> 7;
+            case 98:
+                return (rc.readSharedArray(34) & 12) >>> 2;
+            case 99:
+                return (rc.readSharedArray(35) & 24576) >>> 13;
+            default:
+                return -1;
         }
-
-
-        //if write is contained in single integer
-        if (arrIndexStart == arrIndexEnd) {
-            // Inline switch statement
-            // int bitm = bitmask2Write(integerBitBegin, integerBitEnd);
-            int bitm = 0;
-            switch (32*integerBitBegin + integerBitEnd) {
-                case 0: bitm = -32769; break; 
-                case 1: bitm = -49153; break; 
-                case 2: bitm = -57345; break; 
-                case 3: bitm = -61441; break; 
-                case 4: bitm = -63489; break; 
-                case 5: bitm = -64513; break; 
-                case 6: bitm = -65025; break; 
-                case 7: bitm = -65281; break; 
-                case 8: bitm = -65409; break; 
-                case 9: bitm = -65473; break; 
-                case 10: bitm = -65505; break; 
-                case 11: bitm = -65521; break; 
-                case 12: bitm = -65529; break; 
-                case 13: bitm = -65533; break; 
-                case 14: bitm = -65535; break; 
-                case 15: bitm = -65536; break; 
-                case 16: bitm = -2147418113; break; 
-                case 17: bitm = -1073676289; break; 
-                case 18: bitm = -536805377; break; 
-                case 19: bitm = -268369921; break; 
-                case 20: bitm = -134152193; break; 
-                case 21: bitm = -67043329; break; 
-                case 22: bitm = -33488897; break; 
-                case 23: bitm = -16711681; break; 
-                case 24: bitm = -8323073; break; 
-                case 25: bitm = -4128769; break; 
-                case 26: bitm = -2031617; break; 
-                case 27: bitm = -983041; break; 
-                case 28: bitm = -458753; break; 
-                case 29: bitm = -196609; break; 
-                case 30: bitm = -65537; break; 
-                case 31: bitm = -1; break; 
-                case 33: bitm = -16385; break; 
-                case 34: bitm = -24577; break; 
-                case 35: bitm = -28673; break; 
-                case 36: bitm = -30721; break; 
-                case 37: bitm = -31745; break; 
-                case 38: bitm = -32257; break; 
-                case 39: bitm = -32513; break; 
-                case 40: bitm = -32641; break; 
-                case 41: bitm = -32705; break; 
-                case 42: bitm = -32737; break; 
-                case 43: bitm = -32753; break; 
-                case 44: bitm = -32761; break; 
-                case 45: bitm = -32765; break; 
-                case 46: bitm = -32767; break; 
-                case 47: bitm = -32768; break; 
-                case 48: bitm = -2147450881; break; 
-                case 49: bitm = -1073709057; break; 
-                case 50: bitm = -536838145; break; 
-                case 51: bitm = -268402689; break; 
-                case 52: bitm = -134184961; break; 
-                case 53: bitm = -67076097; break; 
-                case 54: bitm = -33521665; break; 
-                case 55: bitm = -16744449; break; 
-                case 56: bitm = -8355841; break; 
-                case 57: bitm = -4161537; break; 
-                case 58: bitm = -2064385; break; 
-                case 59: bitm = -1015809; break; 
-                case 60: bitm = -491521; break; 
-                case 61: bitm = -229377; break; 
-                case 62: bitm = -98305; break; 
-                case 63: bitm = -32769; break; 
-                case 66: bitm = -8193; break; 
-                case 67: bitm = -12289; break; 
-                case 68: bitm = -14337; break; 
-                case 69: bitm = -15361; break; 
-                case 70: bitm = -15873; break; 
-                case 71: bitm = -16129; break; 
-                case 72: bitm = -16257; break; 
-                case 73: bitm = -16321; break; 
-                case 74: bitm = -16353; break; 
-                case 75: bitm = -16369; break; 
-                case 76: bitm = -16377; break; 
-                case 77: bitm = -16381; break; 
-                case 78: bitm = -16383; break; 
-                case 79: bitm = -16384; break; 
-                case 80: bitm = -2147467265; break; 
-                case 81: bitm = -1073725441; break; 
-                case 82: bitm = -536854529; break; 
-                case 83: bitm = -268419073; break; 
-                case 84: bitm = -134201345; break; 
-                case 85: bitm = -67092481; break; 
-                case 86: bitm = -33538049; break; 
-                case 87: bitm = -16760833; break; 
-                case 88: bitm = -8372225; break; 
-                case 89: bitm = -4177921; break; 
-                case 90: bitm = -2080769; break; 
-                case 91: bitm = -1032193; break; 
-                case 92: bitm = -507905; break; 
-                case 93: bitm = -245761; break; 
-                case 94: bitm = -114689; break; 
-                case 95: bitm = -49153; break; 
-                case 99: bitm = -4097; break; 
-                case 100: bitm = -6145; break; 
-                case 101: bitm = -7169; break; 
-                case 102: bitm = -7681; break; 
-                case 103: bitm = -7937; break; 
-                case 104: bitm = -8065; break; 
-                case 105: bitm = -8129; break; 
-                case 106: bitm = -8161; break; 
-                case 107: bitm = -8177; break; 
-                case 108: bitm = -8185; break; 
-                case 109: bitm = -8189; break; 
-                case 110: bitm = -8191; break; 
-                case 111: bitm = -8192; break; 
-                case 112: bitm = -2147475457; break; 
-                case 113: bitm = -1073733633; break; 
-                case 114: bitm = -536862721; break; 
-                case 115: bitm = -268427265; break; 
-                case 116: bitm = -134209537; break; 
-                case 117: bitm = -67100673; break; 
-                case 118: bitm = -33546241; break; 
-                case 119: bitm = -16769025; break; 
-                case 120: bitm = -8380417; break; 
-                case 121: bitm = -4186113; break; 
-                case 122: bitm = -2088961; break; 
-                case 123: bitm = -1040385; break; 
-                case 124: bitm = -516097; break; 
-                case 125: bitm = -253953; break; 
-                case 126: bitm = -122881; break; 
-                case 127: bitm = -57345; break; 
-                case 132: bitm = -2049; break; 
-                case 133: bitm = -3073; break; 
-                case 134: bitm = -3585; break; 
-                case 135: bitm = -3841; break; 
-                case 136: bitm = -3969; break; 
-                case 137: bitm = -4033; break; 
-                case 138: bitm = -4065; break; 
-                case 139: bitm = -4081; break; 
-                case 140: bitm = -4089; break; 
-                case 141: bitm = -4093; break; 
-                case 142: bitm = -4095; break; 
-                case 143: bitm = -4096; break; 
-                case 144: bitm = -2147479553; break; 
-                case 145: bitm = -1073737729; break; 
-                case 146: bitm = -536866817; break; 
-                case 147: bitm = -268431361; break; 
-                case 148: bitm = -134213633; break; 
-                case 149: bitm = -67104769; break; 
-                case 150: bitm = -33550337; break; 
-                case 151: bitm = -16773121; break; 
-                case 152: bitm = -8384513; break; 
-                case 153: bitm = -4190209; break; 
-                case 154: bitm = -2093057; break; 
-                case 155: bitm = -1044481; break; 
-                case 156: bitm = -520193; break; 
-                case 157: bitm = -258049; break; 
-                case 158: bitm = -126977; break; 
-                case 159: bitm = -61441; break; 
-                case 165: bitm = -1025; break; 
-                case 166: bitm = -1537; break; 
-                case 167: bitm = -1793; break; 
-                case 168: bitm = -1921; break; 
-                case 169: bitm = -1985; break; 
-                case 170: bitm = -2017; break; 
-                case 171: bitm = -2033; break; 
-                case 172: bitm = -2041; break; 
-                case 173: bitm = -2045; break; 
-                case 174: bitm = -2047; break; 
-                case 175: bitm = -2048; break; 
-                case 176: bitm = -2147481601; break; 
-                case 177: bitm = -1073739777; break; 
-                case 178: bitm = -536868865; break; 
-                case 179: bitm = -268433409; break; 
-                case 180: bitm = -134215681; break; 
-                case 181: bitm = -67106817; break; 
-                case 182: bitm = -33552385; break; 
-                case 183: bitm = -16775169; break; 
-                case 184: bitm = -8386561; break; 
-                case 185: bitm = -4192257; break; 
-                case 186: bitm = -2095105; break; 
-                case 187: bitm = -1046529; break; 
-                case 188: bitm = -522241; break; 
-                case 189: bitm = -260097; break; 
-                case 190: bitm = -129025; break; 
-                case 191: bitm = -63489; break; 
-                case 198: bitm = -513; break; 
-                case 199: bitm = -769; break; 
-                case 200: bitm = -897; break; 
-                case 201: bitm = -961; break; 
-                case 202: bitm = -993; break; 
-                case 203: bitm = -1009; break; 
-                case 204: bitm = -1017; break; 
-                case 205: bitm = -1021; break; 
-                case 206: bitm = -1023; break; 
-                case 207: bitm = -1024; break; 
-                case 208: bitm = -2147482625; break; 
-                case 209: bitm = -1073740801; break; 
-                case 210: bitm = -536869889; break; 
-                case 211: bitm = -268434433; break; 
-                case 212: bitm = -134216705; break; 
-                case 213: bitm = -67107841; break; 
-                case 214: bitm = -33553409; break; 
-                case 215: bitm = -16776193; break; 
-                case 216: bitm = -8387585; break; 
-                case 217: bitm = -4193281; break; 
-                case 218: bitm = -2096129; break; 
-                case 219: bitm = -1047553; break; 
-                case 220: bitm = -523265; break; 
-                case 221: bitm = -261121; break; 
-                case 222: bitm = -130049; break; 
-                case 223: bitm = -64513; break; 
-                case 231: bitm = -257; break; 
-                case 232: bitm = -385; break; 
-                case 233: bitm = -449; break; 
-                case 234: bitm = -481; break; 
-                case 235: bitm = -497; break; 
-                case 236: bitm = -505; break; 
-                case 237: bitm = -509; break; 
-                case 238: bitm = -511; break; 
-                case 239: bitm = -512; break; 
-                case 240: bitm = -2147483137; break; 
-                case 241: bitm = -1073741313; break; 
-                case 242: bitm = -536870401; break; 
-                case 243: bitm = -268434945; break; 
-                case 244: bitm = -134217217; break; 
-                case 245: bitm = -67108353; break; 
-                case 246: bitm = -33553921; break; 
-                case 247: bitm = -16776705; break; 
-                case 248: bitm = -8388097; break; 
-                case 249: bitm = -4193793; break; 
-                case 250: bitm = -2096641; break; 
-                case 251: bitm = -1048065; break; 
-                case 252: bitm = -523777; break; 
-                case 253: bitm = -261633; break; 
-                case 254: bitm = -130561; break; 
-                case 255: bitm = -65025; break; 
-                case 264: bitm = -129; break; 
-                case 265: bitm = -193; break; 
-                case 266: bitm = -225; break; 
-                case 267: bitm = -241; break; 
-                case 268: bitm = -249; break; 
-                case 269: bitm = -253; break; 
-                case 270: bitm = -255; break; 
-                case 271: bitm = -256; break; 
-                case 272: bitm = -2147483393; break; 
-                case 273: bitm = -1073741569; break; 
-                case 274: bitm = -536870657; break; 
-                case 275: bitm = -268435201; break; 
-                case 276: bitm = -134217473; break; 
-                case 277: bitm = -67108609; break; 
-                case 278: bitm = -33554177; break; 
-                case 279: bitm = -16776961; break; 
-                case 280: bitm = -8388353; break; 
-                case 281: bitm = -4194049; break; 
-                case 282: bitm = -2096897; break; 
-                case 283: bitm = -1048321; break; 
-                case 284: bitm = -524033; break; 
-                case 285: bitm = -261889; break; 
-                case 286: bitm = -130817; break; 
-                case 287: bitm = -65281; break; 
-                case 297: bitm = -65; break; 
-                case 298: bitm = -97; break; 
-                case 299: bitm = -113; break; 
-                case 300: bitm = -121; break; 
-                case 301: bitm = -125; break; 
-                case 302: bitm = -127; break; 
-                case 303: bitm = -128; break; 
-                case 304: bitm = -2147483521; break; 
-                case 305: bitm = -1073741697; break; 
-                case 306: bitm = -536870785; break; 
-                case 307: bitm = -268435329; break; 
-                case 308: bitm = -134217601; break; 
-                case 309: bitm = -67108737; break; 
-                case 310: bitm = -33554305; break; 
-                case 311: bitm = -16777089; break; 
-                case 312: bitm = -8388481; break; 
-                case 313: bitm = -4194177; break; 
-                case 314: bitm = -2097025; break; 
-                case 315: bitm = -1048449; break; 
-                case 316: bitm = -524161; break; 
-                case 317: bitm = -262017; break; 
-                case 318: bitm = -130945; break; 
-                case 319: bitm = -65409; break; 
-                case 330: bitm = -33; break; 
-                case 331: bitm = -49; break; 
-                case 332: bitm = -57; break; 
-                case 333: bitm = -61; break; 
-                case 334: bitm = -63; break; 
-                case 335: bitm = -64; break; 
-                case 336: bitm = -2147483585; break; 
-                case 337: bitm = -1073741761; break; 
-                case 338: bitm = -536870849; break; 
-                case 339: bitm = -268435393; break; 
-                case 340: bitm = -134217665; break; 
-                case 341: bitm = -67108801; break; 
-                case 342: bitm = -33554369; break; 
-                case 343: bitm = -16777153; break; 
-                case 344: bitm = -8388545; break; 
-                case 345: bitm = -4194241; break; 
-                case 346: bitm = -2097089; break; 
-                case 347: bitm = -1048513; break; 
-                case 348: bitm = -524225; break; 
-                case 349: bitm = -262081; break; 
-                case 350: bitm = -131009; break; 
-                case 351: bitm = -65473; break; 
-                case 363: bitm = -17; break; 
-                case 364: bitm = -25; break; 
-                case 365: bitm = -29; break; 
-                case 366: bitm = -31; break; 
-                case 367: bitm = -32; break; 
-                case 368: bitm = -2147483617; break; 
-                case 369: bitm = -1073741793; break; 
-                case 370: bitm = -536870881; break; 
-                case 371: bitm = -268435425; break; 
-                case 372: bitm = -134217697; break; 
-                case 373: bitm = -67108833; break; 
-                case 374: bitm = -33554401; break; 
-                case 375: bitm = -16777185; break; 
-                case 376: bitm = -8388577; break; 
-                case 377: bitm = -4194273; break; 
-                case 378: bitm = -2097121; break; 
-                case 379: bitm = -1048545; break; 
-                case 380: bitm = -524257; break; 
-                case 381: bitm = -262113; break; 
-                case 382: bitm = -131041; break; 
-                case 383: bitm = -65505; break; 
-                case 396: bitm = -9; break; 
-                case 397: bitm = -13; break; 
-                case 398: bitm = -15; break; 
-                case 399: bitm = -16; break; 
-                case 400: bitm = -2147483633; break; 
-                case 401: bitm = -1073741809; break; 
-                case 402: bitm = -536870897; break; 
-                case 403: bitm = -268435441; break; 
-                case 404: bitm = -134217713; break; 
-                case 405: bitm = -67108849; break; 
-                case 406: bitm = -33554417; break; 
-                case 407: bitm = -16777201; break; 
-                case 408: bitm = -8388593; break; 
-                case 409: bitm = -4194289; break; 
-                case 410: bitm = -2097137; break; 
-                case 411: bitm = -1048561; break; 
-                case 412: bitm = -524273; break; 
-                case 413: bitm = -262129; break; 
-                case 414: bitm = -131057; break; 
-                case 415: bitm = -65521; break; 
-                case 429: bitm = -5; break; 
-                case 430: bitm = -7; break; 
-                case 431: bitm = -8; break; 
-                case 432: bitm = -2147483641; break; 
-                case 433: bitm = -1073741817; break; 
-                case 434: bitm = -536870905; break; 
-                case 435: bitm = -268435449; break; 
-                case 436: bitm = -134217721; break; 
-                case 437: bitm = -67108857; break; 
-                case 438: bitm = -33554425; break; 
-                case 439: bitm = -16777209; break; 
-                case 440: bitm = -8388601; break; 
-                case 441: bitm = -4194297; break; 
-                case 442: bitm = -2097145; break; 
-                case 443: bitm = -1048569; break; 
-                case 444: bitm = -524281; break; 
-                case 445: bitm = -262137; break; 
-                case 446: bitm = -131065; break; 
-                case 447: bitm = -65529; break; 
-                case 462: bitm = -3; break; 
-                case 463: bitm = -4; break; 
-                case 464: bitm = -2147483645; break; 
-                case 465: bitm = -1073741821; break; 
-                case 466: bitm = -536870909; break; 
-                case 467: bitm = -268435453; break; 
-                case 468: bitm = -134217725; break; 
-                case 469: bitm = -67108861; break; 
-                case 470: bitm = -33554429; break; 
-                case 471: bitm = -16777213; break; 
-                case 472: bitm = -8388605; break; 
-                case 473: bitm = -4194301; break; 
-                case 474: bitm = -2097149; break; 
-                case 475: bitm = -1048573; break; 
-                case 476: bitm = -524285; break; 
-                case 477: bitm = -262141; break; 
-                case 478: bitm = -131069; break; 
-                case 479: bitm = -65533; break; 
-                case 495: bitm = -2; break; 
-                case 496: bitm = -2147483647; break; 
-                case 497: bitm = -1073741823; break; 
-                case 498: bitm = -536870911; break; 
-                case 499: bitm = -268435455; break; 
-                case 500: bitm = -134217727; break; 
-                case 501: bitm = -67108863; break; 
-                case 502: bitm = -33554431; break; 
-                case 503: bitm = -16777215; break; 
-                case 504: bitm = -8388607; break; 
-                case 505: bitm = -4194303; break; 
-                case 506: bitm = -2097151; break; 
-                case 507: bitm = -1048575; break; 
-                case 508: bitm = -524287; break; 
-                case 509: bitm = -262143; break; 
-                case 510: bitm = -131071; break; 
-                case 511: bitm = -65535; break; 
-                case 528: bitm = 2147483647; break; 
-                case 529: bitm = 1073741823; break; 
-                case 530: bitm = 536870911; break; 
-                case 531: bitm = 268435455; break; 
-                case 532: bitm = 134217727; break; 
-                case 533: bitm = 67108863; break; 
-                case 534: bitm = 33554431; break; 
-                case 535: bitm = 16777215; break; 
-                case 536: bitm = 8388607; break; 
-                case 537: bitm = 4194303; break; 
-                case 538: bitm = 2097151; break; 
-                case 539: bitm = 1048575; break; 
-                case 540: bitm = 524287; break; 
-                case 541: bitm = 262143; break; 
-                case 542: bitm = 131071; break; 
-                case 543: bitm = 65535; break; 
-                case 561: bitm = -1073741825; break; 
-                case 562: bitm = -1610612737; break; 
-                case 563: bitm = -1879048193; break; 
-                case 564: bitm = -2013265921; break; 
-                case 565: bitm = -2080374785; break; 
-                case 566: bitm = -2113929217; break; 
-                case 567: bitm = -2130706433; break; 
-                case 568: bitm = -2139095041; break; 
-                case 569: bitm = -2143289345; break; 
-                case 570: bitm = -2145386497; break; 
-                case 571: bitm = -2146435073; break; 
-                case 572: bitm = -2146959361; break; 
-                case 573: bitm = -2147221505; break; 
-                case 574: bitm = -2147352577; break; 
-                case 575: bitm = -2147418113; break; 
-                case 594: bitm = -536870913; break; 
-                case 595: bitm = -805306369; break; 
-                case 596: bitm = -939524097; break; 
-                case 597: bitm = -1006632961; break; 
-                case 598: bitm = -1040187393; break; 
-                case 599: bitm = -1056964609; break; 
-                case 600: bitm = -1065353217; break; 
-                case 601: bitm = -1069547521; break; 
-                case 602: bitm = -1071644673; break; 
-                case 603: bitm = -1072693249; break; 
-                case 604: bitm = -1073217537; break; 
-                case 605: bitm = -1073479681; break; 
-                case 606: bitm = -1073610753; break; 
-                case 607: bitm = -1073676289; break; 
-                case 627: bitm = -268435457; break; 
-                case 628: bitm = -402653185; break; 
-                case 629: bitm = -469762049; break; 
-                case 630: bitm = -503316481; break; 
-                case 631: bitm = -520093697; break; 
-                case 632: bitm = -528482305; break; 
-                case 633: bitm = -532676609; break; 
-                case 634: bitm = -534773761; break; 
-                case 635: bitm = -535822337; break; 
-                case 636: bitm = -536346625; break; 
-                case 637: bitm = -536608769; break; 
-                case 638: bitm = -536739841; break; 
-                case 639: bitm = -536805377; break; 
-                case 660: bitm = -134217729; break; 
-                case 661: bitm = -201326593; break; 
-                case 662: bitm = -234881025; break; 
-                case 663: bitm = -251658241; break; 
-                case 664: bitm = -260046849; break; 
-                case 665: bitm = -264241153; break; 
-                case 666: bitm = -266338305; break; 
-                case 667: bitm = -267386881; break; 
-                case 668: bitm = -267911169; break; 
-                case 669: bitm = -268173313; break; 
-                case 670: bitm = -268304385; break; 
-                case 671: bitm = -268369921; break; 
-                case 693: bitm = -67108865; break; 
-                case 694: bitm = -100663297; break; 
-                case 695: bitm = -117440513; break; 
-                case 696: bitm = -125829121; break; 
-                case 697: bitm = -130023425; break; 
-                case 698: bitm = -132120577; break; 
-                case 699: bitm = -133169153; break; 
-                case 700: bitm = -133693441; break; 
-                case 701: bitm = -133955585; break; 
-                case 702: bitm = -134086657; break; 
-                case 703: bitm = -134152193; break; 
-                case 726: bitm = -33554433; break; 
-                case 727: bitm = -50331649; break; 
-                case 728: bitm = -58720257; break; 
-                case 729: bitm = -62914561; break; 
-                case 730: bitm = -65011713; break; 
-                case 731: bitm = -66060289; break; 
-                case 732: bitm = -66584577; break; 
-                case 733: bitm = -66846721; break; 
-                case 734: bitm = -66977793; break; 
-                case 735: bitm = -67043329; break; 
-                case 759: bitm = -16777217; break; 
-                case 760: bitm = -25165825; break; 
-                case 761: bitm = -29360129; break; 
-                case 762: bitm = -31457281; break; 
-                case 763: bitm = -32505857; break; 
-                case 764: bitm = -33030145; break; 
-                case 765: bitm = -33292289; break; 
-                case 766: bitm = -33423361; break; 
-                case 767: bitm = -33488897; break; 
-                case 792: bitm = -8388609; break; 
-                case 793: bitm = -12582913; break; 
-                case 794: bitm = -14680065; break; 
-                case 795: bitm = -15728641; break; 
-                case 796: bitm = -16252929; break; 
-                case 797: bitm = -16515073; break; 
-                case 798: bitm = -16646145; break; 
-                case 799: bitm = -16711681; break; 
-                case 825: bitm = -4194305; break; 
-                case 826: bitm = -6291457; break; 
-                case 827: bitm = -7340033; break; 
-                case 828: bitm = -7864321; break; 
-                case 829: bitm = -8126465; break; 
-                case 830: bitm = -8257537; break; 
-                case 831: bitm = -8323073; break; 
-                case 858: bitm = -2097153; break; 
-                case 859: bitm = -3145729; break; 
-                case 860: bitm = -3670017; break; 
-                case 861: bitm = -3932161; break; 
-                case 862: bitm = -4063233; break; 
-                case 863: bitm = -4128769; break; 
-                case 891: bitm = -1048577; break; 
-                case 892: bitm = -1572865; break; 
-                case 893: bitm = -1835009; break; 
-                case 894: bitm = -1966081; break; 
-                case 895: bitm = -2031617; break; 
-                case 924: bitm = -524289; break; 
-                case 925: bitm = -786433; break; 
-                case 926: bitm = -917505; break; 
-                case 927: bitm = -983041; break; 
-                case 957: bitm = -262145; break; 
-                case 958: bitm = -393217; break; 
-                case 959: bitm = -458753; break; 
-                case 990: bitm = -131073; break; 
-                case 991: bitm = -196609; break; 
-                case 1023: bitm = -65537; break;
-            }    
-
-            value = value << (SHARED_ARRAY_ELEM_SIZE-integerBitBegin-numBits);
-            // read value from shared array at arrIndexStart
-            rc.writeSharedArray(arrIndexStart, ((rc.readSharedArray(arrIndexStart) & bitm) | value) & MAX_SHARED_ARRAY_ELEM);
-        } 
-        // If write spans two integers
-        else {
-            // Inline switch statement -- unable to inline, method too large
-            int bitm1 = bitmask2Write(integerBitBegin, SHARED_ARRAY_ELEM_SIZE-1);
-            /*
-            int bitm1 = 0;
-            int mask1 = 32*integerBitBegin + SHARED_ARRAY_ELEM_SIZE-1;
-            switch (mask1) {
-                case 0: bitm1 = -32769; break; 
-                case 1: bitm1 = -49153; break; 
-                case 2: bitm1 = -57345; break; 
-                case 3: bitm1 = -61441; break; 
-                case 4: bitm1 = -63489; break; 
-                case 5: bitm1 = -64513; break; 
-                case 6: bitm1 = -65025; break; 
-                case 7: bitm1 = -65281; break; 
-                case 8: bitm1 = -65409; break; 
-                case 9: bitm1 = -65473; break; 
-                case 10: bitm1 = -65505; break; 
-                case 11: bitm1 = -65521; break; 
-                case 12: bitm1 = -65529; break; 
-                case 13: bitm1 = -65533; break; 
-                case 14: bitm1 = -65535; break; 
-                case 15: bitm1 = -65536; break; 
-                case 16: bitm1 = -2147418113; break; 
-                case 17: bitm1 = -1073676289; break; 
-                case 18: bitm1 = -536805377; break; 
-                case 19: bitm1 = -268369921; break; 
-                case 20: bitm1 = -134152193; break; 
-                case 21: bitm1 = -67043329; break; 
-                case 22: bitm1 = -33488897; break; 
-                case 23: bitm1 = -16711681; break; 
-                case 24: bitm1 = -8323073; break; 
-                case 25: bitm1 = -4128769; break; 
-                case 26: bitm1 = -2031617; break; 
-                case 27: bitm1 = -983041; break; 
-                case 28: bitm1 = -458753; break; 
-                case 29: bitm1 = -196609; break; 
-                case 30: bitm1 = -65537; break; 
-                case 31: bitm1 = -1; break; 
-                case 33: bitm1 = -16385; break; 
-                case 34: bitm1 = -24577; break; 
-                case 35: bitm1 = -28673; break; 
-                case 36: bitm1 = -30721; break; 
-                case 37: bitm1 = -31745; break; 
-                case 38: bitm1 = -32257; break; 
-                case 39: bitm1 = -32513; break; 
-                case 40: bitm1 = -32641; break; 
-                case 41: bitm1 = -32705; break; 
-                case 42: bitm1 = -32737; break; 
-                case 43: bitm1 = -32753; break; 
-                case 44: bitm1 = -32761; break; 
-                case 45: bitm1 = -32765; break; 
-                case 46: bitm1 = -32767; break; 
-                case 47: bitm1 = -32768; break; 
-                case 48: bitm1 = -2147450881; break; 
-                case 49: bitm1 = -1073709057; break; 
-                case 50: bitm1 = -536838145; break; 
-                case 51: bitm1 = -268402689; break; 
-                case 52: bitm1 = -134184961; break; 
-                case 53: bitm1 = -67076097; break; 
-                case 54: bitm1 = -33521665; break; 
-                case 55: bitm1 = -16744449; break; 
-                case 56: bitm1 = -8355841; break; 
-                case 57: bitm1 = -4161537; break; 
-                case 58: bitm1 = -2064385; break; 
-                case 59: bitm1 = -1015809; break; 
-                case 60: bitm1 = -491521; break; 
-                case 61: bitm1 = -229377; break; 
-                case 62: bitm1 = -98305; break; 
-                case 63: bitm1 = -32769; break; 
-                case 66: bitm1 = -8193; break; 
-                case 67: bitm1 = -12289; break; 
-                case 68: bitm1 = -14337; break; 
-                case 69: bitm1 = -15361; break; 
-                case 70: bitm1 = -15873; break; 
-                case 71: bitm1 = -16129; break; 
-                case 72: bitm1 = -16257; break; 
-                case 73: bitm1 = -16321; break; 
-                case 74: bitm1 = -16353; break; 
-                case 75: bitm1 = -16369; break; 
-                case 76: bitm1 = -16377; break; 
-                case 77: bitm1 = -16381; break; 
-                case 78: bitm1 = -16383; break; 
-                case 79: bitm1 = -16384; break; 
-                case 80: bitm1 = -2147467265; break; 
-                case 81: bitm1 = -1073725441; break; 
-                case 82: bitm1 = -536854529; break; 
-                case 83: bitm1 = -268419073; break; 
-                case 84: bitm1 = -134201345; break; 
-                case 85: bitm1 = -67092481; break; 
-                case 86: bitm1 = -33538049; break; 
-                case 87: bitm1 = -16760833; break; 
-                case 88: bitm1 = -8372225; break; 
-                case 89: bitm1 = -4177921; break; 
-                case 90: bitm1 = -2080769; break; 
-                case 91: bitm1 = -1032193; break; 
-                case 92: bitm1 = -507905; break; 
-                case 93: bitm1 = -245761; break; 
-                case 94: bitm1 = -114689; break; 
-                case 95: bitm1 = -49153; break; 
-                case 99: bitm1 = -4097; break; 
-                case 100: bitm1 = -6145; break; 
-                case 101: bitm1 = -7169; break; 
-                case 102: bitm1 = -7681; break; 
-                case 103: bitm1 = -7937; break; 
-                case 104: bitm1 = -8065; break; 
-                case 105: bitm1 = -8129; break; 
-                case 106: bitm1 = -8161; break; 
-                case 107: bitm1 = -8177; break; 
-                case 108: bitm1 = -8185; break; 
-                case 109: bitm1 = -8189; break; 
-                case 110: bitm1 = -8191; break; 
-                case 111: bitm1 = -8192; break; 
-                case 112: bitm1 = -2147475457; break; 
-                case 113: bitm1 = -1073733633; break; 
-                case 114: bitm1 = -536862721; break; 
-                case 115: bitm1 = -268427265; break; 
-                case 116: bitm1 = -134209537; break; 
-                case 117: bitm1 = -67100673; break; 
-                case 118: bitm1 = -33546241; break; 
-                case 119: bitm1 = -16769025; break; 
-                case 120: bitm1 = -8380417; break; 
-                case 121: bitm1 = -4186113; break; 
-                case 122: bitm1 = -2088961; break; 
-                case 123: bitm1 = -1040385; break; 
-                case 124: bitm1 = -516097; break; 
-                case 125: bitm1 = -253953; break; 
-                case 126: bitm1 = -122881; break; 
-                case 127: bitm1 = -57345; break; 
-                case 132: bitm1 = -2049; break; 
-                case 133: bitm1 = -3073; break; 
-                case 134: bitm1 = -3585; break; 
-                case 135: bitm1 = -3841; break; 
-                case 136: bitm1 = -3969; break; 
-                case 137: bitm1 = -4033; break; 
-                case 138: bitm1 = -4065; break; 
-                case 139: bitm1 = -4081; break; 
-                case 140: bitm1 = -4089; break; 
-                case 141: bitm1 = -4093; break; 
-                case 142: bitm1 = -4095; break; 
-                case 143: bitm1 = -4096; break; 
-                case 144: bitm1 = -2147479553; break; 
-                case 145: bitm1 = -1073737729; break; 
-                case 146: bitm1 = -536866817; break; 
-                case 147: bitm1 = -268431361; break; 
-                case 148: bitm1 = -134213633; break; 
-                case 149: bitm1 = -67104769; break; 
-                case 150: bitm1 = -33550337; break; 
-                case 151: bitm1 = -16773121; break; 
-                case 152: bitm1 = -8384513; break; 
-                case 153: bitm1 = -4190209; break; 
-                case 154: bitm1 = -2093057; break; 
-                case 155: bitm1 = -1044481; break; 
-                case 156: bitm1 = -520193; break; 
-                case 157: bitm1 = -258049; break; 
-                case 158: bitm1 = -126977; break; 
-                case 159: bitm1 = -61441; break; 
-                case 165: bitm1 = -1025; break; 
-                case 166: bitm1 = -1537; break; 
-                case 167: bitm1 = -1793; break; 
-                case 168: bitm1 = -1921; break; 
-                case 169: bitm1 = -1985; break; 
-                case 170: bitm1 = -2017; break; 
-                case 171: bitm1 = -2033; break; 
-                case 172: bitm1 = -2041; break; 
-                case 173: bitm1 = -2045; break; 
-                case 174: bitm1 = -2047; break; 
-                case 175: bitm1 = -2048; break; 
-                case 176: bitm1 = -2147481601; break; 
-                case 177: bitm1 = -1073739777; break; 
-                case 178: bitm1 = -536868865; break; 
-                case 179: bitm1 = -268433409; break; 
-                case 180: bitm1 = -134215681; break; 
-                case 181: bitm1 = -67106817; break; 
-                case 182: bitm1 = -33552385; break; 
-                case 183: bitm1 = -16775169; break; 
-                case 184: bitm1 = -8386561; break; 
-                case 185: bitm1 = -4192257; break; 
-                case 186: bitm1 = -2095105; break; 
-                case 187: bitm1 = -1046529; break; 
-                case 188: bitm1 = -522241; break; 
-                case 189: bitm1 = -260097; break; 
-                case 190: bitm1 = -129025; break; 
-                case 191: bitm1 = -63489; break; 
-                case 198: bitm1 = -513; break; 
-                case 199: bitm1 = -769; break; 
-                case 200: bitm1 = -897; break; 
-                case 201: bitm1 = -961; break; 
-                case 202: bitm1 = -993; break; 
-                case 203: bitm1 = -1009; break; 
-                case 204: bitm1 = -1017; break; 
-                case 205: bitm1 = -1021; break; 
-                case 206: bitm1 = -1023; break; 
-                case 207: bitm1 = -1024; break; 
-                case 208: bitm1 = -2147482625; break; 
-                case 209: bitm1 = -1073740801; break; 
-                case 210: bitm1 = -536869889; break; 
-                case 211: bitm1 = -268434433; break; 
-                case 212: bitm1 = -134216705; break; 
-                case 213: bitm1 = -67107841; break; 
-                case 214: bitm1 = -33553409; break; 
-                case 215: bitm1 = -16776193; break; 
-                case 216: bitm1 = -8387585; break; 
-                case 217: bitm1 = -4193281; break; 
-                case 218: bitm1 = -2096129; break; 
-                case 219: bitm1 = -1047553; break; 
-                case 220: bitm1 = -523265; break; 
-                case 221: bitm1 = -261121; break; 
-                case 222: bitm1 = -130049; break; 
-                case 223: bitm1 = -64513; break; 
-                case 231: bitm1 = -257; break; 
-                case 232: bitm1 = -385; break; 
-                case 233: bitm1 = -449; break; 
-                case 234: bitm1 = -481; break; 
-                case 235: bitm1 = -497; break; 
-                case 236: bitm1 = -505; break; 
-                case 237: bitm1 = -509; break; 
-                case 238: bitm1 = -511; break; 
-                case 239: bitm1 = -512; break; 
-                case 240: bitm1 = -2147483137; break; 
-                case 241: bitm1 = -1073741313; break; 
-                case 242: bitm1 = -536870401; break; 
-                case 243: bitm1 = -268434945; break; 
-                case 244: bitm1 = -134217217; break; 
-                case 245: bitm1 = -67108353; break; 
-                case 246: bitm1 = -33553921; break; 
-                case 247: bitm1 = -16776705; break; 
-                case 248: bitm1 = -8388097; break; 
-                case 249: bitm1 = -4193793; break; 
-                case 250: bitm1 = -2096641; break; 
-                case 251: bitm1 = -1048065; break; 
-                case 252: bitm1 = -523777; break; 
-                case 253: bitm1 = -261633; break; 
-                case 254: bitm1 = -130561; break; 
-                case 255: bitm1 = -65025; break; 
-                case 264: bitm1 = -129; break; 
-                case 265: bitm1 = -193; break; 
-                case 266: bitm1 = -225; break; 
-                case 267: bitm1 = -241; break; 
-                case 268: bitm1 = -249; break; 
-                case 269: bitm1 = -253; break; 
-                case 270: bitm1 = -255; break; 
-                case 271: bitm1 = -256; break; 
-                case 272: bitm1 = -2147483393; break; 
-                case 273: bitm1 = -1073741569; break; 
-                case 274: bitm1 = -536870657; break; 
-                case 275: bitm1 = -268435201; break; 
-                case 276: bitm1 = -134217473; break; 
-                case 277: bitm1 = -67108609; break; 
-                case 278: bitm1 = -33554177; break; 
-                case 279: bitm1 = -16776961; break; 
-                case 280: bitm1 = -8388353; break; 
-                case 281: bitm1 = -4194049; break; 
-                case 282: bitm1 = -2096897; break; 
-                case 283: bitm1 = -1048321; break; 
-                case 284: bitm1 = -524033; break; 
-                case 285: bitm1 = -261889; break; 
-                case 286: bitm1 = -130817; break; 
-                case 287: bitm1 = -65281; break; 
-                case 297: bitm1 = -65; break; 
-                case 298: bitm1 = -97; break; 
-                case 299: bitm1 = -113; break; 
-                case 300: bitm1 = -121; break; 
-                case 301: bitm1 = -125; break; 
-                case 302: bitm1 = -127; break; 
-                case 303: bitm1 = -128; break; 
-                case 304: bitm1 = -2147483521; break; 
-                case 305: bitm1 = -1073741697; break; 
-                case 306: bitm1 = -536870785; break; 
-                case 307: bitm1 = -268435329; break; 
-                case 308: bitm1 = -134217601; break; 
-                case 309: bitm1 = -67108737; break; 
-                case 310: bitm1 = -33554305; break; 
-                case 311: bitm1 = -16777089; break; 
-                case 312: bitm1 = -8388481; break; 
-                case 313: bitm1 = -4194177; break; 
-                case 314: bitm1 = -2097025; break; 
-                case 315: bitm1 = -1048449; break; 
-                case 316: bitm1 = -524161; break; 
-                case 317: bitm1 = -262017; break; 
-                case 318: bitm1 = -130945; break; 
-                case 319: bitm1 = -65409; break; 
-                case 330: bitm1 = -33; break; 
-                case 331: bitm1 = -49; break; 
-                case 332: bitm1 = -57; break; 
-                case 333: bitm1 = -61; break; 
-                case 334: bitm1 = -63; break; 
-                case 335: bitm1 = -64; break; 
-                case 336: bitm1 = -2147483585; break; 
-                case 337: bitm1 = -1073741761; break; 
-                case 338: bitm1 = -536870849; break; 
-                case 339: bitm1 = -268435393; break; 
-                case 340: bitm1 = -134217665; break; 
-                case 341: bitm1 = -67108801; break; 
-                case 342: bitm1 = -33554369; break; 
-                case 343: bitm1 = -16777153; break; 
-                case 344: bitm1 = -8388545; break; 
-                case 345: bitm1 = -4194241; break; 
-                case 346: bitm1 = -2097089; break; 
-                case 347: bitm1 = -1048513; break; 
-                case 348: bitm1 = -524225; break; 
-                case 349: bitm1 = -262081; break; 
-                case 350: bitm1 = -131009; break; 
-                case 351: bitm1 = -65473; break; 
-                case 363: bitm1 = -17; break; 
-                case 364: bitm1 = -25; break; 
-                case 365: bitm1 = -29; break; 
-                case 366: bitm1 = -31; break; 
-                case 367: bitm1 = -32; break; 
-                case 368: bitm1 = -2147483617; break; 
-                case 369: bitm1 = -1073741793; break; 
-                case 370: bitm1 = -536870881; break; 
-                case 371: bitm1 = -268435425; break; 
-                case 372: bitm1 = -134217697; break; 
-                case 373: bitm1 = -67108833; break; 
-                case 374: bitm1 = -33554401; break; 
-                case 375: bitm1 = -16777185; break; 
-                case 376: bitm1 = -8388577; break; 
-                case 377: bitm1 = -4194273; break; 
-                case 378: bitm1 = -2097121; break; 
-                case 379: bitm1 = -1048545; break; 
-                case 380: bitm1 = -524257; break; 
-                case 381: bitm1 = -262113; break; 
-                case 382: bitm1 = -131041; break; 
-                case 383: bitm1 = -65505; break; 
-                case 396: bitm1 = -9; break; 
-                case 397: bitm1 = -13; break; 
-                case 398: bitm1 = -15; break; 
-                case 399: bitm1 = -16; break; 
-                case 400: bitm1 = -2147483633; break; 
-                case 401: bitm1 = -1073741809; break; 
-                case 402: bitm1 = -536870897; break; 
-                case 403: bitm1 = -268435441; break; 
-                case 404: bitm1 = -134217713; break; 
-                case 405: bitm1 = -67108849; break; 
-                case 406: bitm1 = -33554417; break; 
-                case 407: bitm1 = -16777201; break; 
-                case 408: bitm1 = -8388593; break; 
-                case 409: bitm1 = -4194289; break; 
-                case 410: bitm1 = -2097137; break; 
-                case 411: bitm1 = -1048561; break; 
-                case 412: bitm1 = -524273; break; 
-                case 413: bitm1 = -262129; break; 
-                case 414: bitm1 = -131057; break; 
-                case 415: bitm1 = -65521; break; 
-                case 429: bitm1 = -5; break; 
-                case 430: bitm1 = -7; break; 
-                case 431: bitm1 = -8; break; 
-                case 432: bitm1 = -2147483641; break; 
-                case 433: bitm1 = -1073741817; break; 
-                case 434: bitm1 = -536870905; break; 
-                case 435: bitm1 = -268435449; break; 
-                case 436: bitm1 = -134217721; break; 
-                case 437: bitm1 = -67108857; break; 
-                case 438: bitm1 = -33554425; break; 
-                case 439: bitm1 = -16777209; break; 
-                case 440: bitm1 = -8388601; break; 
-                case 441: bitm1 = -4194297; break; 
-                case 442: bitm1 = -2097145; break; 
-                case 443: bitm1 = -1048569; break; 
-                case 444: bitm1 = -524281; break; 
-                case 445: bitm1 = -262137; break; 
-                case 446: bitm1 = -131065; break; 
-                case 447: bitm1 = -65529; break; 
-                case 462: bitm1 = -3; break; 
-                case 463: bitm1 = -4; break; 
-                case 464: bitm1 = -2147483645; break; 
-                case 465: bitm1 = -1073741821; break; 
-                case 466: bitm1 = -536870909; break; 
-                case 467: bitm1 = -268435453; break; 
-                case 468: bitm1 = -134217725; break; 
-                case 469: bitm1 = -67108861; break; 
-                case 470: bitm1 = -33554429; break; 
-                case 471: bitm1 = -16777213; break; 
-                case 472: bitm1 = -8388605; break; 
-                case 473: bitm1 = -4194301; break; 
-                case 474: bitm1 = -2097149; break; 
-                case 475: bitm1 = -1048573; break; 
-                case 476: bitm1 = -524285; break; 
-                case 477: bitm1 = -262141; break; 
-                case 478: bitm1 = -131069; break; 
-                case 479: bitm1 = -65533; break; 
-                case 495: bitm1 = -2; break; 
-                case 496: bitm1 = -2147483647; break; 
-                case 497: bitm1 = -1073741823; break; 
-                case 498: bitm1 = -536870911; break; 
-                case 499: bitm1 = -268435455; break; 
-                case 500: bitm1 = -134217727; break; 
-                case 501: bitm1 = -67108863; break; 
-                case 502: bitm1 = -33554431; break; 
-                case 503: bitm1 = -16777215; break; 
-                case 504: bitm1 = -8388607; break; 
-                case 505: bitm1 = -4194303; break; 
-                case 506: bitm1 = -2097151; break; 
-                case 507: bitm1 = -1048575; break; 
-                case 508: bitm1 = -524287; break; 
-                case 509: bitm1 = -262143; break; 
-                case 510: bitm1 = -131071; break; 
-                case 511: bitm1 = -65535; break; 
-                case 528: bitm1 = 2147483647; break; 
-                case 529: bitm1 = 1073741823; break; 
-                case 530: bitm1 = 536870911; break; 
-                case 531: bitm1 = 268435455; break; 
-                case 532: bitm1 = 134217727; break; 
-                case 533: bitm1 = 67108863; break; 
-                case 534: bitm1 = 33554431; break; 
-                case 535: bitm1 = 16777215; break; 
-                case 536: bitm1 = 8388607; break; 
-                case 537: bitm1 = 4194303; break; 
-                case 538: bitm1 = 2097151; break; 
-                case 539: bitm1 = 1048575; break; 
-                case 540: bitm1 = 524287; break; 
-                case 541: bitm1 = 262143; break; 
-                case 542: bitm1 = 131071; break; 
-                case 543: bitm1 = 65535; break; 
-                case 561: bitm1 = -1073741825; break; 
-                case 562: bitm1 = -1610612737; break; 
-                case 563: bitm1 = -1879048193; break; 
-                case 564: bitm1 = -2013265921; break; 
-                case 565: bitm1 = -2080374785; break; 
-                case 566: bitm1 = -2113929217; break; 
-                case 567: bitm1 = -2130706433; break; 
-                case 568: bitm1 = -2139095041; break; 
-                case 569: bitm1 = -2143289345; break; 
-                case 570: bitm1 = -2145386497; break; 
-                case 571: bitm1 = -2146435073; break; 
-                case 572: bitm1 = -2146959361; break; 
-                case 573: bitm1 = -2147221505; break; 
-                case 574: bitm1 = -2147352577; break; 
-                case 575: bitm1 = -2147418113; break; 
-                case 594: bitm1 = -536870913; break; 
-                case 595: bitm1 = -805306369; break; 
-                case 596: bitm1 = -939524097; break; 
-                case 597: bitm1 = -1006632961; break; 
-                case 598: bitm1 = -1040187393; break; 
-                case 599: bitm1 = -1056964609; break; 
-                case 600: bitm1 = -1065353217; break; 
-                case 601: bitm1 = -1069547521; break; 
-                case 602: bitm1 = -1071644673; break; 
-                case 603: bitm1 = -1072693249; break; 
-                case 604: bitm1 = -1073217537; break; 
-                case 605: bitm1 = -1073479681; break; 
-                case 606: bitm1 = -1073610753; break; 
-                case 607: bitm1 = -1073676289; break; 
-                case 627: bitm1 = -268435457; break; 
-                case 628: bitm1 = -402653185; break; 
-                case 629: bitm1 = -469762049; break; 
-                case 630: bitm1 = -503316481; break; 
-                case 631: bitm1 = -520093697; break; 
-                case 632: bitm1 = -528482305; break; 
-                case 633: bitm1 = -532676609; break; 
-                case 634: bitm1 = -534773761; break; 
-                case 635: bitm1 = -535822337; break; 
-                case 636: bitm1 = -536346625; break; 
-                case 637: bitm1 = -536608769; break; 
-                case 638: bitm1 = -536739841; break; 
-                case 639: bitm1 = -536805377; break; 
-                case 660: bitm1 = -134217729; break; 
-                case 661: bitm1 = -201326593; break; 
-                case 662: bitm1 = -234881025; break; 
-                case 663: bitm1 = -251658241; break; 
-                case 664: bitm1 = -260046849; break; 
-                case 665: bitm1 = -264241153; break; 
-                case 666: bitm1 = -266338305; break; 
-                case 667: bitm1 = -267386881; break; 
-                case 668: bitm1 = -267911169; break; 
-                case 669: bitm1 = -268173313; break; 
-                case 670: bitm1 = -268304385; break; 
-                case 671: bitm1 = -268369921; break; 
-                case 693: bitm1 = -67108865; break; 
-                case 694: bitm1 = -100663297; break; 
-                case 695: bitm1 = -117440513; break; 
-                case 696: bitm1 = -125829121; break; 
-                case 697: bitm1 = -130023425; break; 
-                case 698: bitm1 = -132120577; break; 
-                case 699: bitm1 = -133169153; break; 
-                case 700: bitm1 = -133693441; break; 
-                case 701: bitm1 = -133955585; break; 
-                case 702: bitm1 = -134086657; break; 
-                case 703: bitm1 = -134152193; break; 
-                case 726: bitm1 = -33554433; break; 
-                case 727: bitm1 = -50331649; break; 
-                case 728: bitm1 = -58720257; break; 
-                case 729: bitm1 = -62914561; break; 
-                case 730: bitm1 = -65011713; break; 
-                case 731: bitm1 = -66060289; break; 
-                case 732: bitm1 = -66584577; break; 
-                case 733: bitm1 = -66846721; break; 
-                case 734: bitm1 = -66977793; break; 
-                case 735: bitm1 = -67043329; break; 
-                case 759: bitm1 = -16777217; break; 
-                case 760: bitm1 = -25165825; break; 
-                case 761: bitm1 = -29360129; break; 
-                case 762: bitm1 = -31457281; break; 
-                case 763: bitm1 = -32505857; break; 
-                case 764: bitm1 = -33030145; break; 
-                case 765: bitm1 = -33292289; break; 
-                case 766: bitm1 = -33423361; break; 
-                case 767: bitm1 = -33488897; break; 
-                case 792: bitm1 = -8388609; break; 
-                case 793: bitm1 = -12582913; break; 
-                case 794: bitm1 = -14680065; break; 
-                case 795: bitm1 = -15728641; break; 
-                case 796: bitm1 = -16252929; break; 
-                case 797: bitm1 = -16515073; break; 
-                case 798: bitm1 = -16646145; break; 
-                case 799: bitm1 = -16711681; break; 
-                case 825: bitm1 = -4194305; break; 
-                case 826: bitm1 = -6291457; break; 
-                case 827: bitm1 = -7340033; break; 
-                case 828: bitm1 = -7864321; break; 
-                case 829: bitm1 = -8126465; break; 
-                case 830: bitm1 = -8257537; break; 
-                case 831: bitm1 = -8323073; break; 
-                case 858: bitm1 = -2097153; break; 
-                case 859: bitm1 = -3145729; break; 
-                case 860: bitm1 = -3670017; break; 
-                case 861: bitm1 = -3932161; break; 
-                case 862: bitm1 = -4063233; break; 
-                case 863: bitm1 = -4128769; break; 
-                case 891: bitm1 = -1048577; break; 
-                case 892: bitm1 = -1572865; break; 
-                case 893: bitm1 = -1835009; break; 
-                case 894: bitm1 = -1966081; break; 
-                case 895: bitm1 = -2031617; break; 
-                case 924: bitm1 = -524289; break; 
-                case 925: bitm1 = -786433; break; 
-                case 926: bitm1 = -917505; break; 
-                case 927: bitm1 = -983041; break; 
-                case 957: bitm1 = -262145; break; 
-                case 958: bitm1 = -393217; break; 
-                case 959: bitm1 = -458753; break; 
-                case 990: bitm1 = -131073; break; 
-                case 991: bitm1 = -196609; break; 
-                case 1023: bitm1 = -65537; break;
-            }    
-            */
-            // Inline switch statement
-            // int bitm2 = bitmask2Write(0, integerBitEnd);
-            int bitm2 = 0;
-            switch (integerBitEnd) {
-                case 0: bitm2 = -32769; break; 
-                case 1: bitm2 = -49153; break; 
-                case 2: bitm2 = -57345; break; 
-                case 3: bitm2 = -61441; break; 
-                case 4: bitm2 = -63489; break; 
-                case 5: bitm2 = -64513; break; 
-                case 6: bitm2 = -65025; break; 
-                case 7: bitm2 = -65281; break; 
-                case 8: bitm2 = -65409; break; 
-                case 9: bitm2 = -65473; break; 
-                case 10: bitm2 = -65505; break; 
-                case 11: bitm2 = -65521; break; 
-                case 12: bitm2 = -65529; break; 
-                case 13: bitm2 = -65533; break; 
-                case 14: bitm2 = -65535; break; 
-                case 15: bitm2 = -65536; break; 
-                case 16: bitm2 = -2147418113; break; 
-                case 17: bitm2 = -1073676289; break; 
-                case 18: bitm2 = -536805377; break; 
-                case 19: bitm2 = -268369921; break; 
-                case 20: bitm2 = -134152193; break; 
-                case 21: bitm2 = -67043329; break; 
-                case 22: bitm2 = -33488897; break; 
-                case 23: bitm2 = -16711681; break; 
-                case 24: bitm2 = -8323073; break; 
-                case 25: bitm2 = -4128769; break; 
-                case 26: bitm2 = -2031617; break; 
-                case 27: bitm2 = -983041; break; 
-                case 28: bitm2 = -458753; break; 
-                case 29: bitm2 = -196609; break; 
-                case 30: bitm2 = -65537; break; 
-                case 31: bitm2 = -1; break; 
-                case 33: bitm2 = -16385; break; 
-                case 34: bitm2 = -24577; break; 
-                case 35: bitm2 = -28673; break; 
-                case 36: bitm2 = -30721; break; 
-                case 37: bitm2 = -31745; break; 
-                case 38: bitm2 = -32257; break; 
-                case 39: bitm2 = -32513; break; 
-                case 40: bitm2 = -32641; break; 
-                case 41: bitm2 = -32705; break; 
-                case 42: bitm2 = -32737; break; 
-                case 43: bitm2 = -32753; break; 
-                case 44: bitm2 = -32761; break; 
-                case 45: bitm2 = -32765; break; 
-                case 46: bitm2 = -32767; break; 
-                case 47: bitm2 = -32768; break; 
-                case 48: bitm2 = -2147450881; break; 
-                case 49: bitm2 = -1073709057; break; 
-                case 50: bitm2 = -536838145; break; 
-                case 51: bitm2 = -268402689; break; 
-                case 52: bitm2 = -134184961; break; 
-                case 53: bitm2 = -67076097; break; 
-                case 54: bitm2 = -33521665; break; 
-                case 55: bitm2 = -16744449; break; 
-                case 56: bitm2 = -8355841; break; 
-                case 57: bitm2 = -4161537; break; 
-                case 58: bitm2 = -2064385; break; 
-                case 59: bitm2 = -1015809; break; 
-                case 60: bitm2 = -491521; break; 
-                case 61: bitm2 = -229377; break; 
-                case 62: bitm2 = -98305; break; 
-                case 63: bitm2 = -32769; break; 
-                case 66: bitm2 = -8193; break; 
-                case 67: bitm2 = -12289; break; 
-                case 68: bitm2 = -14337; break; 
-                case 69: bitm2 = -15361; break; 
-                case 70: bitm2 = -15873; break; 
-                case 71: bitm2 = -16129; break; 
-                case 72: bitm2 = -16257; break; 
-                case 73: bitm2 = -16321; break; 
-                case 74: bitm2 = -16353; break; 
-                case 75: bitm2 = -16369; break; 
-                case 76: bitm2 = -16377; break; 
-                case 77: bitm2 = -16381; break; 
-                case 78: bitm2 = -16383; break; 
-                case 79: bitm2 = -16384; break; 
-                case 80: bitm2 = -2147467265; break; 
-                case 81: bitm2 = -1073725441; break; 
-                case 82: bitm2 = -536854529; break; 
-                case 83: bitm2 = -268419073; break; 
-                case 84: bitm2 = -134201345; break; 
-                case 85: bitm2 = -67092481; break; 
-                case 86: bitm2 = -33538049; break; 
-                case 87: bitm2 = -16760833; break; 
-                case 88: bitm2 = -8372225; break; 
-                case 89: bitm2 = -4177921; break; 
-                case 90: bitm2 = -2080769; break; 
-                case 91: bitm2 = -1032193; break; 
-                case 92: bitm2 = -507905; break; 
-                case 93: bitm2 = -245761; break; 
-                case 94: bitm2 = -114689; break; 
-                case 95: bitm2 = -49153; break; 
-                case 99: bitm2 = -4097; break; 
-                case 100: bitm2 = -6145; break; 
-                case 101: bitm2 = -7169; break; 
-                case 102: bitm2 = -7681; break; 
-                case 103: bitm2 = -7937; break; 
-                case 104: bitm2 = -8065; break; 
-                case 105: bitm2 = -8129; break; 
-                case 106: bitm2 = -8161; break; 
-                case 107: bitm2 = -8177; break; 
-                case 108: bitm2 = -8185; break; 
-                case 109: bitm2 = -8189; break; 
-                case 110: bitm2 = -8191; break; 
-                case 111: bitm2 = -8192; break; 
-                case 112: bitm2 = -2147475457; break; 
-                case 113: bitm2 = -1073733633; break; 
-                case 114: bitm2 = -536862721; break; 
-                case 115: bitm2 = -268427265; break; 
-                case 116: bitm2 = -134209537; break; 
-                case 117: bitm2 = -67100673; break; 
-                case 118: bitm2 = -33546241; break; 
-                case 119: bitm2 = -16769025; break; 
-                case 120: bitm2 = -8380417; break; 
-                case 121: bitm2 = -4186113; break; 
-                case 122: bitm2 = -2088961; break; 
-                case 123: bitm2 = -1040385; break; 
-                case 124: bitm2 = -516097; break; 
-                case 125: bitm2 = -253953; break; 
-                case 126: bitm2 = -122881; break; 
-                case 127: bitm2 = -57345; break; 
-                case 132: bitm2 = -2049; break; 
-                case 133: bitm2 = -3073; break; 
-                case 134: bitm2 = -3585; break; 
-                case 135: bitm2 = -3841; break; 
-                case 136: bitm2 = -3969; break; 
-                case 137: bitm2 = -4033; break; 
-                case 138: bitm2 = -4065; break; 
-                case 139: bitm2 = -4081; break; 
-                case 140: bitm2 = -4089; break; 
-                case 141: bitm2 = -4093; break; 
-                case 142: bitm2 = -4095; break; 
-                case 143: bitm2 = -4096; break; 
-                case 144: bitm2 = -2147479553; break; 
-                case 145: bitm2 = -1073737729; break; 
-                case 146: bitm2 = -536866817; break; 
-                case 147: bitm2 = -268431361; break; 
-                case 148: bitm2 = -134213633; break; 
-                case 149: bitm2 = -67104769; break; 
-                case 150: bitm2 = -33550337; break; 
-                case 151: bitm2 = -16773121; break; 
-                case 152: bitm2 = -8384513; break; 
-                case 153: bitm2 = -4190209; break; 
-                case 154: bitm2 = -2093057; break; 
-                case 155: bitm2 = -1044481; break; 
-                case 156: bitm2 = -520193; break; 
-                case 157: bitm2 = -258049; break; 
-                case 158: bitm2 = -126977; break; 
-                case 159: bitm2 = -61441; break; 
-                case 165: bitm2 = -1025; break; 
-                case 166: bitm2 = -1537; break; 
-                case 167: bitm2 = -1793; break; 
-                case 168: bitm2 = -1921; break; 
-                case 169: bitm2 = -1985; break; 
-                case 170: bitm2 = -2017; break; 
-                case 171: bitm2 = -2033; break; 
-                case 172: bitm2 = -2041; break; 
-                case 173: bitm2 = -2045; break; 
-                case 174: bitm2 = -2047; break; 
-                case 175: bitm2 = -2048; break; 
-                case 176: bitm2 = -2147481601; break; 
-                case 177: bitm2 = -1073739777; break; 
-                case 178: bitm2 = -536868865; break; 
-                case 179: bitm2 = -268433409; break; 
-                case 180: bitm2 = -134215681; break; 
-                case 181: bitm2 = -67106817; break; 
-                case 182: bitm2 = -33552385; break; 
-                case 183: bitm2 = -16775169; break; 
-                case 184: bitm2 = -8386561; break; 
-                case 185: bitm2 = -4192257; break; 
-                case 186: bitm2 = -2095105; break; 
-                case 187: bitm2 = -1046529; break; 
-                case 188: bitm2 = -522241; break; 
-                case 189: bitm2 = -260097; break; 
-                case 190: bitm2 = -129025; break; 
-                case 191: bitm2 = -63489; break; 
-                case 198: bitm2 = -513; break; 
-                case 199: bitm2 = -769; break; 
-                case 200: bitm2 = -897; break; 
-                case 201: bitm2 = -961; break; 
-                case 202: bitm2 = -993; break; 
-                case 203: bitm2 = -1009; break; 
-                case 204: bitm2 = -1017; break; 
-                case 205: bitm2 = -1021; break; 
-                case 206: bitm2 = -1023; break; 
-                case 207: bitm2 = -1024; break; 
-                case 208: bitm2 = -2147482625; break; 
-                case 209: bitm2 = -1073740801; break; 
-                case 210: bitm2 = -536869889; break; 
-                case 211: bitm2 = -268434433; break; 
-                case 212: bitm2 = -134216705; break; 
-                case 213: bitm2 = -67107841; break; 
-                case 214: bitm2 = -33553409; break; 
-                case 215: bitm2 = -16776193; break; 
-                case 216: bitm2 = -8387585; break; 
-                case 217: bitm2 = -4193281; break; 
-                case 218: bitm2 = -2096129; break; 
-                case 219: bitm2 = -1047553; break; 
-                case 220: bitm2 = -523265; break; 
-                case 221: bitm2 = -261121; break; 
-                case 222: bitm2 = -130049; break; 
-                case 223: bitm2 = -64513; break; 
-                case 231: bitm2 = -257; break; 
-                case 232: bitm2 = -385; break; 
-                case 233: bitm2 = -449; break; 
-                case 234: bitm2 = -481; break; 
-                case 235: bitm2 = -497; break; 
-                case 236: bitm2 = -505; break; 
-                case 237: bitm2 = -509; break; 
-                case 238: bitm2 = -511; break; 
-                case 239: bitm2 = -512; break; 
-                case 240: bitm2 = -2147483137; break; 
-                case 241: bitm2 = -1073741313; break; 
-                case 242: bitm2 = -536870401; break; 
-                case 243: bitm2 = -268434945; break; 
-                case 244: bitm2 = -134217217; break; 
-                case 245: bitm2 = -67108353; break; 
-                case 246: bitm2 = -33553921; break; 
-                case 247: bitm2 = -16776705; break; 
-                case 248: bitm2 = -8388097; break; 
-                case 249: bitm2 = -4193793; break; 
-                case 250: bitm2 = -2096641; break; 
-                case 251: bitm2 = -1048065; break; 
-                case 252: bitm2 = -523777; break; 
-                case 253: bitm2 = -261633; break; 
-                case 254: bitm2 = -130561; break; 
-                case 255: bitm2 = -65025; break; 
-                case 264: bitm2 = -129; break; 
-                case 265: bitm2 = -193; break; 
-                case 266: bitm2 = -225; break; 
-                case 267: bitm2 = -241; break; 
-                case 268: bitm2 = -249; break; 
-                case 269: bitm2 = -253; break; 
-                case 270: bitm2 = -255; break; 
-                case 271: bitm2 = -256; break; 
-                case 272: bitm2 = -2147483393; break; 
-                case 273: bitm2 = -1073741569; break; 
-                case 274: bitm2 = -536870657; break; 
-                case 275: bitm2 = -268435201; break; 
-                case 276: bitm2 = -134217473; break; 
-                case 277: bitm2 = -67108609; break; 
-                case 278: bitm2 = -33554177; break; 
-                case 279: bitm2 = -16776961; break; 
-                case 280: bitm2 = -8388353; break; 
-                case 281: bitm2 = -4194049; break; 
-                case 282: bitm2 = -2096897; break; 
-                case 283: bitm2 = -1048321; break; 
-                case 284: bitm2 = -524033; break; 
-                case 285: bitm2 = -261889; break; 
-                case 286: bitm2 = -130817; break; 
-                case 287: bitm2 = -65281; break; 
-                case 297: bitm2 = -65; break; 
-                case 298: bitm2 = -97; break; 
-                case 299: bitm2 = -113; break; 
-                case 300: bitm2 = -121; break; 
-                case 301: bitm2 = -125; break; 
-                case 302: bitm2 = -127; break; 
-                case 303: bitm2 = -128; break; 
-                case 304: bitm2 = -2147483521; break; 
-                case 305: bitm2 = -1073741697; break; 
-                case 306: bitm2 = -536870785; break; 
-                case 307: bitm2 = -268435329; break; 
-                case 308: bitm2 = -134217601; break; 
-                case 309: bitm2 = -67108737; break; 
-                case 310: bitm2 = -33554305; break; 
-                case 311: bitm2 = -16777089; break; 
-                case 312: bitm2 = -8388481; break; 
-                case 313: bitm2 = -4194177; break; 
-                case 314: bitm2 = -2097025; break; 
-                case 315: bitm2 = -1048449; break; 
-                case 316: bitm2 = -524161; break; 
-                case 317: bitm2 = -262017; break; 
-                case 318: bitm2 = -130945; break; 
-                case 319: bitm2 = -65409; break; 
-                case 330: bitm2 = -33; break; 
-                case 331: bitm2 = -49; break; 
-                case 332: bitm2 = -57; break; 
-                case 333: bitm2 = -61; break; 
-                case 334: bitm2 = -63; break; 
-                case 335: bitm2 = -64; break; 
-                case 336: bitm2 = -2147483585; break; 
-                case 337: bitm2 = -1073741761; break; 
-                case 338: bitm2 = -536870849; break; 
-                case 339: bitm2 = -268435393; break; 
-                case 340: bitm2 = -134217665; break; 
-                case 341: bitm2 = -67108801; break; 
-                case 342: bitm2 = -33554369; break; 
-                case 343: bitm2 = -16777153; break; 
-                case 344: bitm2 = -8388545; break; 
-                case 345: bitm2 = -4194241; break; 
-                case 346: bitm2 = -2097089; break; 
-                case 347: bitm2 = -1048513; break; 
-                case 348: bitm2 = -524225; break; 
-                case 349: bitm2 = -262081; break; 
-                case 350: bitm2 = -131009; break; 
-                case 351: bitm2 = -65473; break; 
-                case 363: bitm2 = -17; break; 
-                case 364: bitm2 = -25; break; 
-                case 365: bitm2 = -29; break; 
-                case 366: bitm2 = -31; break; 
-                case 367: bitm2 = -32; break; 
-                case 368: bitm2 = -2147483617; break; 
-                case 369: bitm2 = -1073741793; break; 
-                case 370: bitm2 = -536870881; break; 
-                case 371: bitm2 = -268435425; break; 
-                case 372: bitm2 = -134217697; break; 
-                case 373: bitm2 = -67108833; break; 
-                case 374: bitm2 = -33554401; break; 
-                case 375: bitm2 = -16777185; break; 
-                case 376: bitm2 = -8388577; break; 
-                case 377: bitm2 = -4194273; break; 
-                case 378: bitm2 = -2097121; break; 
-                case 379: bitm2 = -1048545; break; 
-                case 380: bitm2 = -524257; break; 
-                case 381: bitm2 = -262113; break; 
-                case 382: bitm2 = -131041; break; 
-                case 383: bitm2 = -65505; break; 
-                case 396: bitm2 = -9; break; 
-                case 397: bitm2 = -13; break; 
-                case 398: bitm2 = -15; break; 
-                case 399: bitm2 = -16; break; 
-                case 400: bitm2 = -2147483633; break; 
-                case 401: bitm2 = -1073741809; break; 
-                case 402: bitm2 = -536870897; break; 
-                case 403: bitm2 = -268435441; break; 
-                case 404: bitm2 = -134217713; break; 
-                case 405: bitm2 = -67108849; break; 
-                case 406: bitm2 = -33554417; break; 
-                case 407: bitm2 = -16777201; break; 
-                case 408: bitm2 = -8388593; break; 
-                case 409: bitm2 = -4194289; break; 
-                case 410: bitm2 = -2097137; break; 
-                case 411: bitm2 = -1048561; break; 
-                case 412: bitm2 = -524273; break; 
-                case 413: bitm2 = -262129; break; 
-                case 414: bitm2 = -131057; break; 
-                case 415: bitm2 = -65521; break; 
-                case 429: bitm2 = -5; break; 
-                case 430: bitm2 = -7; break; 
-                case 431: bitm2 = -8; break; 
-                case 432: bitm2 = -2147483641; break; 
-                case 433: bitm2 = -1073741817; break; 
-                case 434: bitm2 = -536870905; break; 
-                case 435: bitm2 = -268435449; break; 
-                case 436: bitm2 = -134217721; break; 
-                case 437: bitm2 = -67108857; break; 
-                case 438: bitm2 = -33554425; break; 
-                case 439: bitm2 = -16777209; break; 
-                case 440: bitm2 = -8388601; break; 
-                case 441: bitm2 = -4194297; break; 
-                case 442: bitm2 = -2097145; break; 
-                case 443: bitm2 = -1048569; break; 
-                case 444: bitm2 = -524281; break; 
-                case 445: bitm2 = -262137; break; 
-                case 446: bitm2 = -131065; break; 
-                case 447: bitm2 = -65529; break; 
-                case 462: bitm2 = -3; break; 
-                case 463: bitm2 = -4; break; 
-                case 464: bitm2 = -2147483645; break; 
-                case 465: bitm2 = -1073741821; break; 
-                case 466: bitm2 = -536870909; break; 
-                case 467: bitm2 = -268435453; break; 
-                case 468: bitm2 = -134217725; break; 
-                case 469: bitm2 = -67108861; break; 
-                case 470: bitm2 = -33554429; break; 
-                case 471: bitm2 = -16777213; break; 
-                case 472: bitm2 = -8388605; break; 
-                case 473: bitm2 = -4194301; break; 
-                case 474: bitm2 = -2097149; break; 
-                case 475: bitm2 = -1048573; break; 
-                case 476: bitm2 = -524285; break; 
-                case 477: bitm2 = -262141; break; 
-                case 478: bitm2 = -131069; break; 
-                case 479: bitm2 = -65533; break; 
-                case 495: bitm2 = -2; break; 
-                case 496: bitm2 = -2147483647; break; 
-                case 497: bitm2 = -1073741823; break; 
-                case 498: bitm2 = -536870911; break; 
-                case 499: bitm2 = -268435455; break; 
-                case 500: bitm2 = -134217727; break; 
-                case 501: bitm2 = -67108863; break; 
-                case 502: bitm2 = -33554431; break; 
-                case 503: bitm2 = -16777215; break; 
-                case 504: bitm2 = -8388607; break; 
-                case 505: bitm2 = -4194303; break; 
-                case 506: bitm2 = -2097151; break; 
-                case 507: bitm2 = -1048575; break; 
-                case 508: bitm2 = -524287; break; 
-                case 509: bitm2 = -262143; break; 
-                case 510: bitm2 = -131071; break; 
-                case 511: bitm2 = -65535; break; 
-                case 528: bitm2 = 2147483647; break; 
-                case 529: bitm2 = 1073741823; break; 
-                case 530: bitm2 = 536870911; break; 
-                case 531: bitm2 = 268435455; break; 
-                case 532: bitm2 = 134217727; break; 
-                case 533: bitm2 = 67108863; break; 
-                case 534: bitm2 = 33554431; break; 
-                case 535: bitm2 = 16777215; break; 
-                case 536: bitm2 = 8388607; break; 
-                case 537: bitm2 = 4194303; break; 
-                case 538: bitm2 = 2097151; break; 
-                case 539: bitm2 = 1048575; break; 
-                case 540: bitm2 = 524287; break; 
-                case 541: bitm2 = 262143; break; 
-                case 542: bitm2 = 131071; break; 
-                case 543: bitm2 = 65535; break; 
-                case 561: bitm2 = -1073741825; break; 
-                case 562: bitm2 = -1610612737; break; 
-                case 563: bitm2 = -1879048193; break; 
-                case 564: bitm2 = -2013265921; break; 
-                case 565: bitm2 = -2080374785; break; 
-                case 566: bitm2 = -2113929217; break; 
-                case 567: bitm2 = -2130706433; break; 
-                case 568: bitm2 = -2139095041; break; 
-                case 569: bitm2 = -2143289345; break; 
-                case 570: bitm2 = -2145386497; break; 
-                case 571: bitm2 = -2146435073; break; 
-                case 572: bitm2 = -2146959361; break; 
-                case 573: bitm2 = -2147221505; break; 
-                case 574: bitm2 = -2147352577; break; 
-                case 575: bitm2 = -2147418113; break; 
-                case 594: bitm2 = -536870913; break; 
-                case 595: bitm2 = -805306369; break; 
-                case 596: bitm2 = -939524097; break; 
-                case 597: bitm2 = -1006632961; break; 
-                case 598: bitm2 = -1040187393; break; 
-                case 599: bitm2 = -1056964609; break; 
-                case 600: bitm2 = -1065353217; break; 
-                case 601: bitm2 = -1069547521; break; 
-                case 602: bitm2 = -1071644673; break; 
-                case 603: bitm2 = -1072693249; break; 
-                case 604: bitm2 = -1073217537; break; 
-                case 605: bitm2 = -1073479681; break; 
-                case 606: bitm2 = -1073610753; break; 
-                case 607: bitm2 = -1073676289; break; 
-                case 627: bitm2 = -268435457; break; 
-                case 628: bitm2 = -402653185; break; 
-                case 629: bitm2 = -469762049; break; 
-                case 630: bitm2 = -503316481; break; 
-                case 631: bitm2 = -520093697; break; 
-                case 632: bitm2 = -528482305; break; 
-                case 633: bitm2 = -532676609; break; 
-                case 634: bitm2 = -534773761; break; 
-                case 635: bitm2 = -535822337; break; 
-                case 636: bitm2 = -536346625; break; 
-                case 637: bitm2 = -536608769; break; 
-                case 638: bitm2 = -536739841; break; 
-                case 639: bitm2 = -536805377; break; 
-                case 660: bitm2 = -134217729; break; 
-                case 661: bitm2 = -201326593; break; 
-                case 662: bitm2 = -234881025; break; 
-                case 663: bitm2 = -251658241; break; 
-                case 664: bitm2 = -260046849; break; 
-                case 665: bitm2 = -264241153; break; 
-                case 666: bitm2 = -266338305; break; 
-                case 667: bitm2 = -267386881; break; 
-                case 668: bitm2 = -267911169; break; 
-                case 669: bitm2 = -268173313; break; 
-                case 670: bitm2 = -268304385; break; 
-                case 671: bitm2 = -268369921; break; 
-                case 693: bitm2 = -67108865; break; 
-                case 694: bitm2 = -100663297; break; 
-                case 695: bitm2 = -117440513; break; 
-                case 696: bitm2 = -125829121; break; 
-                case 697: bitm2 = -130023425; break; 
-                case 698: bitm2 = -132120577; break; 
-                case 699: bitm2 = -133169153; break; 
-                case 700: bitm2 = -133693441; break; 
-                case 701: bitm2 = -133955585; break; 
-                case 702: bitm2 = -134086657; break; 
-                case 703: bitm2 = -134152193; break; 
-                case 726: bitm2 = -33554433; break; 
-                case 727: bitm2 = -50331649; break; 
-                case 728: bitm2 = -58720257; break; 
-                case 729: bitm2 = -62914561; break; 
-                case 730: bitm2 = -65011713; break; 
-                case 731: bitm2 = -66060289; break; 
-                case 732: bitm2 = -66584577; break; 
-                case 733: bitm2 = -66846721; break; 
-                case 734: bitm2 = -66977793; break; 
-                case 735: bitm2 = -67043329; break; 
-                case 759: bitm2 = -16777217; break; 
-                case 760: bitm2 = -25165825; break; 
-                case 761: bitm2 = -29360129; break; 
-                case 762: bitm2 = -31457281; break; 
-                case 763: bitm2 = -32505857; break; 
-                case 764: bitm2 = -33030145; break; 
-                case 765: bitm2 = -33292289; break; 
-                case 766: bitm2 = -33423361; break; 
-                case 767: bitm2 = -33488897; break; 
-                case 792: bitm2 = -8388609; break; 
-                case 793: bitm2 = -12582913; break; 
-                case 794: bitm2 = -14680065; break; 
-                case 795: bitm2 = -15728641; break; 
-                case 796: bitm2 = -16252929; break; 
-                case 797: bitm2 = -16515073; break; 
-                case 798: bitm2 = -16646145; break; 
-                case 799: bitm2 = -16711681; break; 
-                case 825: bitm2 = -4194305; break; 
-                case 826: bitm2 = -6291457; break; 
-                case 827: bitm2 = -7340033; break; 
-                case 828: bitm2 = -7864321; break; 
-                case 829: bitm2 = -8126465; break; 
-                case 830: bitm2 = -8257537; break; 
-                case 831: bitm2 = -8323073; break; 
-                case 858: bitm2 = -2097153; break; 
-                case 859: bitm2 = -3145729; break; 
-                case 860: bitm2 = -3670017; break; 
-                case 861: bitm2 = -3932161; break; 
-                case 862: bitm2 = -4063233; break; 
-                case 863: bitm2 = -4128769; break; 
-                case 891: bitm2 = -1048577; break; 
-                case 892: bitm2 = -1572865; break; 
-                case 893: bitm2 = -1835009; break; 
-                case 894: bitm2 = -1966081; break; 
-                case 895: bitm2 = -2031617; break; 
-                case 924: bitm2 = -524289; break; 
-                case 925: bitm2 = -786433; break; 
-                case 926: bitm2 = -917505; break; 
-                case 927: bitm2 = -983041; break; 
-                case 957: bitm2 = -262145; break; 
-                case 958: bitm2 = -393217; break; 
-                case 959: bitm2 = -458753; break; 
-                case 990: bitm2 = -131073; break; 
-                case 991: bitm2 = -196609; break; 
-                case 1023: bitm2 = -65537; break;
-            }    
-
-            int part2len = integerBitEnd + 1;            
-            rc.writeSharedArray(arrIndexStart, ((rc.readSharedArray(arrIndexStart) & bitm1) | (value >>> part2len)) & MAX_SHARED_ARRAY_ELEM);
-            rc.writeSharedArray(arrIndexEnd, ((rc.readSharedArray(arrIndexEnd) & bitm2) | (value << (SHARED_ARRAY_ELEM_SIZE-part2len))) & MAX_SHARED_ARRAY_ELEM);
-        }
-        return true;
     }
 
-    // Bits are zero indexed. Put the bit you want to begin reading read from,
-    // _ _ _ 0 1 0 _ , so reading 010, starting from the 0 would be readfromArray(3, 3)
-    // beginBit can be anywhere in [0, SHARED_ARRAY_TOTAL_BITS-1].
-    // numBits should be at most SHARED_ARRAY_ELEM_SIZE.
-    public int read(int beginBit, int numBits) throws GameActionException {
-        int arrIndexStart = beginBit>>>SHARED_ARRAY_ELEM_LOG2;
-        int sumMinusOne = numBits + beginBit - 1;
-        int arrIndexEnd = (sumMinusOne)>>>SHARED_ARRAY_ELEM_LOG2;
-
-        // integerBitBegin and integerBitEnd will be set in the switch statements, in-line for speedup
-        // int integerBitBegin = whichBit2(arrIndexStart, beginBit);
-        // int integerBitEnd = whichBit2(arrIndexEnd, sumMinusOne);
-        int integerBitBegin = 0;
-        int integerBitEnd = 0;
-        switch (beginBit + arrIndexStart*2000) {
-            case 0: integerBitBegin = 0; break;
-            case 1: integerBitBegin = 1; break;
-            case 2: integerBitBegin = 2; break;
-            case 3: integerBitBegin = 3; break;
-            case 4: integerBitBegin = 4; break;
-            case 5: integerBitBegin = 5; break;
-            case 6: integerBitBegin = 6; break;
-            case 7: integerBitBegin = 7; break;
-            case 8: integerBitBegin = 8; break;
-            case 9: integerBitBegin = 9; break;
-            case 10: integerBitBegin = 10; break;
-            case 11: integerBitBegin = 11; break;
-            case 12: integerBitBegin = 12; break;
-            case 13: integerBitBegin = 13; break;
-            case 14: integerBitBegin = 14; break;
-            case 15: integerBitBegin = 15; break;
-            case 2016: integerBitBegin = 0; break;
-            case 2017: integerBitBegin = 1; break;
-            case 2018: integerBitBegin = 2; break;
-            case 2019: integerBitBegin = 3; break;
-            case 2020: integerBitBegin = 4; break;
-            case 2021: integerBitBegin = 5; break;
-            case 2022: integerBitBegin = 6; break;
-            case 2023: integerBitBegin = 7; break;
-            case 2024: integerBitBegin = 8; break;
-            case 2025: integerBitBegin = 9; break;
-            case 2026: integerBitBegin = 10; break;
-            case 2027: integerBitBegin = 11; break;
-            case 2028: integerBitBegin = 12; break;
-            case 2029: integerBitBegin = 13; break;
-            case 2030: integerBitBegin = 14; break;
-            case 2031: integerBitBegin = 15; break;
-            case 4032: integerBitBegin = 0; break;
-            case 4033: integerBitBegin = 1; break;
-            case 4034: integerBitBegin = 2; break;
-            case 4035: integerBitBegin = 3; break;
-            case 4036: integerBitBegin = 4; break;
-            case 4037: integerBitBegin = 5; break;
-            case 4038: integerBitBegin = 6; break;
-            case 4039: integerBitBegin = 7; break;
-            case 4040: integerBitBegin = 8; break;
-            case 4041: integerBitBegin = 9; break;
-            case 4042: integerBitBegin = 10; break;
-            case 4043: integerBitBegin = 11; break;
-            case 4044: integerBitBegin = 12; break;
-            case 4045: integerBitBegin = 13; break;
-            case 4046: integerBitBegin = 14; break;
-            case 4047: integerBitBegin = 15; break;
-            case 6048: integerBitBegin = 0; break;
-            case 6049: integerBitBegin = 1; break;
-            case 6050: integerBitBegin = 2; break;
-            case 6051: integerBitBegin = 3; break;
-            case 6052: integerBitBegin = 4; break;
-            case 6053: integerBitBegin = 5; break;
-            case 6054: integerBitBegin = 6; break;
-            case 6055: integerBitBegin = 7; break;
-            case 6056: integerBitBegin = 8; break;
-            case 6057: integerBitBegin = 9; break;
-            case 6058: integerBitBegin = 10; break;
-            case 6059: integerBitBegin = 11; break;
-            case 6060: integerBitBegin = 12; break;
-            case 6061: integerBitBegin = 13; break;
-            case 6062: integerBitBegin = 14; break;
-            case 6063: integerBitBegin = 15; break;
-            case 8064: integerBitBegin = 0; break;
-            case 8065: integerBitBegin = 1; break;
-            case 8066: integerBitBegin = 2; break;
-            case 8067: integerBitBegin = 3; break;
-            case 8068: integerBitBegin = 4; break;
-            case 8069: integerBitBegin = 5; break;
-            case 8070: integerBitBegin = 6; break;
-            case 8071: integerBitBegin = 7; break;
-            case 8072: integerBitBegin = 8; break;
-            case 8073: integerBitBegin = 9; break;
-            case 8074: integerBitBegin = 10; break;
-            case 8075: integerBitBegin = 11; break;
-            case 8076: integerBitBegin = 12; break;
-            case 8077: integerBitBegin = 13; break;
-            case 8078: integerBitBegin = 14; break;
-            case 8079: integerBitBegin = 15; break;
-            case 10080: integerBitBegin = 0; break;
-            case 10081: integerBitBegin = 1; break;
-            case 10082: integerBitBegin = 2; break;
-            case 10083: integerBitBegin = 3; break;
-            case 10084: integerBitBegin = 4; break;
-            case 10085: integerBitBegin = 5; break;
-            case 10086: integerBitBegin = 6; break;
-            case 10087: integerBitBegin = 7; break;
-            case 10088: integerBitBegin = 8; break;
-            case 10089: integerBitBegin = 9; break;
-            case 10090: integerBitBegin = 10; break;
-            case 10091: integerBitBegin = 11; break;
-            case 10092: integerBitBegin = 12; break;
-            case 10093: integerBitBegin = 13; break;
-            case 10094: integerBitBegin = 14; break;
-            case 10095: integerBitBegin = 15; break;
-            case 12096: integerBitBegin = 0; break;
-            case 12097: integerBitBegin = 1; break;
-            case 12098: integerBitBegin = 2; break;
-            case 12099: integerBitBegin = 3; break;
-            case 12100: integerBitBegin = 4; break;
-            case 12101: integerBitBegin = 5; break;
-            case 12102: integerBitBegin = 6; break;
-            case 12103: integerBitBegin = 7; break;
-            case 12104: integerBitBegin = 8; break;
-            case 12105: integerBitBegin = 9; break;
-            case 12106: integerBitBegin = 10; break;
-            case 12107: integerBitBegin = 11; break;
-            case 12108: integerBitBegin = 12; break;
-            case 12109: integerBitBegin = 13; break;
-            case 12110: integerBitBegin = 14; break;
-            case 12111: integerBitBegin = 15; break;
-            case 14112: integerBitBegin = 0; break;
-            case 14113: integerBitBegin = 1; break;
-            case 14114: integerBitBegin = 2; break;
-            case 14115: integerBitBegin = 3; break;
-            case 14116: integerBitBegin = 4; break;
-            case 14117: integerBitBegin = 5; break;
-            case 14118: integerBitBegin = 6; break;
-            case 14119: integerBitBegin = 7; break;
-            case 14120: integerBitBegin = 8; break;
-            case 14121: integerBitBegin = 9; break;
-            case 14122: integerBitBegin = 10; break;
-            case 14123: integerBitBegin = 11; break;
-            case 14124: integerBitBegin = 12; break;
-            case 14125: integerBitBegin = 13; break;
-            case 14126: integerBitBegin = 14; break;
-            case 14127: integerBitBegin = 15; break;
-            case 16128: integerBitBegin = 0; break;
-            case 16129: integerBitBegin = 1; break;
-            case 16130: integerBitBegin = 2; break;
-            case 16131: integerBitBegin = 3; break;
-            case 16132: integerBitBegin = 4; break;
-            case 16133: integerBitBegin = 5; break;
-            case 16134: integerBitBegin = 6; break;
-            case 16135: integerBitBegin = 7; break;
-            case 16136: integerBitBegin = 8; break;
-            case 16137: integerBitBegin = 9; break;
-            case 16138: integerBitBegin = 10; break;
-            case 16139: integerBitBegin = 11; break;
-            case 16140: integerBitBegin = 12; break;
-            case 16141: integerBitBegin = 13; break;
-            case 16142: integerBitBegin = 14; break;
-            case 16143: integerBitBegin = 15; break;
-            case 18144: integerBitBegin = 0; break;
-            case 18145: integerBitBegin = 1; break;
-            case 18146: integerBitBegin = 2; break;
-            case 18147: integerBitBegin = 3; break;
-            case 18148: integerBitBegin = 4; break;
-            case 18149: integerBitBegin = 5; break;
-            case 18150: integerBitBegin = 6; break;
-            case 18151: integerBitBegin = 7; break;
-            case 18152: integerBitBegin = 8; break;
-            case 18153: integerBitBegin = 9; break;
-            case 18154: integerBitBegin = 10; break;
-            case 18155: integerBitBegin = 11; break;
-            case 18156: integerBitBegin = 12; break;
-            case 18157: integerBitBegin = 13; break;
-            case 18158: integerBitBegin = 14; break;
-            case 18159: integerBitBegin = 15; break;
-            case 20160: integerBitBegin = 0; break;
-            case 20161: integerBitBegin = 1; break;
-            case 20162: integerBitBegin = 2; break;
-            case 20163: integerBitBegin = 3; break;
-            case 20164: integerBitBegin = 4; break;
-            case 20165: integerBitBegin = 5; break;
-            case 20166: integerBitBegin = 6; break;
-            case 20167: integerBitBegin = 7; break;
-            case 20168: integerBitBegin = 8; break;
-            case 20169: integerBitBegin = 9; break;
-            case 20170: integerBitBegin = 10; break;
-            case 20171: integerBitBegin = 11; break;
-            case 20172: integerBitBegin = 12; break;
-            case 20173: integerBitBegin = 13; break;
-            case 20174: integerBitBegin = 14; break;
-            case 20175: integerBitBegin = 15; break;
-            case 22176: integerBitBegin = 0; break;
-            case 22177: integerBitBegin = 1; break;
-            case 22178: integerBitBegin = 2; break;
-            case 22179: integerBitBegin = 3; break;
-            case 22180: integerBitBegin = 4; break;
-            case 22181: integerBitBegin = 5; break;
-            case 22182: integerBitBegin = 6; break;
-            case 22183: integerBitBegin = 7; break;
-            case 22184: integerBitBegin = 8; break;
-            case 22185: integerBitBegin = 9; break;
-            case 22186: integerBitBegin = 10; break;
-            case 22187: integerBitBegin = 11; break;
-            case 22188: integerBitBegin = 12; break;
-            case 22189: integerBitBegin = 13; break;
-            case 22190: integerBitBegin = 14; break;
-            case 22191: integerBitBegin = 15; break;
-            case 24192: integerBitBegin = 0; break;
-            case 24193: integerBitBegin = 1; break;
-            case 24194: integerBitBegin = 2; break;
-            case 24195: integerBitBegin = 3; break;
-            case 24196: integerBitBegin = 4; break;
-            case 24197: integerBitBegin = 5; break;
-            case 24198: integerBitBegin = 6; break;
-            case 24199: integerBitBegin = 7; break;
-            case 24200: integerBitBegin = 8; break;
-            case 24201: integerBitBegin = 9; break;
-            case 24202: integerBitBegin = 10; break;
-            case 24203: integerBitBegin = 11; break;
-            case 24204: integerBitBegin = 12; break;
-            case 24205: integerBitBegin = 13; break;
-            case 24206: integerBitBegin = 14; break;
-            case 24207: integerBitBegin = 15; break;
-            case 26208: integerBitBegin = 0; break;
-            case 26209: integerBitBegin = 1; break;
-            case 26210: integerBitBegin = 2; break;
-            case 26211: integerBitBegin = 3; break;
-            case 26212: integerBitBegin = 4; break;
-            case 26213: integerBitBegin = 5; break;
-            case 26214: integerBitBegin = 6; break;
-            case 26215: integerBitBegin = 7; break;
-            case 26216: integerBitBegin = 8; break;
-            case 26217: integerBitBegin = 9; break;
-            case 26218: integerBitBegin = 10; break;
-            case 26219: integerBitBegin = 11; break;
-            case 26220: integerBitBegin = 12; break;
-            case 26221: integerBitBegin = 13; break;
-            case 26222: integerBitBegin = 14; break;
-            case 26223: integerBitBegin = 15; break;
-            case 28224: integerBitBegin = 0; break;
-            case 28225: integerBitBegin = 1; break;
-            case 28226: integerBitBegin = 2; break;
-            case 28227: integerBitBegin = 3; break;
-            case 28228: integerBitBegin = 4; break;
-            case 28229: integerBitBegin = 5; break;
-            case 28230: integerBitBegin = 6; break;
-            case 28231: integerBitBegin = 7; break;
-            case 28232: integerBitBegin = 8; break;
-            case 28233: integerBitBegin = 9; break;
-            case 28234: integerBitBegin = 10; break;
-            case 28235: integerBitBegin = 11; break;
-            case 28236: integerBitBegin = 12; break;
-            case 28237: integerBitBegin = 13; break;
-            case 28238: integerBitBegin = 14; break;
-            case 28239: integerBitBegin = 15; break;
-            case 30240: integerBitBegin = 0; break;
-            case 30241: integerBitBegin = 1; break;
-            case 30242: integerBitBegin = 2; break;
-            case 30243: integerBitBegin = 3; break;
-            case 30244: integerBitBegin = 4; break;
-            case 30245: integerBitBegin = 5; break;
-            case 30246: integerBitBegin = 6; break;
-            case 30247: integerBitBegin = 7; break;
-            case 30248: integerBitBegin = 8; break;
-            case 30249: integerBitBegin = 9; break;
-            case 30250: integerBitBegin = 10; break;
-            case 30251: integerBitBegin = 11; break;
-            case 30252: integerBitBegin = 12; break;
-            case 30253: integerBitBegin = 13; break;
-            case 30254: integerBitBegin = 14; break;
-            case 30255: integerBitBegin = 15; break;
-            case 32256: integerBitBegin = 0; break;
-            case 32257: integerBitBegin = 1; break;
-            case 32258: integerBitBegin = 2; break;
-            case 32259: integerBitBegin = 3; break;
-            case 32260: integerBitBegin = 4; break;
-            case 32261: integerBitBegin = 5; break;
-            case 32262: integerBitBegin = 6; break;
-            case 32263: integerBitBegin = 7; break;
-            case 32264: integerBitBegin = 8; break;
-            case 32265: integerBitBegin = 9; break;
-            case 32266: integerBitBegin = 10; break;
-            case 32267: integerBitBegin = 11; break;
-            case 32268: integerBitBegin = 12; break;
-            case 32269: integerBitBegin = 13; break;
-            case 32270: integerBitBegin = 14; break;
-            case 32271: integerBitBegin = 15; break;
-            case 34272: integerBitBegin = 0; break;
-            case 34273: integerBitBegin = 1; break;
-            case 34274: integerBitBegin = 2; break;
-            case 34275: integerBitBegin = 3; break;
-            case 34276: integerBitBegin = 4; break;
-            case 34277: integerBitBegin = 5; break;
-            case 34278: integerBitBegin = 6; break;
-            case 34279: integerBitBegin = 7; break;
-            case 34280: integerBitBegin = 8; break;
-            case 34281: integerBitBegin = 9; break;
-            case 34282: integerBitBegin = 10; break;
-            case 34283: integerBitBegin = 11; break;
-            case 34284: integerBitBegin = 12; break;
-            case 34285: integerBitBegin = 13; break;
-            case 34286: integerBitBegin = 14; break;
-            case 34287: integerBitBegin = 15; break;
-            case 36288: integerBitBegin = 0; break;
-            case 36289: integerBitBegin = 1; break;
-            case 36290: integerBitBegin = 2; break;
-            case 36291: integerBitBegin = 3; break;
-            case 36292: integerBitBegin = 4; break;
-            case 36293: integerBitBegin = 5; break;
-            case 36294: integerBitBegin = 6; break;
-            case 36295: integerBitBegin = 7; break;
-            case 36296: integerBitBegin = 8; break;
-            case 36297: integerBitBegin = 9; break;
-            case 36298: integerBitBegin = 10; break;
-            case 36299: integerBitBegin = 11; break;
-            case 36300: integerBitBegin = 12; break;
-            case 36301: integerBitBegin = 13; break;
-            case 36302: integerBitBegin = 14; break;
-            case 36303: integerBitBegin = 15; break;
-            case 38304: integerBitBegin = 0; break;
-            case 38305: integerBitBegin = 1; break;
-            case 38306: integerBitBegin = 2; break;
-            case 38307: integerBitBegin = 3; break;
-            case 38308: integerBitBegin = 4; break;
-            case 38309: integerBitBegin = 5; break;
-            case 38310: integerBitBegin = 6; break;
-            case 38311: integerBitBegin = 7; break;
-            case 38312: integerBitBegin = 8; break;
-            case 38313: integerBitBegin = 9; break;
-            case 38314: integerBitBegin = 10; break;
-            case 38315: integerBitBegin = 11; break;
-            case 38316: integerBitBegin = 12; break;
-            case 38317: integerBitBegin = 13; break;
-            case 38318: integerBitBegin = 14; break;
-            case 38319: integerBitBegin = 15; break;
-            case 40320: integerBitBegin = 0; break;
-            case 40321: integerBitBegin = 1; break;
-            case 40322: integerBitBegin = 2; break;
-            case 40323: integerBitBegin = 3; break;
-            case 40324: integerBitBegin = 4; break;
-            case 40325: integerBitBegin = 5; break;
-            case 40326: integerBitBegin = 6; break;
-            case 40327: integerBitBegin = 7; break;
-            case 40328: integerBitBegin = 8; break;
-            case 40329: integerBitBegin = 9; break;
-            case 40330: integerBitBegin = 10; break;
-            case 40331: integerBitBegin = 11; break;
-            case 40332: integerBitBegin = 12; break;
-            case 40333: integerBitBegin = 13; break;
-            case 40334: integerBitBegin = 14; break;
-            case 40335: integerBitBegin = 15; break;
-            case 42336: integerBitBegin = 0; break;
-            case 42337: integerBitBegin = 1; break;
-            case 42338: integerBitBegin = 2; break;
-            case 42339: integerBitBegin = 3; break;
-            case 42340: integerBitBegin = 4; break;
-            case 42341: integerBitBegin = 5; break;
-            case 42342: integerBitBegin = 6; break;
-            case 42343: integerBitBegin = 7; break;
-            case 42344: integerBitBegin = 8; break;
-            case 42345: integerBitBegin = 9; break;
-            case 42346: integerBitBegin = 10; break;
-            case 42347: integerBitBegin = 11; break;
-            case 42348: integerBitBegin = 12; break;
-            case 42349: integerBitBegin = 13; break;
-            case 42350: integerBitBegin = 14; break;
-            case 42351: integerBitBegin = 15; break;
-            case 44352: integerBitBegin = 0; break;
-            case 44353: integerBitBegin = 1; break;
-            case 44354: integerBitBegin = 2; break;
-            case 44355: integerBitBegin = 3; break;
-            case 44356: integerBitBegin = 4; break;
-            case 44357: integerBitBegin = 5; break;
-            case 44358: integerBitBegin = 6; break;
-            case 44359: integerBitBegin = 7; break;
-            case 44360: integerBitBegin = 8; break;
-            case 44361: integerBitBegin = 9; break;
-            case 44362: integerBitBegin = 10; break;
-            case 44363: integerBitBegin = 11; break;
-            case 44364: integerBitBegin = 12; break;
-            case 44365: integerBitBegin = 13; break;
-            case 44366: integerBitBegin = 14; break;
-            case 44367: integerBitBegin = 15; break;
-            case 46368: integerBitBegin = 0; break;
-            case 46369: integerBitBegin = 1; break;
-            case 46370: integerBitBegin = 2; break;
-            case 46371: integerBitBegin = 3; break;
-            case 46372: integerBitBegin = 4; break;
-            case 46373: integerBitBegin = 5; break;
-            case 46374: integerBitBegin = 6; break;
-            case 46375: integerBitBegin = 7; break;
-            case 46376: integerBitBegin = 8; break;
-            case 46377: integerBitBegin = 9; break;
-            case 46378: integerBitBegin = 10; break;
-            case 46379: integerBitBegin = 11; break;
-            case 46380: integerBitBegin = 12; break;
-            case 46381: integerBitBegin = 13; break;
-            case 46382: integerBitBegin = 14; break;
-            case 46383: integerBitBegin = 15; break;
-            case 48384: integerBitBegin = 0; break;
-            case 48385: integerBitBegin = 1; break;
-            case 48386: integerBitBegin = 2; break;
-            case 48387: integerBitBegin = 3; break;
-            case 48388: integerBitBegin = 4; break;
-            case 48389: integerBitBegin = 5; break;
-            case 48390: integerBitBegin = 6; break;
-            case 48391: integerBitBegin = 7; break;
-            case 48392: integerBitBegin = 8; break;
-            case 48393: integerBitBegin = 9; break;
-            case 48394: integerBitBegin = 10; break;
-            case 48395: integerBitBegin = 11; break;
-            case 48396: integerBitBegin = 12; break;
-            case 48397: integerBitBegin = 13; break;
-            case 48398: integerBitBegin = 14; break;
-            case 48399: integerBitBegin = 15; break;
-            case 50400: integerBitBegin = 0; break;
-            case 50401: integerBitBegin = 1; break;
-            case 50402: integerBitBegin = 2; break;
-            case 50403: integerBitBegin = 3; break;
-            case 50404: integerBitBegin = 4; break;
-            case 50405: integerBitBegin = 5; break;
-            case 50406: integerBitBegin = 6; break;
-            case 50407: integerBitBegin = 7; break;
-            case 50408: integerBitBegin = 8; break;
-            case 50409: integerBitBegin = 9; break;
-            case 50410: integerBitBegin = 10; break;
-            case 50411: integerBitBegin = 11; break;
-            case 50412: integerBitBegin = 12; break;
-            case 50413: integerBitBegin = 13; break;
-            case 50414: integerBitBegin = 14; break;
-            case 50415: integerBitBegin = 15; break;
-            case 52416: integerBitBegin = 0; break;
-            case 52417: integerBitBegin = 1; break;
-            case 52418: integerBitBegin = 2; break;
-            case 52419: integerBitBegin = 3; break;
-            case 52420: integerBitBegin = 4; break;
-            case 52421: integerBitBegin = 5; break;
-            case 52422: integerBitBegin = 6; break;
-            case 52423: integerBitBegin = 7; break;
-            case 52424: integerBitBegin = 8; break;
-            case 52425: integerBitBegin = 9; break;
-            case 52426: integerBitBegin = 10; break;
-            case 52427: integerBitBegin = 11; break;
-            case 52428: integerBitBegin = 12; break;
-            case 52429: integerBitBegin = 13; break;
-            case 52430: integerBitBegin = 14; break;
-            case 52431: integerBitBegin = 15; break;
-            case 54432: integerBitBegin = 0; break;
-            case 54433: integerBitBegin = 1; break;
-            case 54434: integerBitBegin = 2; break;
-            case 54435: integerBitBegin = 3; break;
-            case 54436: integerBitBegin = 4; break;
-            case 54437: integerBitBegin = 5; break;
-            case 54438: integerBitBegin = 6; break;
-            case 54439: integerBitBegin = 7; break;
-            case 54440: integerBitBegin = 8; break;
-            case 54441: integerBitBegin = 9; break;
-            case 54442: integerBitBegin = 10; break;
-            case 54443: integerBitBegin = 11; break;
-            case 54444: integerBitBegin = 12; break;
-            case 54445: integerBitBegin = 13; break;
-            case 54446: integerBitBegin = 14; break;
-            case 54447: integerBitBegin = 15; break;
-            case 56448: integerBitBegin = 0; break;
-            case 56449: integerBitBegin = 1; break;
-            case 56450: integerBitBegin = 2; break;
-            case 56451: integerBitBegin = 3; break;
-            case 56452: integerBitBegin = 4; break;
-            case 56453: integerBitBegin = 5; break;
-            case 56454: integerBitBegin = 6; break;
-            case 56455: integerBitBegin = 7; break;
-            case 56456: integerBitBegin = 8; break;
-            case 56457: integerBitBegin = 9; break;
-            case 56458: integerBitBegin = 10; break;
-            case 56459: integerBitBegin = 11; break;
-            case 56460: integerBitBegin = 12; break;
-            case 56461: integerBitBegin = 13; break;
-            case 56462: integerBitBegin = 14; break;
-            case 56463: integerBitBegin = 15; break;
-            case 58464: integerBitBegin = 0; break;
-            case 58465: integerBitBegin = 1; break;
-            case 58466: integerBitBegin = 2; break;
-            case 58467: integerBitBegin = 3; break;
-            case 58468: integerBitBegin = 4; break;
-            case 58469: integerBitBegin = 5; break;
-            case 58470: integerBitBegin = 6; break;
-            case 58471: integerBitBegin = 7; break;
-            case 58472: integerBitBegin = 8; break;
-            case 58473: integerBitBegin = 9; break;
-            case 58474: integerBitBegin = 10; break;
-            case 58475: integerBitBegin = 11; break;
-            case 58476: integerBitBegin = 12; break;
-            case 58477: integerBitBegin = 13; break;
-            case 58478: integerBitBegin = 14; break;
-            case 58479: integerBitBegin = 15; break;
-            case 60480: integerBitBegin = 0; break;
-            case 60481: integerBitBegin = 1; break;
-            case 60482: integerBitBegin = 2; break;
-            case 60483: integerBitBegin = 3; break;
-            case 60484: integerBitBegin = 4; break;
-            case 60485: integerBitBegin = 5; break;
-            case 60486: integerBitBegin = 6; break;
-            case 60487: integerBitBegin = 7; break;
-            case 60488: integerBitBegin = 8; break;
-            case 60489: integerBitBegin = 9; break;
-            case 60490: integerBitBegin = 10; break;
-            case 60491: integerBitBegin = 11; break;
-            case 60492: integerBitBegin = 12; break;
-            case 60493: integerBitBegin = 13; break;
-            case 60494: integerBitBegin = 14; break;
-            case 60495: integerBitBegin = 15; break;
-            case 62496: integerBitBegin = 0; break;
-            case 62497: integerBitBegin = 1; break;
-            case 62498: integerBitBegin = 2; break;
-            case 62499: integerBitBegin = 3; break;
-            case 62500: integerBitBegin = 4; break;
-            case 62501: integerBitBegin = 5; break;
-            case 62502: integerBitBegin = 6; break;
-            case 62503: integerBitBegin = 7; break;
-            case 62504: integerBitBegin = 8; break;
-            case 62505: integerBitBegin = 9; break;
-            case 62506: integerBitBegin = 10; break;
-            case 62507: integerBitBegin = 11; break;
-            case 62508: integerBitBegin = 12; break;
-            case 62509: integerBitBegin = 13; break;
-            case 62510: integerBitBegin = 14; break;
-            case 62511: integerBitBegin = 15; break;
-            case 64512: integerBitBegin = 0; break;
-            case 64513: integerBitBegin = 1; break;
-            case 64514: integerBitBegin = 2; break;
-            case 64515: integerBitBegin = 3; break;
-            case 64516: integerBitBegin = 4; break;
-            case 64517: integerBitBegin = 5; break;
-            case 64518: integerBitBegin = 6; break;
-            case 64519: integerBitBegin = 7; break;
-            case 64520: integerBitBegin = 8; break;
-            case 64521: integerBitBegin = 9; break;
-            case 64522: integerBitBegin = 10; break;
-            case 64523: integerBitBegin = 11; break;
-            case 64524: integerBitBegin = 12; break;
-            case 64525: integerBitBegin = 13; break;
-            case 64526: integerBitBegin = 14; break;
-            case 64527: integerBitBegin = 15; break;
-            case 66528: integerBitBegin = 0; break;
-            case 66529: integerBitBegin = 1; break;
-            case 66530: integerBitBegin = 2; break;
-            case 66531: integerBitBegin = 3; break;
-            case 66532: integerBitBegin = 4; break;
-            case 66533: integerBitBegin = 5; break;
-            case 66534: integerBitBegin = 6; break;
-            case 66535: integerBitBegin = 7; break;
-            case 66536: integerBitBegin = 8; break;
-            case 66537: integerBitBegin = 9; break;
-            case 66538: integerBitBegin = 10; break;
-            case 66539: integerBitBegin = 11; break;
-            case 66540: integerBitBegin = 12; break;
-            case 66541: integerBitBegin = 13; break;
-            case 66542: integerBitBegin = 14; break;
-            case 66543: integerBitBegin = 15; break;
-            case 68544: integerBitBegin = 0; break;
-            case 68545: integerBitBegin = 1; break;
-            case 68546: integerBitBegin = 2; break;
-            case 68547: integerBitBegin = 3; break;
-            case 68548: integerBitBegin = 4; break;
-            case 68549: integerBitBegin = 5; break;
-            case 68550: integerBitBegin = 6; break;
-            case 68551: integerBitBegin = 7; break;
-            case 68552: integerBitBegin = 8; break;
-            case 68553: integerBitBegin = 9; break;
-            case 68554: integerBitBegin = 10; break;
-            case 68555: integerBitBegin = 11; break;
-            case 68556: integerBitBegin = 12; break;
-            case 68557: integerBitBegin = 13; break;
-            case 68558: integerBitBegin = 14; break;
-            case 68559: integerBitBegin = 15; break;
-            case 70560: integerBitBegin = 0; break;
-            case 70561: integerBitBegin = 1; break;
-            case 70562: integerBitBegin = 2; break;
-            case 70563: integerBitBegin = 3; break;
-            case 70564: integerBitBegin = 4; break;
-            case 70565: integerBitBegin = 5; break;
-            case 70566: integerBitBegin = 6; break;
-            case 70567: integerBitBegin = 7; break;
-            case 70568: integerBitBegin = 8; break;
-            case 70569: integerBitBegin = 9; break;
-            case 70570: integerBitBegin = 10; break;
-            case 70571: integerBitBegin = 11; break;
-            case 70572: integerBitBegin = 12; break;
-            case 70573: integerBitBegin = 13; break;
-            case 70574: integerBitBegin = 14; break;
-            case 70575: integerBitBegin = 15; break;
-            case 72576: integerBitBegin = 0; break;
-            case 72577: integerBitBegin = 1; break;
-            case 72578: integerBitBegin = 2; break;
-            case 72579: integerBitBegin = 3; break;
-            case 72580: integerBitBegin = 4; break;
-            case 72581: integerBitBegin = 5; break;
-            case 72582: integerBitBegin = 6; break;
-            case 72583: integerBitBegin = 7; break;
-            case 72584: integerBitBegin = 8; break;
-            case 72585: integerBitBegin = 9; break;
-            case 72586: integerBitBegin = 10; break;
-            case 72587: integerBitBegin = 11; break;
-            case 72588: integerBitBegin = 12; break;
-            case 72589: integerBitBegin = 13; break;
-            case 72590: integerBitBegin = 14; break;
-            case 72591: integerBitBegin = 15; break;
-            case 74592: integerBitBegin = 0; break;
-            case 74593: integerBitBegin = 1; break;
-            case 74594: integerBitBegin = 2; break;
-            case 74595: integerBitBegin = 3; break;
-            case 74596: integerBitBegin = 4; break;
-            case 74597: integerBitBegin = 5; break;
-            case 74598: integerBitBegin = 6; break;
-            case 74599: integerBitBegin = 7; break;
-            case 74600: integerBitBegin = 8; break;
-            case 74601: integerBitBegin = 9; break;
-            case 74602: integerBitBegin = 10; break;
-            case 74603: integerBitBegin = 11; break;
-            case 74604: integerBitBegin = 12; break;
-            case 74605: integerBitBegin = 13; break;
-            case 74606: integerBitBegin = 14; break;
-            case 74607: integerBitBegin = 15; break;
-            case 76608: integerBitBegin = 0; break;
-            case 76609: integerBitBegin = 1; break;
-            case 76610: integerBitBegin = 2; break;
-            case 76611: integerBitBegin = 3; break;
-            case 76612: integerBitBegin = 4; break;
-            case 76613: integerBitBegin = 5; break;
-            case 76614: integerBitBegin = 6; break;
-            case 76615: integerBitBegin = 7; break;
-            case 76616: integerBitBegin = 8; break;
-            case 76617: integerBitBegin = 9; break;
-            case 76618: integerBitBegin = 10; break;
-            case 76619: integerBitBegin = 11; break;
-            case 76620: integerBitBegin = 12; break;
-            case 76621: integerBitBegin = 13; break;
-            case 76622: integerBitBegin = 14; break;
-            case 76623: integerBitBegin = 15; break;
-            case 78624: integerBitBegin = 0; break;
-            case 78625: integerBitBegin = 1; break;
-            case 78626: integerBitBegin = 2; break;
-            case 78627: integerBitBegin = 3; break;
-            case 78628: integerBitBegin = 4; break;
-            case 78629: integerBitBegin = 5; break;
-            case 78630: integerBitBegin = 6; break;
-            case 78631: integerBitBegin = 7; break;
-            case 78632: integerBitBegin = 8; break;
-            case 78633: integerBitBegin = 9; break;
-            case 78634: integerBitBegin = 10; break;
-            case 78635: integerBitBegin = 11; break;
-            case 78636: integerBitBegin = 12; break;
-            case 78637: integerBitBegin = 13; break;
-            case 78638: integerBitBegin = 14; break;
-            case 78639: integerBitBegin = 15; break;
-            case 80640: integerBitBegin = 0; break;
-            case 80641: integerBitBegin = 1; break;
-            case 80642: integerBitBegin = 2; break;
-            case 80643: integerBitBegin = 3; break;
-            case 80644: integerBitBegin = 4; break;
-            case 80645: integerBitBegin = 5; break;
-            case 80646: integerBitBegin = 6; break;
-            case 80647: integerBitBegin = 7; break;
-            case 80648: integerBitBegin = 8; break;
-            case 80649: integerBitBegin = 9; break;
-            case 80650: integerBitBegin = 10; break;
-            case 80651: integerBitBegin = 11; break;
-            case 80652: integerBitBegin = 12; break;
-            case 80653: integerBitBegin = 13; break;
-            case 80654: integerBitBegin = 14; break;
-            case 80655: integerBitBegin = 15; break;
-            case 82656: integerBitBegin = 0; break;
-            case 82657: integerBitBegin = 1; break;
-            case 82658: integerBitBegin = 2; break;
-            case 82659: integerBitBegin = 3; break;
-            case 82660: integerBitBegin = 4; break;
-            case 82661: integerBitBegin = 5; break;
-            case 82662: integerBitBegin = 6; break;
-            case 82663: integerBitBegin = 7; break;
-            case 82664: integerBitBegin = 8; break;
-            case 82665: integerBitBegin = 9; break;
-            case 82666: integerBitBegin = 10; break;
-            case 82667: integerBitBegin = 11; break;
-            case 82668: integerBitBegin = 12; break;
-            case 82669: integerBitBegin = 13; break;
-            case 82670: integerBitBegin = 14; break;
-            case 82671: integerBitBegin = 15; break;
-            case 84672: integerBitBegin = 0; break;
-            case 84673: integerBitBegin = 1; break;
-            case 84674: integerBitBegin = 2; break;
-            case 84675: integerBitBegin = 3; break;
-            case 84676: integerBitBegin = 4; break;
-            case 84677: integerBitBegin = 5; break;
-            case 84678: integerBitBegin = 6; break;
-            case 84679: integerBitBegin = 7; break;
-            case 84680: integerBitBegin = 8; break;
-            case 84681: integerBitBegin = 9; break;
-            case 84682: integerBitBegin = 10; break;
-            case 84683: integerBitBegin = 11; break;
-            case 84684: integerBitBegin = 12; break;
-            case 84685: integerBitBegin = 13; break;
-            case 84686: integerBitBegin = 14; break;
-            case 84687: integerBitBegin = 15; break;
-            case 86688: integerBitBegin = 0; break;
-            case 86689: integerBitBegin = 1; break;
-            case 86690: integerBitBegin = 2; break;
-            case 86691: integerBitBegin = 3; break;
-            case 86692: integerBitBegin = 4; break;
-            case 86693: integerBitBegin = 5; break;
-            case 86694: integerBitBegin = 6; break;
-            case 86695: integerBitBegin = 7; break;
-            case 86696: integerBitBegin = 8; break;
-            case 86697: integerBitBegin = 9; break;
-            case 86698: integerBitBegin = 10; break;
-            case 86699: integerBitBegin = 11; break;
-            case 86700: integerBitBegin = 12; break;
-            case 86701: integerBitBegin = 13; break;
-            case 86702: integerBitBegin = 14; break;
-            case 86703: integerBitBegin = 15; break;
-            case 88704: integerBitBegin = 0; break;
-            case 88705: integerBitBegin = 1; break;
-            case 88706: integerBitBegin = 2; break;
-            case 88707: integerBitBegin = 3; break;
-            case 88708: integerBitBegin = 4; break;
-            case 88709: integerBitBegin = 5; break;
-            case 88710: integerBitBegin = 6; break;
-            case 88711: integerBitBegin = 7; break;
-            case 88712: integerBitBegin = 8; break;
-            case 88713: integerBitBegin = 9; break;
-            case 88714: integerBitBegin = 10; break;
-            case 88715: integerBitBegin = 11; break;
-            case 88716: integerBitBegin = 12; break;
-            case 88717: integerBitBegin = 13; break;
-            case 88718: integerBitBegin = 14; break;
-            case 88719: integerBitBegin = 15; break;
-            case 90720: integerBitBegin = 0; break;
-            case 90721: integerBitBegin = 1; break;
-            case 90722: integerBitBegin = 2; break;
-            case 90723: integerBitBegin = 3; break;
-            case 90724: integerBitBegin = 4; break;
-            case 90725: integerBitBegin = 5; break;
-            case 90726: integerBitBegin = 6; break;
-            case 90727: integerBitBegin = 7; break;
-            case 90728: integerBitBegin = 8; break;
-            case 90729: integerBitBegin = 9; break;
-            case 90730: integerBitBegin = 10; break;
-            case 90731: integerBitBegin = 11; break;
-            case 90732: integerBitBegin = 12; break;
-            case 90733: integerBitBegin = 13; break;
-            case 90734: integerBitBegin = 14; break;
-            case 90735: integerBitBegin = 15; break;
-            case 92736: integerBitBegin = 0; break;
-            case 92737: integerBitBegin = 1; break;
-            case 92738: integerBitBegin = 2; break;
-            case 92739: integerBitBegin = 3; break;
-            case 92740: integerBitBegin = 4; break;
-            case 92741: integerBitBegin = 5; break;
-            case 92742: integerBitBegin = 6; break;
-            case 92743: integerBitBegin = 7; break;
-            case 92744: integerBitBegin = 8; break;
-            case 92745: integerBitBegin = 9; break;
-            case 92746: integerBitBegin = 10; break;
-            case 92747: integerBitBegin = 11; break;
-            case 92748: integerBitBegin = 12; break;
-            case 92749: integerBitBegin = 13; break;
-            case 92750: integerBitBegin = 14; break;
-            case 92751: integerBitBegin = 15; break;
-            case 94752: integerBitBegin = 0; break;
-            case 94753: integerBitBegin = 1; break;
-            case 94754: integerBitBegin = 2; break;
-            case 94755: integerBitBegin = 3; break;
-            case 94756: integerBitBegin = 4; break;
-            case 94757: integerBitBegin = 5; break;
-            case 94758: integerBitBegin = 6; break;
-            case 94759: integerBitBegin = 7; break;
-            case 94760: integerBitBegin = 8; break;
-            case 94761: integerBitBegin = 9; break;
-            case 94762: integerBitBegin = 10; break;
-            case 94763: integerBitBegin = 11; break;
-            case 94764: integerBitBegin = 12; break;
-            case 94765: integerBitBegin = 13; break;
-            case 94766: integerBitBegin = 14; break;
-            case 94767: integerBitBegin = 15; break;
-            case 96768: integerBitBegin = 0; break;
-            case 96769: integerBitBegin = 1; break;
-            case 96770: integerBitBegin = 2; break;
-            case 96771: integerBitBegin = 3; break;
-            case 96772: integerBitBegin = 4; break;
-            case 96773: integerBitBegin = 5; break;
-            case 96774: integerBitBegin = 6; break;
-            case 96775: integerBitBegin = 7; break;
-            case 96776: integerBitBegin = 8; break;
-            case 96777: integerBitBegin = 9; break;
-            case 96778: integerBitBegin = 10; break;
-            case 96779: integerBitBegin = 11; break;
-            case 96780: integerBitBegin = 12; break;
-            case 96781: integerBitBegin = 13; break;
-            case 96782: integerBitBegin = 14; break;
-            case 96783: integerBitBegin = 15; break;
-            case 98784: integerBitBegin = 0; break;
-            case 98785: integerBitBegin = 1; break;
-            case 98786: integerBitBegin = 2; break;
-            case 98787: integerBitBegin = 3; break;
-            case 98788: integerBitBegin = 4; break;
-            case 98789: integerBitBegin = 5; break;
-            case 98790: integerBitBegin = 6; break;
-            case 98791: integerBitBegin = 7; break;
-            case 98792: integerBitBegin = 8; break;
-            case 98793: integerBitBegin = 9; break;
-            case 98794: integerBitBegin = 10; break;
-            case 98795: integerBitBegin = 11; break;
-            case 98796: integerBitBegin = 12; break;
-            case 98797: integerBitBegin = 13; break;
-            case 98798: integerBitBegin = 14; break;
-            case 98799: integerBitBegin = 15; break;
-            case 100800: integerBitBegin = 0; break;
-            case 100801: integerBitBegin = 1; break;
-            case 100802: integerBitBegin = 2; break;
-            case 100803: integerBitBegin = 3; break;
-            case 100804: integerBitBegin = 4; break;
-            case 100805: integerBitBegin = 5; break;
-            case 100806: integerBitBegin = 6; break;
-            case 100807: integerBitBegin = 7; break;
-            case 100808: integerBitBegin = 8; break;
-            case 100809: integerBitBegin = 9; break;
-            case 100810: integerBitBegin = 10; break;
-            case 100811: integerBitBegin = 11; break;
-            case 100812: integerBitBegin = 12; break;
-            case 100813: integerBitBegin = 13; break;
-            case 100814: integerBitBegin = 14; break;
-            case 100815: integerBitBegin = 15; break;
-            case 102816: integerBitBegin = 0; break;
-            case 102817: integerBitBegin = 1; break;
-            case 102818: integerBitBegin = 2; break;
-            case 102819: integerBitBegin = 3; break;
-            case 102820: integerBitBegin = 4; break;
-            case 102821: integerBitBegin = 5; break;
-            case 102822: integerBitBegin = 6; break;
-            case 102823: integerBitBegin = 7; break;
-            case 102824: integerBitBegin = 8; break;
-            case 102825: integerBitBegin = 9; break;
-            case 102826: integerBitBegin = 10; break;
-            case 102827: integerBitBegin = 11; break;
-            case 102828: integerBitBegin = 12; break;
-            case 102829: integerBitBegin = 13; break;
-            case 102830: integerBitBegin = 14; break;
-            case 102831: integerBitBegin = 15; break;
-            case 104832: integerBitBegin = 0; break;
-            case 104833: integerBitBegin = 1; break;
-            case 104834: integerBitBegin = 2; break;
-            case 104835: integerBitBegin = 3; break;
-            case 104836: integerBitBegin = 4; break;
-            case 104837: integerBitBegin = 5; break;
-            case 104838: integerBitBegin = 6; break;
-            case 104839: integerBitBegin = 7; break;
-            case 104840: integerBitBegin = 8; break;
-            case 104841: integerBitBegin = 9; break;
-            case 104842: integerBitBegin = 10; break;
-            case 104843: integerBitBegin = 11; break;
-            case 104844: integerBitBegin = 12; break;
-            case 104845: integerBitBegin = 13; break;
-            case 104846: integerBitBegin = 14; break;
-            case 104847: integerBitBegin = 15; break;
-            case 106848: integerBitBegin = 0; break;
-            case 106849: integerBitBegin = 1; break;
-            case 106850: integerBitBegin = 2; break;
-            case 106851: integerBitBegin = 3; break;
-            case 106852: integerBitBegin = 4; break;
-            case 106853: integerBitBegin = 5; break;
-            case 106854: integerBitBegin = 6; break;
-            case 106855: integerBitBegin = 7; break;
-            case 106856: integerBitBegin = 8; break;
-            case 106857: integerBitBegin = 9; break;
-            case 106858: integerBitBegin = 10; break;
-            case 106859: integerBitBegin = 11; break;
-            case 106860: integerBitBegin = 12; break;
-            case 106861: integerBitBegin = 13; break;
-            case 106862: integerBitBegin = 14; break;
-            case 106863: integerBitBegin = 15; break;
-            case 108864: integerBitBegin = 0; break;
-            case 108865: integerBitBegin = 1; break;
-            case 108866: integerBitBegin = 2; break;
-            case 108867: integerBitBegin = 3; break;
-            case 108868: integerBitBegin = 4; break;
-            case 108869: integerBitBegin = 5; break;
-            case 108870: integerBitBegin = 6; break;
-            case 108871: integerBitBegin = 7; break;
-            case 108872: integerBitBegin = 8; break;
-            case 108873: integerBitBegin = 9; break;
-            case 108874: integerBitBegin = 10; break;
-            case 108875: integerBitBegin = 11; break;
-            case 108876: integerBitBegin = 12; break;
-            case 108877: integerBitBegin = 13; break;
-            case 108878: integerBitBegin = 14; break;
-            case 108879: integerBitBegin = 15; break;
-            case 110880: integerBitBegin = 0; break;
-            case 110881: integerBitBegin = 1; break;
-            case 110882: integerBitBegin = 2; break;
-            case 110883: integerBitBegin = 3; break;
-            case 110884: integerBitBegin = 4; break;
-            case 110885: integerBitBegin = 5; break;
-            case 110886: integerBitBegin = 6; break;
-            case 110887: integerBitBegin = 7; break;
-            case 110888: integerBitBegin = 8; break;
-            case 110889: integerBitBegin = 9; break;
-            case 110890: integerBitBegin = 10; break;
-            case 110891: integerBitBegin = 11; break;
-            case 110892: integerBitBegin = 12; break;
-            case 110893: integerBitBegin = 13; break;
-            case 110894: integerBitBegin = 14; break;
-            case 110895: integerBitBegin = 15; break;
-            case 112896: integerBitBegin = 0; break;
-            case 112897: integerBitBegin = 1; break;
-            case 112898: integerBitBegin = 2; break;
-            case 112899: integerBitBegin = 3; break;
-            case 112900: integerBitBegin = 4; break;
-            case 112901: integerBitBegin = 5; break;
-            case 112902: integerBitBegin = 6; break;
-            case 112903: integerBitBegin = 7; break;
-            case 112904: integerBitBegin = 8; break;
-            case 112905: integerBitBegin = 9; break;
-            case 112906: integerBitBegin = 10; break;
-            case 112907: integerBitBegin = 11; break;
-            case 112908: integerBitBegin = 12; break;
-            case 112909: integerBitBegin = 13; break;
-            case 112910: integerBitBegin = 14; break;
-            case 112911: integerBitBegin = 15; break;
-            case 114912: integerBitBegin = 0; break;
-            case 114913: integerBitBegin = 1; break;
-            case 114914: integerBitBegin = 2; break;
-            case 114915: integerBitBegin = 3; break;
-            case 114916: integerBitBegin = 4; break;
-            case 114917: integerBitBegin = 5; break;
-            case 114918: integerBitBegin = 6; break;
-            case 114919: integerBitBegin = 7; break;
-            case 114920: integerBitBegin = 8; break;
-            case 114921: integerBitBegin = 9; break;
-            case 114922: integerBitBegin = 10; break;
-            case 114923: integerBitBegin = 11; break;
-            case 114924: integerBitBegin = 12; break;
-            case 114925: integerBitBegin = 13; break;
-            case 114926: integerBitBegin = 14; break;
-            case 114927: integerBitBegin = 15; break;
-            case 116928: integerBitBegin = 0; break;
-            case 116929: integerBitBegin = 1; break;
-            case 116930: integerBitBegin = 2; break;
-            case 116931: integerBitBegin = 3; break;
-            case 116932: integerBitBegin = 4; break;
-            case 116933: integerBitBegin = 5; break;
-            case 116934: integerBitBegin = 6; break;
-            case 116935: integerBitBegin = 7; break;
-            case 116936: integerBitBegin = 8; break;
-            case 116937: integerBitBegin = 9; break;
-            case 116938: integerBitBegin = 10; break;
-            case 116939: integerBitBegin = 11; break;
-            case 116940: integerBitBegin = 12; break;
-            case 116941: integerBitBegin = 13; break;
-            case 116942: integerBitBegin = 14; break;
-            case 116943: integerBitBegin = 15; break;
-            case 118944: integerBitBegin = 0; break;
-            case 118945: integerBitBegin = 1; break;
-            case 118946: integerBitBegin = 2; break;
-            case 118947: integerBitBegin = 3; break;
-            case 118948: integerBitBegin = 4; break;
-            case 118949: integerBitBegin = 5; break;
-            case 118950: integerBitBegin = 6; break;
-            case 118951: integerBitBegin = 7; break;
-            case 118952: integerBitBegin = 8; break;
-            case 118953: integerBitBegin = 9; break;
-            case 118954: integerBitBegin = 10; break;
-            case 118955: integerBitBegin = 11; break;
-            case 118956: integerBitBegin = 12; break;
-            case 118957: integerBitBegin = 13; break;
-            case 118958: integerBitBegin = 14; break;
-            case 118959: integerBitBegin = 15; break;
-            case 120960: integerBitBegin = 0; break;
-            case 120961: integerBitBegin = 1; break;
-            case 120962: integerBitBegin = 2; break;
-            case 120963: integerBitBegin = 3; break;
-            case 120964: integerBitBegin = 4; break;
-            case 120965: integerBitBegin = 5; break;
-            case 120966: integerBitBegin = 6; break;
-            case 120967: integerBitBegin = 7; break;
-            case 120968: integerBitBegin = 8; break;
-            case 120969: integerBitBegin = 9; break;
-            case 120970: integerBitBegin = 10; break;
-            case 120971: integerBitBegin = 11; break;
-            case 120972: integerBitBegin = 12; break;
-            case 120973: integerBitBegin = 13; break;
-            case 120974: integerBitBegin = 14; break;
-            case 120975: integerBitBegin = 15; break;
-            case 122976: integerBitBegin = 0; break;
-            case 122977: integerBitBegin = 1; break;
-            case 122978: integerBitBegin = 2; break;
-            case 122979: integerBitBegin = 3; break;
-            case 122980: integerBitBegin = 4; break;
-            case 122981: integerBitBegin = 5; break;
-            case 122982: integerBitBegin = 6; break;
-            case 122983: integerBitBegin = 7; break;
-            case 122984: integerBitBegin = 8; break;
-            case 122985: integerBitBegin = 9; break;
-            case 122986: integerBitBegin = 10; break;
-            case 122987: integerBitBegin = 11; break;
-            case 122988: integerBitBegin = 12; break;
-            case 122989: integerBitBegin = 13; break;
-            case 122990: integerBitBegin = 14; break;
-            case 122991: integerBitBegin = 15; break;
-            case 124992: integerBitBegin = 0; break;
-            case 124993: integerBitBegin = 1; break;
-            case 124994: integerBitBegin = 2; break;
-            case 124995: integerBitBegin = 3; break;
-            case 124996: integerBitBegin = 4; break;
-            case 124997: integerBitBegin = 5; break;
-            case 124998: integerBitBegin = 6; break;
-            case 124999: integerBitBegin = 7; break;
-            case 125000: integerBitBegin = 8; break;
-            case 125001: integerBitBegin = 9; break;
-            case 125002: integerBitBegin = 10; break;
-            case 125003: integerBitBegin = 11; break;
-            case 125004: integerBitBegin = 12; break;
-            case 125005: integerBitBegin = 13; break;
-            case 125006: integerBitBegin = 14; break;
-            case 125007: integerBitBegin = 15; break;
-            case 127008: integerBitBegin = 0; break;
-            case 127009: integerBitBegin = 1; break;
-            case 127010: integerBitBegin = 2; break;
-            case 127011: integerBitBegin = 3; break;
-            case 127012: integerBitBegin = 4; break;
-            case 127013: integerBitBegin = 5; break;
-            case 127014: integerBitBegin = 6; break;
-            case 127015: integerBitBegin = 7; break;
-            case 127016: integerBitBegin = 8; break;
-            case 127017: integerBitBegin = 9; break;
-            case 127018: integerBitBegin = 10; break;
-            case 127019: integerBitBegin = 11; break;
-            case 127020: integerBitBegin = 12; break;
-            case 127021: integerBitBegin = 13; break;
-            case 127022: integerBitBegin = 14; break;
-            case 127023: integerBitBegin = 15; break;
-        }       
-        switch (sumMinusOne + arrIndexEnd*2000) {
-            case 0: integerBitEnd = 0; break;
-            case 1: integerBitEnd = 1; break;
-            case 2: integerBitEnd = 2; break;
-            case 3: integerBitEnd = 3; break;
-            case 4: integerBitEnd = 4; break;
-            case 5: integerBitEnd = 5; break;
-            case 6: integerBitEnd = 6; break;
-            case 7: integerBitEnd = 7; break;
-            case 8: integerBitEnd = 8; break;
-            case 9: integerBitEnd = 9; break;
-            case 10: integerBitEnd = 10; break;
-            case 11: integerBitEnd = 11; break;
-            case 12: integerBitEnd = 12; break;
-            case 13: integerBitEnd = 13; break;
-            case 14: integerBitEnd = 14; break;
-            case 15: integerBitEnd = 15; break;
-            case 2016: integerBitEnd = 0; break;
-            case 2017: integerBitEnd = 1; break;
-            case 2018: integerBitEnd = 2; break;
-            case 2019: integerBitEnd = 3; break;
-            case 2020: integerBitEnd = 4; break;
-            case 2021: integerBitEnd = 5; break;
-            case 2022: integerBitEnd = 6; break;
-            case 2023: integerBitEnd = 7; break;
-            case 2024: integerBitEnd = 8; break;
-            case 2025: integerBitEnd = 9; break;
-            case 2026: integerBitEnd = 10; break;
-            case 2027: integerBitEnd = 11; break;
-            case 2028: integerBitEnd = 12; break;
-            case 2029: integerBitEnd = 13; break;
-            case 2030: integerBitEnd = 14; break;
-            case 2031: integerBitEnd = 15; break;
-            case 4032: integerBitEnd = 0; break;
-            case 4033: integerBitEnd = 1; break;
-            case 4034: integerBitEnd = 2; break;
-            case 4035: integerBitEnd = 3; break;
-            case 4036: integerBitEnd = 4; break;
-            case 4037: integerBitEnd = 5; break;
-            case 4038: integerBitEnd = 6; break;
-            case 4039: integerBitEnd = 7; break;
-            case 4040: integerBitEnd = 8; break;
-            case 4041: integerBitEnd = 9; break;
-            case 4042: integerBitEnd = 10; break;
-            case 4043: integerBitEnd = 11; break;
-            case 4044: integerBitEnd = 12; break;
-            case 4045: integerBitEnd = 13; break;
-            case 4046: integerBitEnd = 14; break;
-            case 4047: integerBitEnd = 15; break;
-            case 6048: integerBitEnd = 0; break;
-            case 6049: integerBitEnd = 1; break;
-            case 6050: integerBitEnd = 2; break;
-            case 6051: integerBitEnd = 3; break;
-            case 6052: integerBitEnd = 4; break;
-            case 6053: integerBitEnd = 5; break;
-            case 6054: integerBitEnd = 6; break;
-            case 6055: integerBitEnd = 7; break;
-            case 6056: integerBitEnd = 8; break;
-            case 6057: integerBitEnd = 9; break;
-            case 6058: integerBitEnd = 10; break;
-            case 6059: integerBitEnd = 11; break;
-            case 6060: integerBitEnd = 12; break;
-            case 6061: integerBitEnd = 13; break;
-            case 6062: integerBitEnd = 14; break;
-            case 6063: integerBitEnd = 15; break;
-            case 8064: integerBitEnd = 0; break;
-            case 8065: integerBitEnd = 1; break;
-            case 8066: integerBitEnd = 2; break;
-            case 8067: integerBitEnd = 3; break;
-            case 8068: integerBitEnd = 4; break;
-            case 8069: integerBitEnd = 5; break;
-            case 8070: integerBitEnd = 6; break;
-            case 8071: integerBitEnd = 7; break;
-            case 8072: integerBitEnd = 8; break;
-            case 8073: integerBitEnd = 9; break;
-            case 8074: integerBitEnd = 10; break;
-            case 8075: integerBitEnd = 11; break;
-            case 8076: integerBitEnd = 12; break;
-            case 8077: integerBitEnd = 13; break;
-            case 8078: integerBitEnd = 14; break;
-            case 8079: integerBitEnd = 15; break;
-            case 10080: integerBitEnd = 0; break;
-            case 10081: integerBitEnd = 1; break;
-            case 10082: integerBitEnd = 2; break;
-            case 10083: integerBitEnd = 3; break;
-            case 10084: integerBitEnd = 4; break;
-            case 10085: integerBitEnd = 5; break;
-            case 10086: integerBitEnd = 6; break;
-            case 10087: integerBitEnd = 7; break;
-            case 10088: integerBitEnd = 8; break;
-            case 10089: integerBitEnd = 9; break;
-            case 10090: integerBitEnd = 10; break;
-            case 10091: integerBitEnd = 11; break;
-            case 10092: integerBitEnd = 12; break;
-            case 10093: integerBitEnd = 13; break;
-            case 10094: integerBitEnd = 14; break;
-            case 10095: integerBitEnd = 15; break;
-            case 12096: integerBitEnd = 0; break;
-            case 12097: integerBitEnd = 1; break;
-            case 12098: integerBitEnd = 2; break;
-            case 12099: integerBitEnd = 3; break;
-            case 12100: integerBitEnd = 4; break;
-            case 12101: integerBitEnd = 5; break;
-            case 12102: integerBitEnd = 6; break;
-            case 12103: integerBitEnd = 7; break;
-            case 12104: integerBitEnd = 8; break;
-            case 12105: integerBitEnd = 9; break;
-            case 12106: integerBitEnd = 10; break;
-            case 12107: integerBitEnd = 11; break;
-            case 12108: integerBitEnd = 12; break;
-            case 12109: integerBitEnd = 13; break;
-            case 12110: integerBitEnd = 14; break;
-            case 12111: integerBitEnd = 15; break;
-            case 14112: integerBitEnd = 0; break;
-            case 14113: integerBitEnd = 1; break;
-            case 14114: integerBitEnd = 2; break;
-            case 14115: integerBitEnd = 3; break;
-            case 14116: integerBitEnd = 4; break;
-            case 14117: integerBitEnd = 5; break;
-            case 14118: integerBitEnd = 6; break;
-            case 14119: integerBitEnd = 7; break;
-            case 14120: integerBitEnd = 8; break;
-            case 14121: integerBitEnd = 9; break;
-            case 14122: integerBitEnd = 10; break;
-            case 14123: integerBitEnd = 11; break;
-            case 14124: integerBitEnd = 12; break;
-            case 14125: integerBitEnd = 13; break;
-            case 14126: integerBitEnd = 14; break;
-            case 14127: integerBitEnd = 15; break;
-            case 16128: integerBitEnd = 0; break;
-            case 16129: integerBitEnd = 1; break;
-            case 16130: integerBitEnd = 2; break;
-            case 16131: integerBitEnd = 3; break;
-            case 16132: integerBitEnd = 4; break;
-            case 16133: integerBitEnd = 5; break;
-            case 16134: integerBitEnd = 6; break;
-            case 16135: integerBitEnd = 7; break;
-            case 16136: integerBitEnd = 8; break;
-            case 16137: integerBitEnd = 9; break;
-            case 16138: integerBitEnd = 10; break;
-            case 16139: integerBitEnd = 11; break;
-            case 16140: integerBitEnd = 12; break;
-            case 16141: integerBitEnd = 13; break;
-            case 16142: integerBitEnd = 14; break;
-            case 16143: integerBitEnd = 15; break;
-            case 18144: integerBitEnd = 0; break;
-            case 18145: integerBitEnd = 1; break;
-            case 18146: integerBitEnd = 2; break;
-            case 18147: integerBitEnd = 3; break;
-            case 18148: integerBitEnd = 4; break;
-            case 18149: integerBitEnd = 5; break;
-            case 18150: integerBitEnd = 6; break;
-            case 18151: integerBitEnd = 7; break;
-            case 18152: integerBitEnd = 8; break;
-            case 18153: integerBitEnd = 9; break;
-            case 18154: integerBitEnd = 10; break;
-            case 18155: integerBitEnd = 11; break;
-            case 18156: integerBitEnd = 12; break;
-            case 18157: integerBitEnd = 13; break;
-            case 18158: integerBitEnd = 14; break;
-            case 18159: integerBitEnd = 15; break;
-            case 20160: integerBitEnd = 0; break;
-            case 20161: integerBitEnd = 1; break;
-            case 20162: integerBitEnd = 2; break;
-            case 20163: integerBitEnd = 3; break;
-            case 20164: integerBitEnd = 4; break;
-            case 20165: integerBitEnd = 5; break;
-            case 20166: integerBitEnd = 6; break;
-            case 20167: integerBitEnd = 7; break;
-            case 20168: integerBitEnd = 8; break;
-            case 20169: integerBitEnd = 9; break;
-            case 20170: integerBitEnd = 10; break;
-            case 20171: integerBitEnd = 11; break;
-            case 20172: integerBitEnd = 12; break;
-            case 20173: integerBitEnd = 13; break;
-            case 20174: integerBitEnd = 14; break;
-            case 20175: integerBitEnd = 15; break;
-            case 22176: integerBitEnd = 0; break;
-            case 22177: integerBitEnd = 1; break;
-            case 22178: integerBitEnd = 2; break;
-            case 22179: integerBitEnd = 3; break;
-            case 22180: integerBitEnd = 4; break;
-            case 22181: integerBitEnd = 5; break;
-            case 22182: integerBitEnd = 6; break;
-            case 22183: integerBitEnd = 7; break;
-            case 22184: integerBitEnd = 8; break;
-            case 22185: integerBitEnd = 9; break;
-            case 22186: integerBitEnd = 10; break;
-            case 22187: integerBitEnd = 11; break;
-            case 22188: integerBitEnd = 12; break;
-            case 22189: integerBitEnd = 13; break;
-            case 22190: integerBitEnd = 14; break;
-            case 22191: integerBitEnd = 15; break;
-            case 24192: integerBitEnd = 0; break;
-            case 24193: integerBitEnd = 1; break;
-            case 24194: integerBitEnd = 2; break;
-            case 24195: integerBitEnd = 3; break;
-            case 24196: integerBitEnd = 4; break;
-            case 24197: integerBitEnd = 5; break;
-            case 24198: integerBitEnd = 6; break;
-            case 24199: integerBitEnd = 7; break;
-            case 24200: integerBitEnd = 8; break;
-            case 24201: integerBitEnd = 9; break;
-            case 24202: integerBitEnd = 10; break;
-            case 24203: integerBitEnd = 11; break;
-            case 24204: integerBitEnd = 12; break;
-            case 24205: integerBitEnd = 13; break;
-            case 24206: integerBitEnd = 14; break;
-            case 24207: integerBitEnd = 15; break;
-            case 26208: integerBitEnd = 0; break;
-            case 26209: integerBitEnd = 1; break;
-            case 26210: integerBitEnd = 2; break;
-            case 26211: integerBitEnd = 3; break;
-            case 26212: integerBitEnd = 4; break;
-            case 26213: integerBitEnd = 5; break;
-            case 26214: integerBitEnd = 6; break;
-            case 26215: integerBitEnd = 7; break;
-            case 26216: integerBitEnd = 8; break;
-            case 26217: integerBitEnd = 9; break;
-            case 26218: integerBitEnd = 10; break;
-            case 26219: integerBitEnd = 11; break;
-            case 26220: integerBitEnd = 12; break;
-            case 26221: integerBitEnd = 13; break;
-            case 26222: integerBitEnd = 14; break;
-            case 26223: integerBitEnd = 15; break;
-            case 28224: integerBitEnd = 0; break;
-            case 28225: integerBitEnd = 1; break;
-            case 28226: integerBitEnd = 2; break;
-            case 28227: integerBitEnd = 3; break;
-            case 28228: integerBitEnd = 4; break;
-            case 28229: integerBitEnd = 5; break;
-            case 28230: integerBitEnd = 6; break;
-            case 28231: integerBitEnd = 7; break;
-            case 28232: integerBitEnd = 8; break;
-            case 28233: integerBitEnd = 9; break;
-            case 28234: integerBitEnd = 10; break;
-            case 28235: integerBitEnd = 11; break;
-            case 28236: integerBitEnd = 12; break;
-            case 28237: integerBitEnd = 13; break;
-            case 28238: integerBitEnd = 14; break;
-            case 28239: integerBitEnd = 15; break;
-            case 30240: integerBitEnd = 0; break;
-            case 30241: integerBitEnd = 1; break;
-            case 30242: integerBitEnd = 2; break;
-            case 30243: integerBitEnd = 3; break;
-            case 30244: integerBitEnd = 4; break;
-            case 30245: integerBitEnd = 5; break;
-            case 30246: integerBitEnd = 6; break;
-            case 30247: integerBitEnd = 7; break;
-            case 30248: integerBitEnd = 8; break;
-            case 30249: integerBitEnd = 9; break;
-            case 30250: integerBitEnd = 10; break;
-            case 30251: integerBitEnd = 11; break;
-            case 30252: integerBitEnd = 12; break;
-            case 30253: integerBitEnd = 13; break;
-            case 30254: integerBitEnd = 14; break;
-            case 30255: integerBitEnd = 15; break;
-            case 32256: integerBitEnd = 0; break;
-            case 32257: integerBitEnd = 1; break;
-            case 32258: integerBitEnd = 2; break;
-            case 32259: integerBitEnd = 3; break;
-            case 32260: integerBitEnd = 4; break;
-            case 32261: integerBitEnd = 5; break;
-            case 32262: integerBitEnd = 6; break;
-            case 32263: integerBitEnd = 7; break;
-            case 32264: integerBitEnd = 8; break;
-            case 32265: integerBitEnd = 9; break;
-            case 32266: integerBitEnd = 10; break;
-            case 32267: integerBitEnd = 11; break;
-            case 32268: integerBitEnd = 12; break;
-            case 32269: integerBitEnd = 13; break;
-            case 32270: integerBitEnd = 14; break;
-            case 32271: integerBitEnd = 15; break;
-            case 34272: integerBitEnd = 0; break;
-            case 34273: integerBitEnd = 1; break;
-            case 34274: integerBitEnd = 2; break;
-            case 34275: integerBitEnd = 3; break;
-            case 34276: integerBitEnd = 4; break;
-            case 34277: integerBitEnd = 5; break;
-            case 34278: integerBitEnd = 6; break;
-            case 34279: integerBitEnd = 7; break;
-            case 34280: integerBitEnd = 8; break;
-            case 34281: integerBitEnd = 9; break;
-            case 34282: integerBitEnd = 10; break;
-            case 34283: integerBitEnd = 11; break;
-            case 34284: integerBitEnd = 12; break;
-            case 34285: integerBitEnd = 13; break;
-            case 34286: integerBitEnd = 14; break;
-            case 34287: integerBitEnd = 15; break;
-            case 36288: integerBitEnd = 0; break;
-            case 36289: integerBitEnd = 1; break;
-            case 36290: integerBitEnd = 2; break;
-            case 36291: integerBitEnd = 3; break;
-            case 36292: integerBitEnd = 4; break;
-            case 36293: integerBitEnd = 5; break;
-            case 36294: integerBitEnd = 6; break;
-            case 36295: integerBitEnd = 7; break;
-            case 36296: integerBitEnd = 8; break;
-            case 36297: integerBitEnd = 9; break;
-            case 36298: integerBitEnd = 10; break;
-            case 36299: integerBitEnd = 11; break;
-            case 36300: integerBitEnd = 12; break;
-            case 36301: integerBitEnd = 13; break;
-            case 36302: integerBitEnd = 14; break;
-            case 36303: integerBitEnd = 15; break;
-            case 38304: integerBitEnd = 0; break;
-            case 38305: integerBitEnd = 1; break;
-            case 38306: integerBitEnd = 2; break;
-            case 38307: integerBitEnd = 3; break;
-            case 38308: integerBitEnd = 4; break;
-            case 38309: integerBitEnd = 5; break;
-            case 38310: integerBitEnd = 6; break;
-            case 38311: integerBitEnd = 7; break;
-            case 38312: integerBitEnd = 8; break;
-            case 38313: integerBitEnd = 9; break;
-            case 38314: integerBitEnd = 10; break;
-            case 38315: integerBitEnd = 11; break;
-            case 38316: integerBitEnd = 12; break;
-            case 38317: integerBitEnd = 13; break;
-            case 38318: integerBitEnd = 14; break;
-            case 38319: integerBitEnd = 15; break;
-            case 40320: integerBitEnd = 0; break;
-            case 40321: integerBitEnd = 1; break;
-            case 40322: integerBitEnd = 2; break;
-            case 40323: integerBitEnd = 3; break;
-            case 40324: integerBitEnd = 4; break;
-            case 40325: integerBitEnd = 5; break;
-            case 40326: integerBitEnd = 6; break;
-            case 40327: integerBitEnd = 7; break;
-            case 40328: integerBitEnd = 8; break;
-            case 40329: integerBitEnd = 9; break;
-            case 40330: integerBitEnd = 10; break;
-            case 40331: integerBitEnd = 11; break;
-            case 40332: integerBitEnd = 12; break;
-            case 40333: integerBitEnd = 13; break;
-            case 40334: integerBitEnd = 14; break;
-            case 40335: integerBitEnd = 15; break;
-            case 42336: integerBitEnd = 0; break;
-            case 42337: integerBitEnd = 1; break;
-            case 42338: integerBitEnd = 2; break;
-            case 42339: integerBitEnd = 3; break;
-            case 42340: integerBitEnd = 4; break;
-            case 42341: integerBitEnd = 5; break;
-            case 42342: integerBitEnd = 6; break;
-            case 42343: integerBitEnd = 7; break;
-            case 42344: integerBitEnd = 8; break;
-            case 42345: integerBitEnd = 9; break;
-            case 42346: integerBitEnd = 10; break;
-            case 42347: integerBitEnd = 11; break;
-            case 42348: integerBitEnd = 12; break;
-            case 42349: integerBitEnd = 13; break;
-            case 42350: integerBitEnd = 14; break;
-            case 42351: integerBitEnd = 15; break;
-            case 44352: integerBitEnd = 0; break;
-            case 44353: integerBitEnd = 1; break;
-            case 44354: integerBitEnd = 2; break;
-            case 44355: integerBitEnd = 3; break;
-            case 44356: integerBitEnd = 4; break;
-            case 44357: integerBitEnd = 5; break;
-            case 44358: integerBitEnd = 6; break;
-            case 44359: integerBitEnd = 7; break;
-            case 44360: integerBitEnd = 8; break;
-            case 44361: integerBitEnd = 9; break;
-            case 44362: integerBitEnd = 10; break;
-            case 44363: integerBitEnd = 11; break;
-            case 44364: integerBitEnd = 12; break;
-            case 44365: integerBitEnd = 13; break;
-            case 44366: integerBitEnd = 14; break;
-            case 44367: integerBitEnd = 15; break;
-            case 46368: integerBitEnd = 0; break;
-            case 46369: integerBitEnd = 1; break;
-            case 46370: integerBitEnd = 2; break;
-            case 46371: integerBitEnd = 3; break;
-            case 46372: integerBitEnd = 4; break;
-            case 46373: integerBitEnd = 5; break;
-            case 46374: integerBitEnd = 6; break;
-            case 46375: integerBitEnd = 7; break;
-            case 46376: integerBitEnd = 8; break;
-            case 46377: integerBitEnd = 9; break;
-            case 46378: integerBitEnd = 10; break;
-            case 46379: integerBitEnd = 11; break;
-            case 46380: integerBitEnd = 12; break;
-            case 46381: integerBitEnd = 13; break;
-            case 46382: integerBitEnd = 14; break;
-            case 46383: integerBitEnd = 15; break;
-            case 48384: integerBitEnd = 0; break;
-            case 48385: integerBitEnd = 1; break;
-            case 48386: integerBitEnd = 2; break;
-            case 48387: integerBitEnd = 3; break;
-            case 48388: integerBitEnd = 4; break;
-            case 48389: integerBitEnd = 5; break;
-            case 48390: integerBitEnd = 6; break;
-            case 48391: integerBitEnd = 7; break;
-            case 48392: integerBitEnd = 8; break;
-            case 48393: integerBitEnd = 9; break;
-            case 48394: integerBitEnd = 10; break;
-            case 48395: integerBitEnd = 11; break;
-            case 48396: integerBitEnd = 12; break;
-            case 48397: integerBitEnd = 13; break;
-            case 48398: integerBitEnd = 14; break;
-            case 48399: integerBitEnd = 15; break;
-            case 50400: integerBitEnd = 0; break;
-            case 50401: integerBitEnd = 1; break;
-            case 50402: integerBitEnd = 2; break;
-            case 50403: integerBitEnd = 3; break;
-            case 50404: integerBitEnd = 4; break;
-            case 50405: integerBitEnd = 5; break;
-            case 50406: integerBitEnd = 6; break;
-            case 50407: integerBitEnd = 7; break;
-            case 50408: integerBitEnd = 8; break;
-            case 50409: integerBitEnd = 9; break;
-            case 50410: integerBitEnd = 10; break;
-            case 50411: integerBitEnd = 11; break;
-            case 50412: integerBitEnd = 12; break;
-            case 50413: integerBitEnd = 13; break;
-            case 50414: integerBitEnd = 14; break;
-            case 50415: integerBitEnd = 15; break;
-            case 52416: integerBitEnd = 0; break;
-            case 52417: integerBitEnd = 1; break;
-            case 52418: integerBitEnd = 2; break;
-            case 52419: integerBitEnd = 3; break;
-            case 52420: integerBitEnd = 4; break;
-            case 52421: integerBitEnd = 5; break;
-            case 52422: integerBitEnd = 6; break;
-            case 52423: integerBitEnd = 7; break;
-            case 52424: integerBitEnd = 8; break;
-            case 52425: integerBitEnd = 9; break;
-            case 52426: integerBitEnd = 10; break;
-            case 52427: integerBitEnd = 11; break;
-            case 52428: integerBitEnd = 12; break;
-            case 52429: integerBitEnd = 13; break;
-            case 52430: integerBitEnd = 14; break;
-            case 52431: integerBitEnd = 15; break;
-            case 54432: integerBitEnd = 0; break;
-            case 54433: integerBitEnd = 1; break;
-            case 54434: integerBitEnd = 2; break;
-            case 54435: integerBitEnd = 3; break;
-            case 54436: integerBitEnd = 4; break;
-            case 54437: integerBitEnd = 5; break;
-            case 54438: integerBitEnd = 6; break;
-            case 54439: integerBitEnd = 7; break;
-            case 54440: integerBitEnd = 8; break;
-            case 54441: integerBitEnd = 9; break;
-            case 54442: integerBitEnd = 10; break;
-            case 54443: integerBitEnd = 11; break;
-            case 54444: integerBitEnd = 12; break;
-            case 54445: integerBitEnd = 13; break;
-            case 54446: integerBitEnd = 14; break;
-            case 54447: integerBitEnd = 15; break;
-            case 56448: integerBitEnd = 0; break;
-            case 56449: integerBitEnd = 1; break;
-            case 56450: integerBitEnd = 2; break;
-            case 56451: integerBitEnd = 3; break;
-            case 56452: integerBitEnd = 4; break;
-            case 56453: integerBitEnd = 5; break;
-            case 56454: integerBitEnd = 6; break;
-            case 56455: integerBitEnd = 7; break;
-            case 56456: integerBitEnd = 8; break;
-            case 56457: integerBitEnd = 9; break;
-            case 56458: integerBitEnd = 10; break;
-            case 56459: integerBitEnd = 11; break;
-            case 56460: integerBitEnd = 12; break;
-            case 56461: integerBitEnd = 13; break;
-            case 56462: integerBitEnd = 14; break;
-            case 56463: integerBitEnd = 15; break;
-            case 58464: integerBitEnd = 0; break;
-            case 58465: integerBitEnd = 1; break;
-            case 58466: integerBitEnd = 2; break;
-            case 58467: integerBitEnd = 3; break;
-            case 58468: integerBitEnd = 4; break;
-            case 58469: integerBitEnd = 5; break;
-            case 58470: integerBitEnd = 6; break;
-            case 58471: integerBitEnd = 7; break;
-            case 58472: integerBitEnd = 8; break;
-            case 58473: integerBitEnd = 9; break;
-            case 58474: integerBitEnd = 10; break;
-            case 58475: integerBitEnd = 11; break;
-            case 58476: integerBitEnd = 12; break;
-            case 58477: integerBitEnd = 13; break;
-            case 58478: integerBitEnd = 14; break;
-            case 58479: integerBitEnd = 15; break;
-            case 60480: integerBitEnd = 0; break;
-            case 60481: integerBitEnd = 1; break;
-            case 60482: integerBitEnd = 2; break;
-            case 60483: integerBitEnd = 3; break;
-            case 60484: integerBitEnd = 4; break;
-            case 60485: integerBitEnd = 5; break;
-            case 60486: integerBitEnd = 6; break;
-            case 60487: integerBitEnd = 7; break;
-            case 60488: integerBitEnd = 8; break;
-            case 60489: integerBitEnd = 9; break;
-            case 60490: integerBitEnd = 10; break;
-            case 60491: integerBitEnd = 11; break;
-            case 60492: integerBitEnd = 12; break;
-            case 60493: integerBitEnd = 13; break;
-            case 60494: integerBitEnd = 14; break;
-            case 60495: integerBitEnd = 15; break;
-            case 62496: integerBitEnd = 0; break;
-            case 62497: integerBitEnd = 1; break;
-            case 62498: integerBitEnd = 2; break;
-            case 62499: integerBitEnd = 3; break;
-            case 62500: integerBitEnd = 4; break;
-            case 62501: integerBitEnd = 5; break;
-            case 62502: integerBitEnd = 6; break;
-            case 62503: integerBitEnd = 7; break;
-            case 62504: integerBitEnd = 8; break;
-            case 62505: integerBitEnd = 9; break;
-            case 62506: integerBitEnd = 10; break;
-            case 62507: integerBitEnd = 11; break;
-            case 62508: integerBitEnd = 12; break;
-            case 62509: integerBitEnd = 13; break;
-            case 62510: integerBitEnd = 14; break;
-            case 62511: integerBitEnd = 15; break;
-            case 64512: integerBitEnd = 0; break;
-            case 64513: integerBitEnd = 1; break;
-            case 64514: integerBitEnd = 2; break;
-            case 64515: integerBitEnd = 3; break;
-            case 64516: integerBitEnd = 4; break;
-            case 64517: integerBitEnd = 5; break;
-            case 64518: integerBitEnd = 6; break;
-            case 64519: integerBitEnd = 7; break;
-            case 64520: integerBitEnd = 8; break;
-            case 64521: integerBitEnd = 9; break;
-            case 64522: integerBitEnd = 10; break;
-            case 64523: integerBitEnd = 11; break;
-            case 64524: integerBitEnd = 12; break;
-            case 64525: integerBitEnd = 13; break;
-            case 64526: integerBitEnd = 14; break;
-            case 64527: integerBitEnd = 15; break;
-            case 66528: integerBitEnd = 0; break;
-            case 66529: integerBitEnd = 1; break;
-            case 66530: integerBitEnd = 2; break;
-            case 66531: integerBitEnd = 3; break;
-            case 66532: integerBitEnd = 4; break;
-            case 66533: integerBitEnd = 5; break;
-            case 66534: integerBitEnd = 6; break;
-            case 66535: integerBitEnd = 7; break;
-            case 66536: integerBitEnd = 8; break;
-            case 66537: integerBitEnd = 9; break;
-            case 66538: integerBitEnd = 10; break;
-            case 66539: integerBitEnd = 11; break;
-            case 66540: integerBitEnd = 12; break;
-            case 66541: integerBitEnd = 13; break;
-            case 66542: integerBitEnd = 14; break;
-            case 66543: integerBitEnd = 15; break;
-            case 68544: integerBitEnd = 0; break;
-            case 68545: integerBitEnd = 1; break;
-            case 68546: integerBitEnd = 2; break;
-            case 68547: integerBitEnd = 3; break;
-            case 68548: integerBitEnd = 4; break;
-            case 68549: integerBitEnd = 5; break;
-            case 68550: integerBitEnd = 6; break;
-            case 68551: integerBitEnd = 7; break;
-            case 68552: integerBitEnd = 8; break;
-            case 68553: integerBitEnd = 9; break;
-            case 68554: integerBitEnd = 10; break;
-            case 68555: integerBitEnd = 11; break;
-            case 68556: integerBitEnd = 12; break;
-            case 68557: integerBitEnd = 13; break;
-            case 68558: integerBitEnd = 14; break;
-            case 68559: integerBitEnd = 15; break;
-            case 70560: integerBitEnd = 0; break;
-            case 70561: integerBitEnd = 1; break;
-            case 70562: integerBitEnd = 2; break;
-            case 70563: integerBitEnd = 3; break;
-            case 70564: integerBitEnd = 4; break;
-            case 70565: integerBitEnd = 5; break;
-            case 70566: integerBitEnd = 6; break;
-            case 70567: integerBitEnd = 7; break;
-            case 70568: integerBitEnd = 8; break;
-            case 70569: integerBitEnd = 9; break;
-            case 70570: integerBitEnd = 10; break;
-            case 70571: integerBitEnd = 11; break;
-            case 70572: integerBitEnd = 12; break;
-            case 70573: integerBitEnd = 13; break;
-            case 70574: integerBitEnd = 14; break;
-            case 70575: integerBitEnd = 15; break;
-            case 72576: integerBitEnd = 0; break;
-            case 72577: integerBitEnd = 1; break;
-            case 72578: integerBitEnd = 2; break;
-            case 72579: integerBitEnd = 3; break;
-            case 72580: integerBitEnd = 4; break;
-            case 72581: integerBitEnd = 5; break;
-            case 72582: integerBitEnd = 6; break;
-            case 72583: integerBitEnd = 7; break;
-            case 72584: integerBitEnd = 8; break;
-            case 72585: integerBitEnd = 9; break;
-            case 72586: integerBitEnd = 10; break;
-            case 72587: integerBitEnd = 11; break;
-            case 72588: integerBitEnd = 12; break;
-            case 72589: integerBitEnd = 13; break;
-            case 72590: integerBitEnd = 14; break;
-            case 72591: integerBitEnd = 15; break;
-            case 74592: integerBitEnd = 0; break;
-            case 74593: integerBitEnd = 1; break;
-            case 74594: integerBitEnd = 2; break;
-            case 74595: integerBitEnd = 3; break;
-            case 74596: integerBitEnd = 4; break;
-            case 74597: integerBitEnd = 5; break;
-            case 74598: integerBitEnd = 6; break;
-            case 74599: integerBitEnd = 7; break;
-            case 74600: integerBitEnd = 8; break;
-            case 74601: integerBitEnd = 9; break;
-            case 74602: integerBitEnd = 10; break;
-            case 74603: integerBitEnd = 11; break;
-            case 74604: integerBitEnd = 12; break;
-            case 74605: integerBitEnd = 13; break;
-            case 74606: integerBitEnd = 14; break;
-            case 74607: integerBitEnd = 15; break;
-            case 76608: integerBitEnd = 0; break;
-            case 76609: integerBitEnd = 1; break;
-            case 76610: integerBitEnd = 2; break;
-            case 76611: integerBitEnd = 3; break;
-            case 76612: integerBitEnd = 4; break;
-            case 76613: integerBitEnd = 5; break;
-            case 76614: integerBitEnd = 6; break;
-            case 76615: integerBitEnd = 7; break;
-            case 76616: integerBitEnd = 8; break;
-            case 76617: integerBitEnd = 9; break;
-            case 76618: integerBitEnd = 10; break;
-            case 76619: integerBitEnd = 11; break;
-            case 76620: integerBitEnd = 12; break;
-            case 76621: integerBitEnd = 13; break;
-            case 76622: integerBitEnd = 14; break;
-            case 76623: integerBitEnd = 15; break;
-            case 78624: integerBitEnd = 0; break;
-            case 78625: integerBitEnd = 1; break;
-            case 78626: integerBitEnd = 2; break;
-            case 78627: integerBitEnd = 3; break;
-            case 78628: integerBitEnd = 4; break;
-            case 78629: integerBitEnd = 5; break;
-            case 78630: integerBitEnd = 6; break;
-            case 78631: integerBitEnd = 7; break;
-            case 78632: integerBitEnd = 8; break;
-            case 78633: integerBitEnd = 9; break;
-            case 78634: integerBitEnd = 10; break;
-            case 78635: integerBitEnd = 11; break;
-            case 78636: integerBitEnd = 12; break;
-            case 78637: integerBitEnd = 13; break;
-            case 78638: integerBitEnd = 14; break;
-            case 78639: integerBitEnd = 15; break;
-            case 80640: integerBitEnd = 0; break;
-            case 80641: integerBitEnd = 1; break;
-            case 80642: integerBitEnd = 2; break;
-            case 80643: integerBitEnd = 3; break;
-            case 80644: integerBitEnd = 4; break;
-            case 80645: integerBitEnd = 5; break;
-            case 80646: integerBitEnd = 6; break;
-            case 80647: integerBitEnd = 7; break;
-            case 80648: integerBitEnd = 8; break;
-            case 80649: integerBitEnd = 9; break;
-            case 80650: integerBitEnd = 10; break;
-            case 80651: integerBitEnd = 11; break;
-            case 80652: integerBitEnd = 12; break;
-            case 80653: integerBitEnd = 13; break;
-            case 80654: integerBitEnd = 14; break;
-            case 80655: integerBitEnd = 15; break;
-            case 82656: integerBitEnd = 0; break;
-            case 82657: integerBitEnd = 1; break;
-            case 82658: integerBitEnd = 2; break;
-            case 82659: integerBitEnd = 3; break;
-            case 82660: integerBitEnd = 4; break;
-            case 82661: integerBitEnd = 5; break;
-            case 82662: integerBitEnd = 6; break;
-            case 82663: integerBitEnd = 7; break;
-            case 82664: integerBitEnd = 8; break;
-            case 82665: integerBitEnd = 9; break;
-            case 82666: integerBitEnd = 10; break;
-            case 82667: integerBitEnd = 11; break;
-            case 82668: integerBitEnd = 12; break;
-            case 82669: integerBitEnd = 13; break;
-            case 82670: integerBitEnd = 14; break;
-            case 82671: integerBitEnd = 15; break;
-            case 84672: integerBitEnd = 0; break;
-            case 84673: integerBitEnd = 1; break;
-            case 84674: integerBitEnd = 2; break;
-            case 84675: integerBitEnd = 3; break;
-            case 84676: integerBitEnd = 4; break;
-            case 84677: integerBitEnd = 5; break;
-            case 84678: integerBitEnd = 6; break;
-            case 84679: integerBitEnd = 7; break;
-            case 84680: integerBitEnd = 8; break;
-            case 84681: integerBitEnd = 9; break;
-            case 84682: integerBitEnd = 10; break;
-            case 84683: integerBitEnd = 11; break;
-            case 84684: integerBitEnd = 12; break;
-            case 84685: integerBitEnd = 13; break;
-            case 84686: integerBitEnd = 14; break;
-            case 84687: integerBitEnd = 15; break;
-            case 86688: integerBitEnd = 0; break;
-            case 86689: integerBitEnd = 1; break;
-            case 86690: integerBitEnd = 2; break;
-            case 86691: integerBitEnd = 3; break;
-            case 86692: integerBitEnd = 4; break;
-            case 86693: integerBitEnd = 5; break;
-            case 86694: integerBitEnd = 6; break;
-            case 86695: integerBitEnd = 7; break;
-            case 86696: integerBitEnd = 8; break;
-            case 86697: integerBitEnd = 9; break;
-            case 86698: integerBitEnd = 10; break;
-            case 86699: integerBitEnd = 11; break;
-            case 86700: integerBitEnd = 12; break;
-            case 86701: integerBitEnd = 13; break;
-            case 86702: integerBitEnd = 14; break;
-            case 86703: integerBitEnd = 15; break;
-            case 88704: integerBitEnd = 0; break;
-            case 88705: integerBitEnd = 1; break;
-            case 88706: integerBitEnd = 2; break;
-            case 88707: integerBitEnd = 3; break;
-            case 88708: integerBitEnd = 4; break;
-            case 88709: integerBitEnd = 5; break;
-            case 88710: integerBitEnd = 6; break;
-            case 88711: integerBitEnd = 7; break;
-            case 88712: integerBitEnd = 8; break;
-            case 88713: integerBitEnd = 9; break;
-            case 88714: integerBitEnd = 10; break;
-            case 88715: integerBitEnd = 11; break;
-            case 88716: integerBitEnd = 12; break;
-            case 88717: integerBitEnd = 13; break;
-            case 88718: integerBitEnd = 14; break;
-            case 88719: integerBitEnd = 15; break;
-            case 90720: integerBitEnd = 0; break;
-            case 90721: integerBitEnd = 1; break;
-            case 90722: integerBitEnd = 2; break;
-            case 90723: integerBitEnd = 3; break;
-            case 90724: integerBitEnd = 4; break;
-            case 90725: integerBitEnd = 5; break;
-            case 90726: integerBitEnd = 6; break;
-            case 90727: integerBitEnd = 7; break;
-            case 90728: integerBitEnd = 8; break;
-            case 90729: integerBitEnd = 9; break;
-            case 90730: integerBitEnd = 10; break;
-            case 90731: integerBitEnd = 11; break;
-            case 90732: integerBitEnd = 12; break;
-            case 90733: integerBitEnd = 13; break;
-            case 90734: integerBitEnd = 14; break;
-            case 90735: integerBitEnd = 15; break;
-            case 92736: integerBitEnd = 0; break;
-            case 92737: integerBitEnd = 1; break;
-            case 92738: integerBitEnd = 2; break;
-            case 92739: integerBitEnd = 3; break;
-            case 92740: integerBitEnd = 4; break;
-            case 92741: integerBitEnd = 5; break;
-            case 92742: integerBitEnd = 6; break;
-            case 92743: integerBitEnd = 7; break;
-            case 92744: integerBitEnd = 8; break;
-            case 92745: integerBitEnd = 9; break;
-            case 92746: integerBitEnd = 10; break;
-            case 92747: integerBitEnd = 11; break;
-            case 92748: integerBitEnd = 12; break;
-            case 92749: integerBitEnd = 13; break;
-            case 92750: integerBitEnd = 14; break;
-            case 92751: integerBitEnd = 15; break;
-            case 94752: integerBitEnd = 0; break;
-            case 94753: integerBitEnd = 1; break;
-            case 94754: integerBitEnd = 2; break;
-            case 94755: integerBitEnd = 3; break;
-            case 94756: integerBitEnd = 4; break;
-            case 94757: integerBitEnd = 5; break;
-            case 94758: integerBitEnd = 6; break;
-            case 94759: integerBitEnd = 7; break;
-            case 94760: integerBitEnd = 8; break;
-            case 94761: integerBitEnd = 9; break;
-            case 94762: integerBitEnd = 10; break;
-            case 94763: integerBitEnd = 11; break;
-            case 94764: integerBitEnd = 12; break;
-            case 94765: integerBitEnd = 13; break;
-            case 94766: integerBitEnd = 14; break;
-            case 94767: integerBitEnd = 15; break;
-            case 96768: integerBitEnd = 0; break;
-            case 96769: integerBitEnd = 1; break;
-            case 96770: integerBitEnd = 2; break;
-            case 96771: integerBitEnd = 3; break;
-            case 96772: integerBitEnd = 4; break;
-            case 96773: integerBitEnd = 5; break;
-            case 96774: integerBitEnd = 6; break;
-            case 96775: integerBitEnd = 7; break;
-            case 96776: integerBitEnd = 8; break;
-            case 96777: integerBitEnd = 9; break;
-            case 96778: integerBitEnd = 10; break;
-            case 96779: integerBitEnd = 11; break;
-            case 96780: integerBitEnd = 12; break;
-            case 96781: integerBitEnd = 13; break;
-            case 96782: integerBitEnd = 14; break;
-            case 96783: integerBitEnd = 15; break;
-            case 98784: integerBitEnd = 0; break;
-            case 98785: integerBitEnd = 1; break;
-            case 98786: integerBitEnd = 2; break;
-            case 98787: integerBitEnd = 3; break;
-            case 98788: integerBitEnd = 4; break;
-            case 98789: integerBitEnd = 5; break;
-            case 98790: integerBitEnd = 6; break;
-            case 98791: integerBitEnd = 7; break;
-            case 98792: integerBitEnd = 8; break;
-            case 98793: integerBitEnd = 9; break;
-            case 98794: integerBitEnd = 10; break;
-            case 98795: integerBitEnd = 11; break;
-            case 98796: integerBitEnd = 12; break;
-            case 98797: integerBitEnd = 13; break;
-            case 98798: integerBitEnd = 14; break;
-            case 98799: integerBitEnd = 15; break;
-            case 100800: integerBitEnd = 0; break;
-            case 100801: integerBitEnd = 1; break;
-            case 100802: integerBitEnd = 2; break;
-            case 100803: integerBitEnd = 3; break;
-            case 100804: integerBitEnd = 4; break;
-            case 100805: integerBitEnd = 5; break;
-            case 100806: integerBitEnd = 6; break;
-            case 100807: integerBitEnd = 7; break;
-            case 100808: integerBitEnd = 8; break;
-            case 100809: integerBitEnd = 9; break;
-            case 100810: integerBitEnd = 10; break;
-            case 100811: integerBitEnd = 11; break;
-            case 100812: integerBitEnd = 12; break;
-            case 100813: integerBitEnd = 13; break;
-            case 100814: integerBitEnd = 14; break;
-            case 100815: integerBitEnd = 15; break;
-            case 102816: integerBitEnd = 0; break;
-            case 102817: integerBitEnd = 1; break;
-            case 102818: integerBitEnd = 2; break;
-            case 102819: integerBitEnd = 3; break;
-            case 102820: integerBitEnd = 4; break;
-            case 102821: integerBitEnd = 5; break;
-            case 102822: integerBitEnd = 6; break;
-            case 102823: integerBitEnd = 7; break;
-            case 102824: integerBitEnd = 8; break;
-            case 102825: integerBitEnd = 9; break;
-            case 102826: integerBitEnd = 10; break;
-            case 102827: integerBitEnd = 11; break;
-            case 102828: integerBitEnd = 12; break;
-            case 102829: integerBitEnd = 13; break;
-            case 102830: integerBitEnd = 14; break;
-            case 102831: integerBitEnd = 15; break;
-            case 104832: integerBitEnd = 0; break;
-            case 104833: integerBitEnd = 1; break;
-            case 104834: integerBitEnd = 2; break;
-            case 104835: integerBitEnd = 3; break;
-            case 104836: integerBitEnd = 4; break;
-            case 104837: integerBitEnd = 5; break;
-            case 104838: integerBitEnd = 6; break;
-            case 104839: integerBitEnd = 7; break;
-            case 104840: integerBitEnd = 8; break;
-            case 104841: integerBitEnd = 9; break;
-            case 104842: integerBitEnd = 10; break;
-            case 104843: integerBitEnd = 11; break;
-            case 104844: integerBitEnd = 12; break;
-            case 104845: integerBitEnd = 13; break;
-            case 104846: integerBitEnd = 14; break;
-            case 104847: integerBitEnd = 15; break;
-            case 106848: integerBitEnd = 0; break;
-            case 106849: integerBitEnd = 1; break;
-            case 106850: integerBitEnd = 2; break;
-            case 106851: integerBitEnd = 3; break;
-            case 106852: integerBitEnd = 4; break;
-            case 106853: integerBitEnd = 5; break;
-            case 106854: integerBitEnd = 6; break;
-            case 106855: integerBitEnd = 7; break;
-            case 106856: integerBitEnd = 8; break;
-            case 106857: integerBitEnd = 9; break;
-            case 106858: integerBitEnd = 10; break;
-            case 106859: integerBitEnd = 11; break;
-            case 106860: integerBitEnd = 12; break;
-            case 106861: integerBitEnd = 13; break;
-            case 106862: integerBitEnd = 14; break;
-            case 106863: integerBitEnd = 15; break;
-            case 108864: integerBitEnd = 0; break;
-            case 108865: integerBitEnd = 1; break;
-            case 108866: integerBitEnd = 2; break;
-            case 108867: integerBitEnd = 3; break;
-            case 108868: integerBitEnd = 4; break;
-            case 108869: integerBitEnd = 5; break;
-            case 108870: integerBitEnd = 6; break;
-            case 108871: integerBitEnd = 7; break;
-            case 108872: integerBitEnd = 8; break;
-            case 108873: integerBitEnd = 9; break;
-            case 108874: integerBitEnd = 10; break;
-            case 108875: integerBitEnd = 11; break;
-            case 108876: integerBitEnd = 12; break;
-            case 108877: integerBitEnd = 13; break;
-            case 108878: integerBitEnd = 14; break;
-            case 108879: integerBitEnd = 15; break;
-            case 110880: integerBitEnd = 0; break;
-            case 110881: integerBitEnd = 1; break;
-            case 110882: integerBitEnd = 2; break;
-            case 110883: integerBitEnd = 3; break;
-            case 110884: integerBitEnd = 4; break;
-            case 110885: integerBitEnd = 5; break;
-            case 110886: integerBitEnd = 6; break;
-            case 110887: integerBitEnd = 7; break;
-            case 110888: integerBitEnd = 8; break;
-            case 110889: integerBitEnd = 9; break;
-            case 110890: integerBitEnd = 10; break;
-            case 110891: integerBitEnd = 11; break;
-            case 110892: integerBitEnd = 12; break;
-            case 110893: integerBitEnd = 13; break;
-            case 110894: integerBitEnd = 14; break;
-            case 110895: integerBitEnd = 15; break;
-            case 112896: integerBitEnd = 0; break;
-            case 112897: integerBitEnd = 1; break;
-            case 112898: integerBitEnd = 2; break;
-            case 112899: integerBitEnd = 3; break;
-            case 112900: integerBitEnd = 4; break;
-            case 112901: integerBitEnd = 5; break;
-            case 112902: integerBitEnd = 6; break;
-            case 112903: integerBitEnd = 7; break;
-            case 112904: integerBitEnd = 8; break;
-            case 112905: integerBitEnd = 9; break;
-            case 112906: integerBitEnd = 10; break;
-            case 112907: integerBitEnd = 11; break;
-            case 112908: integerBitEnd = 12; break;
-            case 112909: integerBitEnd = 13; break;
-            case 112910: integerBitEnd = 14; break;
-            case 112911: integerBitEnd = 15; break;
-            case 114912: integerBitEnd = 0; break;
-            case 114913: integerBitEnd = 1; break;
-            case 114914: integerBitEnd = 2; break;
-            case 114915: integerBitEnd = 3; break;
-            case 114916: integerBitEnd = 4; break;
-            case 114917: integerBitEnd = 5; break;
-            case 114918: integerBitEnd = 6; break;
-            case 114919: integerBitEnd = 7; break;
-            case 114920: integerBitEnd = 8; break;
-            case 114921: integerBitEnd = 9; break;
-            case 114922: integerBitEnd = 10; break;
-            case 114923: integerBitEnd = 11; break;
-            case 114924: integerBitEnd = 12; break;
-            case 114925: integerBitEnd = 13; break;
-            case 114926: integerBitEnd = 14; break;
-            case 114927: integerBitEnd = 15; break;
-            case 116928: integerBitEnd = 0; break;
-            case 116929: integerBitEnd = 1; break;
-            case 116930: integerBitEnd = 2; break;
-            case 116931: integerBitEnd = 3; break;
-            case 116932: integerBitEnd = 4; break;
-            case 116933: integerBitEnd = 5; break;
-            case 116934: integerBitEnd = 6; break;
-            case 116935: integerBitEnd = 7; break;
-            case 116936: integerBitEnd = 8; break;
-            case 116937: integerBitEnd = 9; break;
-            case 116938: integerBitEnd = 10; break;
-            case 116939: integerBitEnd = 11; break;
-            case 116940: integerBitEnd = 12; break;
-            case 116941: integerBitEnd = 13; break;
-            case 116942: integerBitEnd = 14; break;
-            case 116943: integerBitEnd = 15; break;
-            case 118944: integerBitEnd = 0; break;
-            case 118945: integerBitEnd = 1; break;
-            case 118946: integerBitEnd = 2; break;
-            case 118947: integerBitEnd = 3; break;
-            case 118948: integerBitEnd = 4; break;
-            case 118949: integerBitEnd = 5; break;
-            case 118950: integerBitEnd = 6; break;
-            case 118951: integerBitEnd = 7; break;
-            case 118952: integerBitEnd = 8; break;
-            case 118953: integerBitEnd = 9; break;
-            case 118954: integerBitEnd = 10; break;
-            case 118955: integerBitEnd = 11; break;
-            case 118956: integerBitEnd = 12; break;
-            case 118957: integerBitEnd = 13; break;
-            case 118958: integerBitEnd = 14; break;
-            case 118959: integerBitEnd = 15; break;
-            case 120960: integerBitEnd = 0; break;
-            case 120961: integerBitEnd = 1; break;
-            case 120962: integerBitEnd = 2; break;
-            case 120963: integerBitEnd = 3; break;
-            case 120964: integerBitEnd = 4; break;
-            case 120965: integerBitEnd = 5; break;
-            case 120966: integerBitEnd = 6; break;
-            case 120967: integerBitEnd = 7; break;
-            case 120968: integerBitEnd = 8; break;
-            case 120969: integerBitEnd = 9; break;
-            case 120970: integerBitEnd = 10; break;
-            case 120971: integerBitEnd = 11; break;
-            case 120972: integerBitEnd = 12; break;
-            case 120973: integerBitEnd = 13; break;
-            case 120974: integerBitEnd = 14; break;
-            case 120975: integerBitEnd = 15; break;
-            case 122976: integerBitEnd = 0; break;
-            case 122977: integerBitEnd = 1; break;
-            case 122978: integerBitEnd = 2; break;
-            case 122979: integerBitEnd = 3; break;
-            case 122980: integerBitEnd = 4; break;
-            case 122981: integerBitEnd = 5; break;
-            case 122982: integerBitEnd = 6; break;
-            case 122983: integerBitEnd = 7; break;
-            case 122984: integerBitEnd = 8; break;
-            case 122985: integerBitEnd = 9; break;
-            case 122986: integerBitEnd = 10; break;
-            case 122987: integerBitEnd = 11; break;
-            case 122988: integerBitEnd = 12; break;
-            case 122989: integerBitEnd = 13; break;
-            case 122990: integerBitEnd = 14; break;
-            case 122991: integerBitEnd = 15; break;
-            case 124992: integerBitEnd = 0; break;
-            case 124993: integerBitEnd = 1; break;
-            case 124994: integerBitEnd = 2; break;
-            case 124995: integerBitEnd = 3; break;
-            case 124996: integerBitEnd = 4; break;
-            case 124997: integerBitEnd = 5; break;
-            case 124998: integerBitEnd = 6; break;
-            case 124999: integerBitEnd = 7; break;
-            case 125000: integerBitEnd = 8; break;
-            case 125001: integerBitEnd = 9; break;
-            case 125002: integerBitEnd = 10; break;
-            case 125003: integerBitEnd = 11; break;
-            case 125004: integerBitEnd = 12; break;
-            case 125005: integerBitEnd = 13; break;
-            case 125006: integerBitEnd = 14; break;
-            case 125007: integerBitEnd = 15; break;
-            case 127008: integerBitEnd = 0; break;
-            case 127009: integerBitEnd = 1; break;
-            case 127010: integerBitEnd = 2; break;
-            case 127011: integerBitEnd = 3; break;
-            case 127012: integerBitEnd = 4; break;
-            case 127013: integerBitEnd = 5; break;
-            case 127014: integerBitEnd = 6; break;
-            case 127015: integerBitEnd = 7; break;
-            case 127016: integerBitEnd = 8; break;
-            case 127017: integerBitEnd = 9; break;
-            case 127018: integerBitEnd = 10; break;
-            case 127019: integerBitEnd = 11; break;
-            case 127020: integerBitEnd = 12; break;
-            case 127021: integerBitEnd = 13; break;
-            case 127022: integerBitEnd = 14; break;
-            case 127023: integerBitEnd = 15; break;
+    public void writeClusterControlStatus(int idx, int value) throws GameActionException {
+        switch (idx) {
+            case 0:
+                rc.writeSharedArray(4, (rc.readSharedArray(4) & 53247) | (value << 12));
+                break;
+            case 1:
+                rc.writeSharedArray(4, (rc.readSharedArray(4) & 65151) | (value << 7));
+                break;
+            case 2:
+                rc.writeSharedArray(4, (rc.readSharedArray(4) & 65523) | (value << 2));
+                break;
+            case 3:
+                rc.writeSharedArray(5, (rc.readSharedArray(5) & 40959) | (value << 13));
+                break;
+            case 4:
+                rc.writeSharedArray(5, (rc.readSharedArray(5) & 64767) | (value << 8));
+                break;
+            case 5:
+                rc.writeSharedArray(5, (rc.readSharedArray(5) & 65511) | (value << 3));
+                break;
+            case 6:
+                rc.writeSharedArray(6, (rc.readSharedArray(6) & 16383) | (value << 14));
+                break;
+            case 7:
+                rc.writeSharedArray(6, (rc.readSharedArray(6) & 63999) | (value << 9));
+                break;
+            case 8:
+                rc.writeSharedArray(6, (rc.readSharedArray(6) & 65487) | (value << 4));
+                break;
+            case 9:
+                rc.writeSharedArray(6, (rc.readSharedArray(6) & 65534) | ((value & 2) >>> 1));
+                rc.writeSharedArray(7, (rc.readSharedArray(7) & 32767) | ((value & 1) << 15));
+                break;
+            case 10:
+                rc.writeSharedArray(7, (rc.readSharedArray(7) & 62463) | (value << 10));
+                break;
+            case 11:
+                rc.writeSharedArray(7, (rc.readSharedArray(7) & 65439) | (value << 5));
+                break;
+            case 12:
+                rc.writeSharedArray(7, (rc.readSharedArray(7) & 65532) | (value));
+                break;
+            case 13:
+                rc.writeSharedArray(8, (rc.readSharedArray(8) & 59391) | (value << 11));
+                break;
+            case 14:
+                rc.writeSharedArray(8, (rc.readSharedArray(8) & 65343) | (value << 6));
+                break;
+            case 15:
+                rc.writeSharedArray(8, (rc.readSharedArray(8) & 65529) | (value << 1));
+                break;
+            case 16:
+                rc.writeSharedArray(9, (rc.readSharedArray(9) & 53247) | (value << 12));
+                break;
+            case 17:
+                rc.writeSharedArray(9, (rc.readSharedArray(9) & 65151) | (value << 7));
+                break;
+            case 18:
+                rc.writeSharedArray(9, (rc.readSharedArray(9) & 65523) | (value << 2));
+                break;
+            case 19:
+                rc.writeSharedArray(10, (rc.readSharedArray(10) & 40959) | (value << 13));
+                break;
+            case 20:
+                rc.writeSharedArray(10, (rc.readSharedArray(10) & 64767) | (value << 8));
+                break;
+            case 21:
+                rc.writeSharedArray(10, (rc.readSharedArray(10) & 65511) | (value << 3));
+                break;
+            case 22:
+                rc.writeSharedArray(11, (rc.readSharedArray(11) & 16383) | (value << 14));
+                break;
+            case 23:
+                rc.writeSharedArray(11, (rc.readSharedArray(11) & 63999) | (value << 9));
+                break;
+            case 24:
+                rc.writeSharedArray(11, (rc.readSharedArray(11) & 65487) | (value << 4));
+                break;
+            case 25:
+                rc.writeSharedArray(11, (rc.readSharedArray(11) & 65534) | ((value & 2) >>> 1));
+                rc.writeSharedArray(12, (rc.readSharedArray(12) & 32767) | ((value & 1) << 15));
+                break;
+            case 26:
+                rc.writeSharedArray(12, (rc.readSharedArray(12) & 62463) | (value << 10));
+                break;
+            case 27:
+                rc.writeSharedArray(12, (rc.readSharedArray(12) & 65439) | (value << 5));
+                break;
+            case 28:
+                rc.writeSharedArray(12, (rc.readSharedArray(12) & 65532) | (value));
+                break;
+            case 29:
+                rc.writeSharedArray(13, (rc.readSharedArray(13) & 59391) | (value << 11));
+                break;
+            case 30:
+                rc.writeSharedArray(13, (rc.readSharedArray(13) & 65343) | (value << 6));
+                break;
+            case 31:
+                rc.writeSharedArray(13, (rc.readSharedArray(13) & 65529) | (value << 1));
+                break;
+            case 32:
+                rc.writeSharedArray(14, (rc.readSharedArray(14) & 53247) | (value << 12));
+                break;
+            case 33:
+                rc.writeSharedArray(14, (rc.readSharedArray(14) & 65151) | (value << 7));
+                break;
+            case 34:
+                rc.writeSharedArray(14, (rc.readSharedArray(14) & 65523) | (value << 2));
+                break;
+            case 35:
+                rc.writeSharedArray(15, (rc.readSharedArray(15) & 40959) | (value << 13));
+                break;
+            case 36:
+                rc.writeSharedArray(15, (rc.readSharedArray(15) & 64767) | (value << 8));
+                break;
+            case 37:
+                rc.writeSharedArray(15, (rc.readSharedArray(15) & 65511) | (value << 3));
+                break;
+            case 38:
+                rc.writeSharedArray(16, (rc.readSharedArray(16) & 16383) | (value << 14));
+                break;
+            case 39:
+                rc.writeSharedArray(16, (rc.readSharedArray(16) & 63999) | (value << 9));
+                break;
+            case 40:
+                rc.writeSharedArray(16, (rc.readSharedArray(16) & 65487) | (value << 4));
+                break;
+            case 41:
+                rc.writeSharedArray(16, (rc.readSharedArray(16) & 65534) | ((value & 2) >>> 1));
+                rc.writeSharedArray(17, (rc.readSharedArray(17) & 32767) | ((value & 1) << 15));
+                break;
+            case 42:
+                rc.writeSharedArray(17, (rc.readSharedArray(17) & 62463) | (value << 10));
+                break;
+            case 43:
+                rc.writeSharedArray(17, (rc.readSharedArray(17) & 65439) | (value << 5));
+                break;
+            case 44:
+                rc.writeSharedArray(17, (rc.readSharedArray(17) & 65532) | (value));
+                break;
+            case 45:
+                rc.writeSharedArray(18, (rc.readSharedArray(18) & 59391) | (value << 11));
+                break;
+            case 46:
+                rc.writeSharedArray(18, (rc.readSharedArray(18) & 65343) | (value << 6));
+                break;
+            case 47:
+                rc.writeSharedArray(18, (rc.readSharedArray(18) & 65529) | (value << 1));
+                break;
+            case 48:
+                rc.writeSharedArray(19, (rc.readSharedArray(19) & 53247) | (value << 12));
+                break;
+            case 49:
+                rc.writeSharedArray(19, (rc.readSharedArray(19) & 65151) | (value << 7));
+                break;
+            case 50:
+                rc.writeSharedArray(19, (rc.readSharedArray(19) & 65523) | (value << 2));
+                break;
+            case 51:
+                rc.writeSharedArray(20, (rc.readSharedArray(20) & 40959) | (value << 13));
+                break;
+            case 52:
+                rc.writeSharedArray(20, (rc.readSharedArray(20) & 64767) | (value << 8));
+                break;
+            case 53:
+                rc.writeSharedArray(20, (rc.readSharedArray(20) & 65511) | (value << 3));
+                break;
+            case 54:
+                rc.writeSharedArray(21, (rc.readSharedArray(21) & 16383) | (value << 14));
+                break;
+            case 55:
+                rc.writeSharedArray(21, (rc.readSharedArray(21) & 63999) | (value << 9));
+                break;
+            case 56:
+                rc.writeSharedArray(21, (rc.readSharedArray(21) & 65487) | (value << 4));
+                break;
+            case 57:
+                rc.writeSharedArray(21, (rc.readSharedArray(21) & 65534) | ((value & 2) >>> 1));
+                rc.writeSharedArray(22, (rc.readSharedArray(22) & 32767) | ((value & 1) << 15));
+                break;
+            case 58:
+                rc.writeSharedArray(22, (rc.readSharedArray(22) & 62463) | (value << 10));
+                break;
+            case 59:
+                rc.writeSharedArray(22, (rc.readSharedArray(22) & 65439) | (value << 5));
+                break;
+            case 60:
+                rc.writeSharedArray(22, (rc.readSharedArray(22) & 65532) | (value));
+                break;
+            case 61:
+                rc.writeSharedArray(23, (rc.readSharedArray(23) & 59391) | (value << 11));
+                break;
+            case 62:
+                rc.writeSharedArray(23, (rc.readSharedArray(23) & 65343) | (value << 6));
+                break;
+            case 63:
+                rc.writeSharedArray(23, (rc.readSharedArray(23) & 65529) | (value << 1));
+                break;
+            case 64:
+                rc.writeSharedArray(24, (rc.readSharedArray(24) & 53247) | (value << 12));
+                break;
+            case 65:
+                rc.writeSharedArray(24, (rc.readSharedArray(24) & 65151) | (value << 7));
+                break;
+            case 66:
+                rc.writeSharedArray(24, (rc.readSharedArray(24) & 65523) | (value << 2));
+                break;
+            case 67:
+                rc.writeSharedArray(25, (rc.readSharedArray(25) & 40959) | (value << 13));
+                break;
+            case 68:
+                rc.writeSharedArray(25, (rc.readSharedArray(25) & 64767) | (value << 8));
+                break;
+            case 69:
+                rc.writeSharedArray(25, (rc.readSharedArray(25) & 65511) | (value << 3));
+                break;
+            case 70:
+                rc.writeSharedArray(26, (rc.readSharedArray(26) & 16383) | (value << 14));
+                break;
+            case 71:
+                rc.writeSharedArray(26, (rc.readSharedArray(26) & 63999) | (value << 9));
+                break;
+            case 72:
+                rc.writeSharedArray(26, (rc.readSharedArray(26) & 65487) | (value << 4));
+                break;
+            case 73:
+                rc.writeSharedArray(26, (rc.readSharedArray(26) & 65534) | ((value & 2) >>> 1));
+                rc.writeSharedArray(27, (rc.readSharedArray(27) & 32767) | ((value & 1) << 15));
+                break;
+            case 74:
+                rc.writeSharedArray(27, (rc.readSharedArray(27) & 62463) | (value << 10));
+                break;
+            case 75:
+                rc.writeSharedArray(27, (rc.readSharedArray(27) & 65439) | (value << 5));
+                break;
+            case 76:
+                rc.writeSharedArray(27, (rc.readSharedArray(27) & 65532) | (value));
+                break;
+            case 77:
+                rc.writeSharedArray(28, (rc.readSharedArray(28) & 59391) | (value << 11));
+                break;
+            case 78:
+                rc.writeSharedArray(28, (rc.readSharedArray(28) & 65343) | (value << 6));
+                break;
+            case 79:
+                rc.writeSharedArray(28, (rc.readSharedArray(28) & 65529) | (value << 1));
+                break;
+            case 80:
+                rc.writeSharedArray(29, (rc.readSharedArray(29) & 53247) | (value << 12));
+                break;
+            case 81:
+                rc.writeSharedArray(29, (rc.readSharedArray(29) & 65151) | (value << 7));
+                break;
+            case 82:
+                rc.writeSharedArray(29, (rc.readSharedArray(29) & 65523) | (value << 2));
+                break;
+            case 83:
+                rc.writeSharedArray(30, (rc.readSharedArray(30) & 40959) | (value << 13));
+                break;
+            case 84:
+                rc.writeSharedArray(30, (rc.readSharedArray(30) & 64767) | (value << 8));
+                break;
+            case 85:
+                rc.writeSharedArray(30, (rc.readSharedArray(30) & 65511) | (value << 3));
+                break;
+            case 86:
+                rc.writeSharedArray(31, (rc.readSharedArray(31) & 16383) | (value << 14));
+                break;
+            case 87:
+                rc.writeSharedArray(31, (rc.readSharedArray(31) & 63999) | (value << 9));
+                break;
+            case 88:
+                rc.writeSharedArray(31, (rc.readSharedArray(31) & 65487) | (value << 4));
+                break;
+            case 89:
+                rc.writeSharedArray(31, (rc.readSharedArray(31) & 65534) | ((value & 2) >>> 1));
+                rc.writeSharedArray(32, (rc.readSharedArray(32) & 32767) | ((value & 1) << 15));
+                break;
+            case 90:
+                rc.writeSharedArray(32, (rc.readSharedArray(32) & 62463) | (value << 10));
+                break;
+            case 91:
+                rc.writeSharedArray(32, (rc.readSharedArray(32) & 65439) | (value << 5));
+                break;
+            case 92:
+                rc.writeSharedArray(32, (rc.readSharedArray(32) & 65532) | (value));
+                break;
+            case 93:
+                rc.writeSharedArray(33, (rc.readSharedArray(33) & 59391) | (value << 11));
+                break;
+            case 94:
+                rc.writeSharedArray(33, (rc.readSharedArray(33) & 65343) | (value << 6));
+                break;
+            case 95:
+                rc.writeSharedArray(33, (rc.readSharedArray(33) & 65529) | (value << 1));
+                break;
+            case 96:
+                rc.writeSharedArray(34, (rc.readSharedArray(34) & 53247) | (value << 12));
+                break;
+            case 97:
+                rc.writeSharedArray(34, (rc.readSharedArray(34) & 65151) | (value << 7));
+                break;
+            case 98:
+                rc.writeSharedArray(34, (rc.readSharedArray(34) & 65523) | (value << 2));
+                break;
+            case 99:
+                rc.writeSharedArray(35, (rc.readSharedArray(35) & 40959) | (value << 13));
+                break;
         }
-
-        int output = 0;
-        // if read is contained in a single integer
-        if (arrIndexStart == arrIndexEnd) {
-            // Inline switch statement -- unable to inline, method too large
-            // int bitm = bitmask2Read(integerBitBegin, integerBitEnd);
-            int bitm = 0;
-            switch (32*integerBitBegin + integerBitEnd) {
-                case 0: bitm = 32768; break; 
-                case 1: bitm = 49152; break; 
-                case 2: bitm = 57344; break; 
-                case 3: bitm = 61440; break; 
-                case 4: bitm = 63488; break; 
-                case 5: bitm = 64512; break; 
-                case 6: bitm = 65024; break; 
-                case 7: bitm = 65280; break; 
-                case 8: bitm = 65408; break; 
-                case 9: bitm = 65472; break; 
-                case 10: bitm = 65504; break; 
-                case 11: bitm = 65520; break; 
-                case 12: bitm = 65528; break; 
-                case 13: bitm = 65532; break; 
-                case 14: bitm = 65534; break; 
-                case 15: bitm = 65535; break; 
-                case 16: bitm = 2147418112; break; 
-                case 17: bitm = 1073676288; break; 
-                case 18: bitm = 536805376; break; 
-                case 19: bitm = 268369920; break; 
-                case 20: bitm = 134152192; break; 
-                case 21: bitm = 67043328; break; 
-                case 22: bitm = 33488896; break; 
-                case 23: bitm = 16711680; break; 
-                case 24: bitm = 8323072; break; 
-                case 25: bitm = 4128768; break; 
-                case 26: bitm = 2031616; break; 
-                case 27: bitm = 983040; break; 
-                case 28: bitm = 458752; break; 
-                case 29: bitm = 196608; break; 
-                case 30: bitm = 65536; break; 
-                case 31: bitm = 0; break; 
-                case 33: bitm = 16384; break; 
-                case 34: bitm = 24576; break; 
-                case 35: bitm = 28672; break; 
-                case 36: bitm = 30720; break; 
-                case 37: bitm = 31744; break; 
-                case 38: bitm = 32256; break; 
-                case 39: bitm = 32512; break; 
-                case 40: bitm = 32640; break; 
-                case 41: bitm = 32704; break; 
-                case 42: bitm = 32736; break; 
-                case 43: bitm = 32752; break; 
-                case 44: bitm = 32760; break; 
-                case 45: bitm = 32764; break; 
-                case 46: bitm = 32766; break; 
-                case 47: bitm = 32767; break; 
-                case 48: bitm = 2147450880; break; 
-                case 49: bitm = 1073709056; break; 
-                case 50: bitm = 536838144; break; 
-                case 51: bitm = 268402688; break; 
-                case 52: bitm = 134184960; break; 
-                case 53: bitm = 67076096; break; 
-                case 54: bitm = 33521664; break; 
-                case 55: bitm = 16744448; break; 
-                case 56: bitm = 8355840; break; 
-                case 57: bitm = 4161536; break; 
-                case 58: bitm = 2064384; break; 
-                case 59: bitm = 1015808; break; 
-                case 60: bitm = 491520; break; 
-                case 61: bitm = 229376; break; 
-                case 62: bitm = 98304; break; 
-                case 63: bitm = 32768; break; 
-                case 66: bitm = 8192; break; 
-                case 67: bitm = 12288; break; 
-                case 68: bitm = 14336; break; 
-                case 69: bitm = 15360; break; 
-                case 70: bitm = 15872; break; 
-                case 71: bitm = 16128; break; 
-                case 72: bitm = 16256; break; 
-                case 73: bitm = 16320; break; 
-                case 74: bitm = 16352; break; 
-                case 75: bitm = 16368; break; 
-                case 76: bitm = 16376; break; 
-                case 77: bitm = 16380; break; 
-                case 78: bitm = 16382; break; 
-                case 79: bitm = 16383; break; 
-                case 80: bitm = 2147467264; break; 
-                case 81: bitm = 1073725440; break; 
-                case 82: bitm = 536854528; break; 
-                case 83: bitm = 268419072; break; 
-                case 84: bitm = 134201344; break; 
-                case 85: bitm = 67092480; break; 
-                case 86: bitm = 33538048; break; 
-                case 87: bitm = 16760832; break; 
-                case 88: bitm = 8372224; break; 
-                case 89: bitm = 4177920; break; 
-                case 90: bitm = 2080768; break; 
-                case 91: bitm = 1032192; break; 
-                case 92: bitm = 507904; break; 
-                case 93: bitm = 245760; break; 
-                case 94: bitm = 114688; break; 
-                case 95: bitm = 49152; break; 
-                case 99: bitm = 4096; break; 
-                case 100: bitm = 6144; break; 
-                case 101: bitm = 7168; break; 
-                case 102: bitm = 7680; break; 
-                case 103: bitm = 7936; break; 
-                case 104: bitm = 8064; break; 
-                case 105: bitm = 8128; break; 
-                case 106: bitm = 8160; break; 
-                case 107: bitm = 8176; break; 
-                case 108: bitm = 8184; break; 
-                case 109: bitm = 8188; break; 
-                case 110: bitm = 8190; break; 
-                case 111: bitm = 8191; break; 
-                case 112: bitm = 2147475456; break; 
-                case 113: bitm = 1073733632; break; 
-                case 114: bitm = 536862720; break; 
-                case 115: bitm = 268427264; break; 
-                case 116: bitm = 134209536; break; 
-                case 117: bitm = 67100672; break; 
-                case 118: bitm = 33546240; break; 
-                case 119: bitm = 16769024; break; 
-                case 120: bitm = 8380416; break; 
-                case 121: bitm = 4186112; break; 
-                case 122: bitm = 2088960; break; 
-                case 123: bitm = 1040384; break; 
-                case 124: bitm = 516096; break; 
-                case 125: bitm = 253952; break; 
-                case 126: bitm = 122880; break; 
-                case 127: bitm = 57344; break; 
-                case 132: bitm = 2048; break; 
-                case 133: bitm = 3072; break; 
-                case 134: bitm = 3584; break; 
-                case 135: bitm = 3840; break; 
-                case 136: bitm = 3968; break; 
-                case 137: bitm = 4032; break; 
-                case 138: bitm = 4064; break; 
-                case 139: bitm = 4080; break; 
-                case 140: bitm = 4088; break; 
-                case 141: bitm = 4092; break; 
-                case 142: bitm = 4094; break; 
-                case 143: bitm = 4095; break; 
-                case 144: bitm = 2147479552; break; 
-                case 145: bitm = 1073737728; break; 
-                case 146: bitm = 536866816; break; 
-                case 147: bitm = 268431360; break; 
-                case 148: bitm = 134213632; break; 
-                case 149: bitm = 67104768; break; 
-                case 150: bitm = 33550336; break; 
-                case 151: bitm = 16773120; break; 
-                case 152: bitm = 8384512; break; 
-                case 153: bitm = 4190208; break; 
-                case 154: bitm = 2093056; break; 
-                case 155: bitm = 1044480; break; 
-                case 156: bitm = 520192; break; 
-                case 157: bitm = 258048; break; 
-                case 158: bitm = 126976; break; 
-                case 159: bitm = 61440; break; 
-                case 165: bitm = 1024; break; 
-                case 166: bitm = 1536; break; 
-                case 167: bitm = 1792; break; 
-                case 168: bitm = 1920; break; 
-                case 169: bitm = 1984; break; 
-                case 170: bitm = 2016; break; 
-                case 171: bitm = 2032; break; 
-                case 172: bitm = 2040; break; 
-                case 173: bitm = 2044; break; 
-                case 174: bitm = 2046; break; 
-                case 175: bitm = 2047; break; 
-                case 176: bitm = 2147481600; break; 
-                case 177: bitm = 1073739776; break; 
-                case 178: bitm = 536868864; break; 
-                case 179: bitm = 268433408; break; 
-                case 180: bitm = 134215680; break; 
-                case 181: bitm = 67106816; break; 
-                case 182: bitm = 33552384; break; 
-                case 183: bitm = 16775168; break; 
-                case 184: bitm = 8386560; break; 
-                case 185: bitm = 4192256; break; 
-                case 186: bitm = 2095104; break; 
-                case 187: bitm = 1046528; break; 
-                case 188: bitm = 522240; break; 
-                case 189: bitm = 260096; break; 
-                case 190: bitm = 129024; break; 
-                case 191: bitm = 63488; break; 
-                case 198: bitm = 512; break; 
-                case 199: bitm = 768; break; 
-                case 200: bitm = 896; break; 
-                case 201: bitm = 960; break; 
-                case 202: bitm = 992; break; 
-                case 203: bitm = 1008; break; 
-                case 204: bitm = 1016; break; 
-                case 205: bitm = 1020; break; 
-                case 206: bitm = 1022; break; 
-                case 207: bitm = 1023; break; 
-                case 208: bitm = 2147482624; break; 
-                case 209: bitm = 1073740800; break; 
-                case 210: bitm = 536869888; break; 
-                case 211: bitm = 268434432; break; 
-                case 212: bitm = 134216704; break; 
-                case 213: bitm = 67107840; break; 
-                case 214: bitm = 33553408; break; 
-                case 215: bitm = 16776192; break; 
-                case 216: bitm = 8387584; break; 
-                case 217: bitm = 4193280; break; 
-                case 218: bitm = 2096128; break; 
-                case 219: bitm = 1047552; break; 
-                case 220: bitm = 523264; break; 
-                case 221: bitm = 261120; break; 
-                case 222: bitm = 130048; break; 
-                case 223: bitm = 64512; break; 
-                case 231: bitm = 256; break; 
-                case 232: bitm = 384; break; 
-                case 233: bitm = 448; break; 
-                case 234: bitm = 480; break; 
-                case 235: bitm = 496; break; 
-                case 236: bitm = 504; break; 
-                case 237: bitm = 508; break; 
-                case 238: bitm = 510; break; 
-                case 239: bitm = 511; break; 
-                case 240: bitm = 2147483136; break; 
-                case 241: bitm = 1073741312; break; 
-                case 242: bitm = 536870400; break; 
-                case 243: bitm = 268434944; break; 
-                case 244: bitm = 134217216; break; 
-                case 245: bitm = 67108352; break; 
-                case 246: bitm = 33553920; break; 
-                case 247: bitm = 16776704; break; 
-                case 248: bitm = 8388096; break; 
-                case 249: bitm = 4193792; break; 
-                case 250: bitm = 2096640; break; 
-                case 251: bitm = 1048064; break; 
-                case 252: bitm = 523776; break; 
-                case 253: bitm = 261632; break; 
-                case 254: bitm = 130560; break; 
-                case 255: bitm = 65024; break; 
-                case 264: bitm = 128; break; 
-                case 265: bitm = 192; break; 
-                case 266: bitm = 224; break; 
-                case 267: bitm = 240; break; 
-                case 268: bitm = 248; break; 
-                case 269: bitm = 252; break; 
-                case 270: bitm = 254; break; 
-                case 271: bitm = 255; break; 
-                case 272: bitm = 2147483392; break; 
-                case 273: bitm = 1073741568; break; 
-                case 274: bitm = 536870656; break; 
-                case 275: bitm = 268435200; break; 
-                case 276: bitm = 134217472; break; 
-                case 277: bitm = 67108608; break; 
-                case 278: bitm = 33554176; break; 
-                case 279: bitm = 16776960; break; 
-                case 280: bitm = 8388352; break; 
-                case 281: bitm = 4194048; break; 
-                case 282: bitm = 2096896; break; 
-                case 283: bitm = 1048320; break; 
-                case 284: bitm = 524032; break; 
-                case 285: bitm = 261888; break; 
-                case 286: bitm = 130816; break; 
-                case 287: bitm = 65280; break; 
-                case 297: bitm = 64; break; 
-                case 298: bitm = 96; break; 
-                case 299: bitm = 112; break; 
-                case 300: bitm = 120; break; 
-                case 301: bitm = 124; break; 
-                case 302: bitm = 126; break; 
-                case 303: bitm = 127; break; 
-                case 304: bitm = 2147483520; break; 
-                case 305: bitm = 1073741696; break; 
-                case 306: bitm = 536870784; break; 
-                case 307: bitm = 268435328; break; 
-                case 308: bitm = 134217600; break; 
-                case 309: bitm = 67108736; break; 
-                case 310: bitm = 33554304; break; 
-                case 311: bitm = 16777088; break; 
-                case 312: bitm = 8388480; break; 
-                case 313: bitm = 4194176; break; 
-                case 314: bitm = 2097024; break; 
-                case 315: bitm = 1048448; break; 
-                case 316: bitm = 524160; break; 
-                case 317: bitm = 262016; break; 
-                case 318: bitm = 130944; break; 
-                case 319: bitm = 65408; break; 
-                case 330: bitm = 32; break; 
-                case 331: bitm = 48; break; 
-                case 332: bitm = 56; break; 
-                case 333: bitm = 60; break; 
-                case 334: bitm = 62; break; 
-                case 335: bitm = 63; break; 
-                case 336: bitm = 2147483584; break; 
-                case 337: bitm = 1073741760; break; 
-                case 338: bitm = 536870848; break; 
-                case 339: bitm = 268435392; break; 
-                case 340: bitm = 134217664; break; 
-                case 341: bitm = 67108800; break; 
-                case 342: bitm = 33554368; break; 
-                case 343: bitm = 16777152; break; 
-                case 344: bitm = 8388544; break; 
-                case 345: bitm = 4194240; break; 
-                case 346: bitm = 2097088; break; 
-                case 347: bitm = 1048512; break; 
-                case 348: bitm = 524224; break; 
-                case 349: bitm = 262080; break; 
-                case 350: bitm = 131008; break; 
-                case 351: bitm = 65472; break; 
-                case 363: bitm = 16; break; 
-                case 364: bitm = 24; break; 
-                case 365: bitm = 28; break; 
-                case 366: bitm = 30; break; 
-                case 367: bitm = 31; break; 
-                case 368: bitm = 2147483616; break; 
-                case 369: bitm = 1073741792; break; 
-                case 370: bitm = 536870880; break; 
-                case 371: bitm = 268435424; break; 
-                case 372: bitm = 134217696; break; 
-                case 373: bitm = 67108832; break; 
-                case 374: bitm = 33554400; break; 
-                case 375: bitm = 16777184; break; 
-                case 376: bitm = 8388576; break; 
-                case 377: bitm = 4194272; break; 
-                case 378: bitm = 2097120; break; 
-                case 379: bitm = 1048544; break; 
-                case 380: bitm = 524256; break; 
-                case 381: bitm = 262112; break; 
-                case 382: bitm = 131040; break; 
-                case 383: bitm = 65504; break; 
-                case 396: bitm = 8; break; 
-                case 397: bitm = 12; break; 
-                case 398: bitm = 14; break; 
-                case 399: bitm = 15; break; 
-                case 400: bitm = 2147483632; break; 
-                case 401: bitm = 1073741808; break; 
-                case 402: bitm = 536870896; break; 
-                case 403: bitm = 268435440; break; 
-                case 404: bitm = 134217712; break; 
-                case 405: bitm = 67108848; break; 
-                case 406: bitm = 33554416; break; 
-                case 407: bitm = 16777200; break; 
-                case 408: bitm = 8388592; break; 
-                case 409: bitm = 4194288; break; 
-                case 410: bitm = 2097136; break; 
-                case 411: bitm = 1048560; break; 
-                case 412: bitm = 524272; break; 
-                case 413: bitm = 262128; break; 
-                case 414: bitm = 131056; break; 
-                case 415: bitm = 65520; break; 
-                case 429: bitm = 4; break; 
-                case 430: bitm = 6; break; 
-                case 431: bitm = 7; break; 
-                case 432: bitm = 2147483640; break; 
-                case 433: bitm = 1073741816; break; 
-                case 434: bitm = 536870904; break; 
-                case 435: bitm = 268435448; break; 
-                case 436: bitm = 134217720; break; 
-                case 437: bitm = 67108856; break; 
-                case 438: bitm = 33554424; break; 
-                case 439: bitm = 16777208; break; 
-                case 440: bitm = 8388600; break; 
-                case 441: bitm = 4194296; break; 
-                case 442: bitm = 2097144; break; 
-                case 443: bitm = 1048568; break; 
-                case 444: bitm = 524280; break; 
-                case 445: bitm = 262136; break; 
-                case 446: bitm = 131064; break; 
-                case 447: bitm = 65528; break; 
-                case 462: bitm = 2; break; 
-                case 463: bitm = 3; break; 
-                case 464: bitm = 2147483644; break; 
-                case 465: bitm = 1073741820; break; 
-                case 466: bitm = 536870908; break; 
-                case 467: bitm = 268435452; break; 
-                case 468: bitm = 134217724; break; 
-                case 469: bitm = 67108860; break; 
-                case 470: bitm = 33554428; break; 
-                case 471: bitm = 16777212; break; 
-                case 472: bitm = 8388604; break; 
-                case 473: bitm = 4194300; break; 
-                case 474: bitm = 2097148; break; 
-                case 475: bitm = 1048572; break; 
-                case 476: bitm = 524284; break; 
-                case 477: bitm = 262140; break; 
-                case 478: bitm = 131068; break; 
-                case 479: bitm = 65532; break; 
-                case 495: bitm = 1; break; 
-                case 496: bitm = 2147483646; break; 
-                case 497: bitm = 1073741822; break; 
-                case 498: bitm = 536870910; break; 
-                case 499: bitm = 268435454; break; 
-                case 500: bitm = 134217726; break; 
-                case 501: bitm = 67108862; break; 
-                case 502: bitm = 33554430; break; 
-                case 503: bitm = 16777214; break; 
-                case 504: bitm = 8388606; break; 
-                case 505: bitm = 4194302; break; 
-                case 506: bitm = 2097150; break; 
-                case 507: bitm = 1048574; break; 
-                case 508: bitm = 524286; break; 
-                case 509: bitm = 262142; break; 
-                case 510: bitm = 131070; break; 
-                case 511: bitm = 65534; break; 
-                case 528: bitm = -2147483648; break; 
-                case 529: bitm = -1073741824; break; 
-                case 530: bitm = -536870912; break; 
-                case 531: bitm = -268435456; break; 
-                case 532: bitm = -134217728; break; 
-                case 533: bitm = -67108864; break; 
-                case 534: bitm = -33554432; break; 
-                case 535: bitm = -16777216; break; 
-                case 536: bitm = -8388608; break; 
-                case 537: bitm = -4194304; break; 
-                case 538: bitm = -2097152; break; 
-                case 539: bitm = -1048576; break; 
-                case 540: bitm = -524288; break; 
-                case 541: bitm = -262144; break; 
-                case 542: bitm = -131072; break; 
-                case 543: bitm = -65536; break; 
-                case 561: bitm = 1073741824; break; 
-                case 562: bitm = 1610612736; break; 
-                case 563: bitm = 1879048192; break; 
-                case 564: bitm = 2013265920; break; 
-                case 565: bitm = 2080374784; break; 
-                case 566: bitm = 2113929216; break; 
-                case 567: bitm = 2130706432; break; 
-                case 568: bitm = 2139095040; break; 
-                case 569: bitm = 2143289344; break; 
-                case 570: bitm = 2145386496; break; 
-                case 571: bitm = 2146435072; break; 
-                case 572: bitm = 2146959360; break; 
-                case 573: bitm = 2147221504; break; 
-                case 574: bitm = 2147352576; break; 
-                case 575: bitm = 2147418112; break; 
-                case 594: bitm = 536870912; break; 
-                case 595: bitm = 805306368; break; 
-                case 596: bitm = 939524096; break; 
-                case 597: bitm = 1006632960; break; 
-                case 598: bitm = 1040187392; break; 
-                case 599: bitm = 1056964608; break; 
-                case 600: bitm = 1065353216; break; 
-                case 601: bitm = 1069547520; break; 
-                case 602: bitm = 1071644672; break; 
-                case 603: bitm = 1072693248; break; 
-                case 604: bitm = 1073217536; break; 
-                case 605: bitm = 1073479680; break; 
-                case 606: bitm = 1073610752; break; 
-                case 607: bitm = 1073676288; break; 
-                case 627: bitm = 268435456; break; 
-                case 628: bitm = 402653184; break; 
-                case 629: bitm = 469762048; break; 
-                case 630: bitm = 503316480; break; 
-                case 631: bitm = 520093696; break; 
-                case 632: bitm = 528482304; break; 
-                case 633: bitm = 532676608; break; 
-                case 634: bitm = 534773760; break; 
-                case 635: bitm = 535822336; break; 
-                case 636: bitm = 536346624; break; 
-                case 637: bitm = 536608768; break; 
-                case 638: bitm = 536739840; break; 
-                case 639: bitm = 536805376; break; 
-                case 660: bitm = 134217728; break; 
-                case 661: bitm = 201326592; break; 
-                case 662: bitm = 234881024; break; 
-                case 663: bitm = 251658240; break; 
-                case 664: bitm = 260046848; break; 
-                case 665: bitm = 264241152; break; 
-                case 666: bitm = 266338304; break; 
-                case 667: bitm = 267386880; break; 
-                case 668: bitm = 267911168; break; 
-                case 669: bitm = 268173312; break; 
-                case 670: bitm = 268304384; break; 
-                case 671: bitm = 268369920; break; 
-                case 693: bitm = 67108864; break; 
-                case 694: bitm = 100663296; break; 
-                case 695: bitm = 117440512; break; 
-                case 696: bitm = 125829120; break; 
-                case 697: bitm = 130023424; break; 
-                case 698: bitm = 132120576; break; 
-                case 699: bitm = 133169152; break; 
-                case 700: bitm = 133693440; break; 
-                case 701: bitm = 133955584; break; 
-                case 702: bitm = 134086656; break; 
-                case 703: bitm = 134152192; break; 
-                case 726: bitm = 33554432; break; 
-                case 727: bitm = 50331648; break; 
-                case 728: bitm = 58720256; break; 
-                case 729: bitm = 62914560; break; 
-                case 730: bitm = 65011712; break; 
-                case 731: bitm = 66060288; break; 
-                case 732: bitm = 66584576; break; 
-                case 733: bitm = 66846720; break; 
-                case 734: bitm = 66977792; break; 
-                case 735: bitm = 67043328; break; 
-                case 759: bitm = 16777216; break; 
-                case 760: bitm = 25165824; break; 
-                case 761: bitm = 29360128; break; 
-                case 762: bitm = 31457280; break; 
-                case 763: bitm = 32505856; break; 
-                case 764: bitm = 33030144; break; 
-                case 765: bitm = 33292288; break; 
-                case 766: bitm = 33423360; break; 
-                case 767: bitm = 33488896; break; 
-                case 792: bitm = 8388608; break; 
-                case 793: bitm = 12582912; break; 
-                case 794: bitm = 14680064; break; 
-                case 795: bitm = 15728640; break; 
-                case 796: bitm = 16252928; break; 
-                case 797: bitm = 16515072; break; 
-                case 798: bitm = 16646144; break; 
-                case 799: bitm = 16711680; break; 
-                case 825: bitm = 4194304; break; 
-                case 826: bitm = 6291456; break; 
-                case 827: bitm = 7340032; break; 
-                case 828: bitm = 7864320; break; 
-                case 829: bitm = 8126464; break; 
-                case 830: bitm = 8257536; break; 
-                case 831: bitm = 8323072; break; 
-                case 858: bitm = 2097152; break; 
-                case 859: bitm = 3145728; break; 
-                case 860: bitm = 3670016; break; 
-                case 861: bitm = 3932160; break; 
-                case 862: bitm = 4063232; break; 
-                case 863: bitm = 4128768; break; 
-                case 891: bitm = 1048576; break; 
-                case 892: bitm = 1572864; break; 
-                case 893: bitm = 1835008; break; 
-                case 894: bitm = 1966080; break; 
-                case 895: bitm = 2031616; break; 
-                case 924: bitm = 524288; break; 
-                case 925: bitm = 786432; break; 
-                case 926: bitm = 917504; break; 
-                case 927: bitm = 983040; break; 
-                case 957: bitm = 262144; break; 
-                case 958: bitm = 393216; break; 
-                case 959: bitm = 458752; break; 
-                case 990: bitm = 131072; break; 
-                case 991: bitm = 196608; break; 
-                case 1023: bitm = 65536; break;
-            }
-            
-            output = (rc.readSharedArray(arrIndexStart) & bitm) >>> (SHARED_ARRAY_ELEM_SIZE - integerBitBegin - numBits);
-        } 
-        // If the read spans two integers
-        else {
-            // Inline switch statement
-            int bitm1 = bitmask2Read(integerBitBegin, SHARED_ARRAY_ELEM_SIZE-1);
-            /*
-            int bitm1 = 0;
-            int mask1 = 32*integerBitBegin + SHARED_ARRAY_ELEM_SIZE-1; 
-            switch (mask1) {
-                case 0: bitm1 = 32768; break; 
-                case 1: bitm1 = 49152; break; 
-                case 2: bitm1 = 57344; break; 
-                case 3: bitm1 = 61440; break; 
-                case 4: bitm1 = 63488; break; 
-                case 5: bitm1 = 64512; break; 
-                case 6: bitm1 = 65024; break; 
-                case 7: bitm1 = 65280; break; 
-                case 8: bitm1 = 65408; break; 
-                case 9: bitm1 = 65472; break; 
-                case 10: bitm1 = 65504; break; 
-                case 11: bitm1 = 65520; break; 
-                case 12: bitm1 = 65528; break; 
-                case 13: bitm1 = 65532; break; 
-                case 14: bitm1 = 65534; break; 
-                case 15: bitm1 = 65535; break; 
-                case 16: bitm1 = 2147418112; break; 
-                case 17: bitm1 = 1073676288; break; 
-                case 18: bitm1 = 536805376; break; 
-                case 19: bitm1 = 268369920; break; 
-                case 20: bitm1 = 134152192; break; 
-                case 21: bitm1 = 67043328; break; 
-                case 22: bitm1 = 33488896; break; 
-                case 23: bitm1 = 16711680; break; 
-                case 24: bitm1 = 8323072; break; 
-                case 25: bitm1 = 4128768; break; 
-                case 26: bitm1 = 2031616; break; 
-                case 27: bitm1 = 983040; break; 
-                case 28: bitm1 = 458752; break; 
-                case 29: bitm1 = 196608; break; 
-                case 30: bitm1 = 65536; break; 
-                case 31: bitm1 = 0; break; 
-                case 33: bitm1 = 16384; break; 
-                case 34: bitm1 = 24576; break; 
-                case 35: bitm1 = 28672; break; 
-                case 36: bitm1 = 30720; break; 
-                case 37: bitm1 = 31744; break; 
-                case 38: bitm1 = 32256; break; 
-                case 39: bitm1 = 32512; break; 
-                case 40: bitm1 = 32640; break; 
-                case 41: bitm1 = 32704; break; 
-                case 42: bitm1 = 32736; break; 
-                case 43: bitm1 = 32752; break; 
-                case 44: bitm1 = 32760; break; 
-                case 45: bitm1 = 32764; break; 
-                case 46: bitm1 = 32766; break; 
-                case 47: bitm1 = 32767; break; 
-                case 48: bitm1 = 2147450880; break; 
-                case 49: bitm1 = 1073709056; break; 
-                case 50: bitm1 = 536838144; break; 
-                case 51: bitm1 = 268402688; break; 
-                case 52: bitm1 = 134184960; break; 
-                case 53: bitm1 = 67076096; break; 
-                case 54: bitm1 = 33521664; break; 
-                case 55: bitm1 = 16744448; break; 
-                case 56: bitm1 = 8355840; break; 
-                case 57: bitm1 = 4161536; break; 
-                case 58: bitm1 = 2064384; break; 
-                case 59: bitm1 = 1015808; break; 
-                case 60: bitm1 = 491520; break; 
-                case 61: bitm1 = 229376; break; 
-                case 62: bitm1 = 98304; break; 
-                case 63: bitm1 = 32768; break; 
-                case 66: bitm1 = 8192; break; 
-                case 67: bitm1 = 12288; break; 
-                case 68: bitm1 = 14336; break; 
-                case 69: bitm1 = 15360; break; 
-                case 70: bitm1 = 15872; break; 
-                case 71: bitm1 = 16128; break; 
-                case 72: bitm1 = 16256; break; 
-                case 73: bitm1 = 16320; break; 
-                case 74: bitm1 = 16352; break; 
-                case 75: bitm1 = 16368; break; 
-                case 76: bitm1 = 16376; break; 
-                case 77: bitm1 = 16380; break; 
-                case 78: bitm1 = 16382; break; 
-                case 79: bitm1 = 16383; break; 
-                case 80: bitm1 = 2147467264; break; 
-                case 81: bitm1 = 1073725440; break; 
-                case 82: bitm1 = 536854528; break; 
-                case 83: bitm1 = 268419072; break; 
-                case 84: bitm1 = 134201344; break; 
-                case 85: bitm1 = 67092480; break; 
-                case 86: bitm1 = 33538048; break; 
-                case 87: bitm1 = 16760832; break; 
-                case 88: bitm1 = 8372224; break; 
-                case 89: bitm1 = 4177920; break; 
-                case 90: bitm1 = 2080768; break; 
-                case 91: bitm1 = 1032192; break; 
-                case 92: bitm1 = 507904; break; 
-                case 93: bitm1 = 245760; break; 
-                case 94: bitm1 = 114688; break; 
-                case 95: bitm1 = 49152; break; 
-                case 99: bitm1 = 4096; break; 
-                case 100: bitm1 = 6144; break; 
-                case 101: bitm1 = 7168; break; 
-                case 102: bitm1 = 7680; break; 
-                case 103: bitm1 = 7936; break; 
-                case 104: bitm1 = 8064; break; 
-                case 105: bitm1 = 8128; break; 
-                case 106: bitm1 = 8160; break; 
-                case 107: bitm1 = 8176; break; 
-                case 108: bitm1 = 8184; break; 
-                case 109: bitm1 = 8188; break; 
-                case 110: bitm1 = 8190; break; 
-                case 111: bitm1 = 8191; break; 
-                case 112: bitm1 = 2147475456; break; 
-                case 113: bitm1 = 1073733632; break; 
-                case 114: bitm1 = 536862720; break; 
-                case 115: bitm1 = 268427264; break; 
-                case 116: bitm1 = 134209536; break; 
-                case 117: bitm1 = 67100672; break; 
-                case 118: bitm1 = 33546240; break; 
-                case 119: bitm1 = 16769024; break; 
-                case 120: bitm1 = 8380416; break; 
-                case 121: bitm1 = 4186112; break; 
-                case 122: bitm1 = 2088960; break; 
-                case 123: bitm1 = 1040384; break; 
-                case 124: bitm1 = 516096; break; 
-                case 125: bitm1 = 253952; break; 
-                case 126: bitm1 = 122880; break; 
-                case 127: bitm1 = 57344; break; 
-                case 132: bitm1 = 2048; break; 
-                case 133: bitm1 = 3072; break; 
-                case 134: bitm1 = 3584; break; 
-                case 135: bitm1 = 3840; break; 
-                case 136: bitm1 = 3968; break; 
-                case 137: bitm1 = 4032; break; 
-                case 138: bitm1 = 4064; break; 
-                case 139: bitm1 = 4080; break; 
-                case 140: bitm1 = 4088; break; 
-                case 141: bitm1 = 4092; break; 
-                case 142: bitm1 = 4094; break; 
-                case 143: bitm1 = 4095; break; 
-                case 144: bitm1 = 2147479552; break; 
-                case 145: bitm1 = 1073737728; break; 
-                case 146: bitm1 = 536866816; break; 
-                case 147: bitm1 = 268431360; break; 
-                case 148: bitm1 = 134213632; break; 
-                case 149: bitm1 = 67104768; break; 
-                case 150: bitm1 = 33550336; break; 
-                case 151: bitm1 = 16773120; break; 
-                case 152: bitm1 = 8384512; break; 
-                case 153: bitm1 = 4190208; break; 
-                case 154: bitm1 = 2093056; break; 
-                case 155: bitm1 = 1044480; break; 
-                case 156: bitm1 = 520192; break; 
-                case 157: bitm1 = 258048; break; 
-                case 158: bitm1 = 126976; break; 
-                case 159: bitm1 = 61440; break; 
-                case 165: bitm1 = 1024; break; 
-                case 166: bitm1 = 1536; break; 
-                case 167: bitm1 = 1792; break; 
-                case 168: bitm1 = 1920; break; 
-                case 169: bitm1 = 1984; break; 
-                case 170: bitm1 = 2016; break; 
-                case 171: bitm1 = 2032; break; 
-                case 172: bitm1 = 2040; break; 
-                case 173: bitm1 = 2044; break; 
-                case 174: bitm1 = 2046; break; 
-                case 175: bitm1 = 2047; break; 
-                case 176: bitm1 = 2147481600; break; 
-                case 177: bitm1 = 1073739776; break; 
-                case 178: bitm1 = 536868864; break; 
-                case 179: bitm1 = 268433408; break; 
-                case 180: bitm1 = 134215680; break; 
-                case 181: bitm1 = 67106816; break; 
-                case 182: bitm1 = 33552384; break; 
-                case 183: bitm1 = 16775168; break; 
-                case 184: bitm1 = 8386560; break; 
-                case 185: bitm1 = 4192256; break; 
-                case 186: bitm1 = 2095104; break; 
-                case 187: bitm1 = 1046528; break; 
-                case 188: bitm1 = 522240; break; 
-                case 189: bitm1 = 260096; break; 
-                case 190: bitm1 = 129024; break; 
-                case 191: bitm1 = 63488; break; 
-                case 198: bitm1 = 512; break; 
-                case 199: bitm1 = 768; break; 
-                case 200: bitm1 = 896; break; 
-                case 201: bitm1 = 960; break; 
-                case 202: bitm1 = 992; break; 
-                case 203: bitm1 = 1008; break; 
-                case 204: bitm1 = 1016; break; 
-                case 205: bitm1 = 1020; break; 
-                case 206: bitm1 = 1022; break; 
-                case 207: bitm1 = 1023; break; 
-                case 208: bitm1 = 2147482624; break; 
-                case 209: bitm1 = 1073740800; break; 
-                case 210: bitm1 = 536869888; break; 
-                case 211: bitm1 = 268434432; break; 
-                case 212: bitm1 = 134216704; break; 
-                case 213: bitm1 = 67107840; break; 
-                case 214: bitm1 = 33553408; break; 
-                case 215: bitm1 = 16776192; break; 
-                case 216: bitm1 = 8387584; break; 
-                case 217: bitm1 = 4193280; break; 
-                case 218: bitm1 = 2096128; break; 
-                case 219: bitm1 = 1047552; break; 
-                case 220: bitm1 = 523264; break; 
-                case 221: bitm1 = 261120; break; 
-                case 222: bitm1 = 130048; break; 
-                case 223: bitm1 = 64512; break; 
-                case 231: bitm1 = 256; break; 
-                case 232: bitm1 = 384; break; 
-                case 233: bitm1 = 448; break; 
-                case 234: bitm1 = 480; break; 
-                case 235: bitm1 = 496; break; 
-                case 236: bitm1 = 504; break; 
-                case 237: bitm1 = 508; break; 
-                case 238: bitm1 = 510; break; 
-                case 239: bitm1 = 511; break; 
-                case 240: bitm1 = 2147483136; break; 
-                case 241: bitm1 = 1073741312; break; 
-                case 242: bitm1 = 536870400; break; 
-                case 243: bitm1 = 268434944; break; 
-                case 244: bitm1 = 134217216; break; 
-                case 245: bitm1 = 67108352; break; 
-                case 246: bitm1 = 33553920; break; 
-                case 247: bitm1 = 16776704; break; 
-                case 248: bitm1 = 8388096; break; 
-                case 249: bitm1 = 4193792; break; 
-                case 250: bitm1 = 2096640; break; 
-                case 251: bitm1 = 1048064; break; 
-                case 252: bitm1 = 523776; break; 
-                case 253: bitm1 = 261632; break; 
-                case 254: bitm1 = 130560; break; 
-                case 255: bitm1 = 65024; break; 
-                case 264: bitm1 = 128; break; 
-                case 265: bitm1 = 192; break; 
-                case 266: bitm1 = 224; break; 
-                case 267: bitm1 = 240; break; 
-                case 268: bitm1 = 248; break; 
-                case 269: bitm1 = 252; break; 
-                case 270: bitm1 = 254; break; 
-                case 271: bitm1 = 255; break; 
-                case 272: bitm1 = 2147483392; break; 
-                case 273: bitm1 = 1073741568; break; 
-                case 274: bitm1 = 536870656; break; 
-                case 275: bitm1 = 268435200; break; 
-                case 276: bitm1 = 134217472; break; 
-                case 277: bitm1 = 67108608; break; 
-                case 278: bitm1 = 33554176; break; 
-                case 279: bitm1 = 16776960; break; 
-                case 280: bitm1 = 8388352; break; 
-                case 281: bitm1 = 4194048; break; 
-                case 282: bitm1 = 2096896; break; 
-                case 283: bitm1 = 1048320; break; 
-                case 284: bitm1 = 524032; break; 
-                case 285: bitm1 = 261888; break; 
-                case 286: bitm1 = 130816; break; 
-                case 287: bitm1 = 65280; break; 
-                case 297: bitm1 = 64; break; 
-                case 298: bitm1 = 96; break; 
-                case 299: bitm1 = 112; break; 
-                case 300: bitm1 = 120; break; 
-                case 301: bitm1 = 124; break; 
-                case 302: bitm1 = 126; break; 
-                case 303: bitm1 = 127; break; 
-                case 304: bitm1 = 2147483520; break; 
-                case 305: bitm1 = 1073741696; break; 
-                case 306: bitm1 = 536870784; break; 
-                case 307: bitm1 = 268435328; break; 
-                case 308: bitm1 = 134217600; break; 
-                case 309: bitm1 = 67108736; break; 
-                case 310: bitm1 = 33554304; break; 
-                case 311: bitm1 = 16777088; break; 
-                case 312: bitm1 = 8388480; break; 
-                case 313: bitm1 = 4194176; break; 
-                case 314: bitm1 = 2097024; break; 
-                case 315: bitm1 = 1048448; break; 
-                case 316: bitm1 = 524160; break; 
-                case 317: bitm1 = 262016; break; 
-                case 318: bitm1 = 130944; break; 
-                case 319: bitm1 = 65408; break; 
-                case 330: bitm1 = 32; break; 
-                case 331: bitm1 = 48; break; 
-                case 332: bitm1 = 56; break; 
-                case 333: bitm1 = 60; break; 
-                case 334: bitm1 = 62; break; 
-                case 335: bitm1 = 63; break; 
-                case 336: bitm1 = 2147483584; break; 
-                case 337: bitm1 = 1073741760; break; 
-                case 338: bitm1 = 536870848; break; 
-                case 339: bitm1 = 268435392; break; 
-                case 340: bitm1 = 134217664; break; 
-                case 341: bitm1 = 67108800; break; 
-                case 342: bitm1 = 33554368; break; 
-                case 343: bitm1 = 16777152; break; 
-                case 344: bitm1 = 8388544; break; 
-                case 345: bitm1 = 4194240; break; 
-                case 346: bitm1 = 2097088; break; 
-                case 347: bitm1 = 1048512; break; 
-                case 348: bitm1 = 524224; break; 
-                case 349: bitm1 = 262080; break; 
-                case 350: bitm1 = 131008; break; 
-                case 351: bitm1 = 65472; break; 
-                case 363: bitm1 = 16; break; 
-                case 364: bitm1 = 24; break; 
-                case 365: bitm1 = 28; break; 
-                case 366: bitm1 = 30; break; 
-                case 367: bitm1 = 31; break; 
-                case 368: bitm1 = 2147483616; break; 
-                case 369: bitm1 = 1073741792; break; 
-                case 370: bitm1 = 536870880; break; 
-                case 371: bitm1 = 268435424; break; 
-                case 372: bitm1 = 134217696; break; 
-                case 373: bitm1 = 67108832; break; 
-                case 374: bitm1 = 33554400; break; 
-                case 375: bitm1 = 16777184; break; 
-                case 376: bitm1 = 8388576; break; 
-                case 377: bitm1 = 4194272; break; 
-                case 378: bitm1 = 2097120; break; 
-                case 379: bitm1 = 1048544; break; 
-                case 380: bitm1 = 524256; break; 
-                case 381: bitm1 = 262112; break; 
-                case 382: bitm1 = 131040; break; 
-                case 383: bitm1 = 65504; break; 
-                case 396: bitm1 = 8; break; 
-                case 397: bitm1 = 12; break; 
-                case 398: bitm1 = 14; break; 
-                case 399: bitm1 = 15; break; 
-                case 400: bitm1 = 2147483632; break; 
-                case 401: bitm1 = 1073741808; break; 
-                case 402: bitm1 = 536870896; break; 
-                case 403: bitm1 = 268435440; break; 
-                case 404: bitm1 = 134217712; break; 
-                case 405: bitm1 = 67108848; break; 
-                case 406: bitm1 = 33554416; break; 
-                case 407: bitm1 = 16777200; break; 
-                case 408: bitm1 = 8388592; break; 
-                case 409: bitm1 = 4194288; break; 
-                case 410: bitm1 = 2097136; break; 
-                case 411: bitm1 = 1048560; break; 
-                case 412: bitm1 = 524272; break; 
-                case 413: bitm1 = 262128; break; 
-                case 414: bitm1 = 131056; break; 
-                case 415: bitm1 = 65520; break; 
-                case 429: bitm1 = 4; break; 
-                case 430: bitm1 = 6; break; 
-                case 431: bitm1 = 7; break; 
-                case 432: bitm1 = 2147483640; break; 
-                case 433: bitm1 = 1073741816; break; 
-                case 434: bitm1 = 536870904; break; 
-                case 435: bitm1 = 268435448; break; 
-                case 436: bitm1 = 134217720; break; 
-                case 437: bitm1 = 67108856; break; 
-                case 438: bitm1 = 33554424; break; 
-                case 439: bitm1 = 16777208; break; 
-                case 440: bitm1 = 8388600; break; 
-                case 441: bitm1 = 4194296; break; 
-                case 442: bitm1 = 2097144; break; 
-                case 443: bitm1 = 1048568; break; 
-                case 444: bitm1 = 524280; break; 
-                case 445: bitm1 = 262136; break; 
-                case 446: bitm1 = 131064; break; 
-                case 447: bitm1 = 65528; break; 
-                case 462: bitm1 = 2; break; 
-                case 463: bitm1 = 3; break; 
-                case 464: bitm1 = 2147483644; break; 
-                case 465: bitm1 = 1073741820; break; 
-                case 466: bitm1 = 536870908; break; 
-                case 467: bitm1 = 268435452; break; 
-                case 468: bitm1 = 134217724; break; 
-                case 469: bitm1 = 67108860; break; 
-                case 470: bitm1 = 33554428; break; 
-                case 471: bitm1 = 16777212; break; 
-                case 472: bitm1 = 8388604; break; 
-                case 473: bitm1 = 4194300; break; 
-                case 474: bitm1 = 2097148; break; 
-                case 475: bitm1 = 1048572; break; 
-                case 476: bitm1 = 524284; break; 
-                case 477: bitm1 = 262140; break; 
-                case 478: bitm1 = 131068; break; 
-                case 479: bitm1 = 65532; break; 
-                case 495: bitm1 = 1; break; 
-                case 496: bitm1 = 2147483646; break; 
-                case 497: bitm1 = 1073741822; break; 
-                case 498: bitm1 = 536870910; break; 
-                case 499: bitm1 = 268435454; break; 
-                case 500: bitm1 = 134217726; break; 
-                case 501: bitm1 = 67108862; break; 
-                case 502: bitm1 = 33554430; break; 
-                case 503: bitm1 = 16777214; break; 
-                case 504: bitm1 = 8388606; break; 
-                case 505: bitm1 = 4194302; break; 
-                case 506: bitm1 = 2097150; break; 
-                case 507: bitm1 = 1048574; break; 
-                case 508: bitm1 = 524286; break; 
-                case 509: bitm1 = 262142; break; 
-                case 510: bitm1 = 131070; break; 
-                case 511: bitm1 = 65534; break; 
-                case 528: bitm1 = -2147483648; break; 
-                case 529: bitm1 = -1073741824; break; 
-                case 530: bitm1 = -536870912; break; 
-                case 531: bitm1 = -268435456; break; 
-                case 532: bitm1 = -134217728; break; 
-                case 533: bitm1 = -67108864; break; 
-                case 534: bitm1 = -33554432; break; 
-                case 535: bitm1 = -16777216; break; 
-                case 536: bitm1 = -8388608; break; 
-                case 537: bitm1 = -4194304; break; 
-                case 538: bitm1 = -2097152; break; 
-                case 539: bitm1 = -1048576; break; 
-                case 540: bitm1 = -524288; break; 
-                case 541: bitm1 = -262144; break; 
-                case 542: bitm1 = -131072; break; 
-                case 543: bitm1 = -65536; break; 
-                case 561: bitm1 = 1073741824; break; 
-                case 562: bitm1 = 1610612736; break; 
-                case 563: bitm1 = 1879048192; break; 
-                case 564: bitm1 = 2013265920; break; 
-                case 565: bitm1 = 2080374784; break; 
-                case 566: bitm1 = 2113929216; break; 
-                case 567: bitm1 = 2130706432; break; 
-                case 568: bitm1 = 2139095040; break; 
-                case 569: bitm1 = 2143289344; break; 
-                case 570: bitm1 = 2145386496; break; 
-                case 571: bitm1 = 2146435072; break; 
-                case 572: bitm1 = 2146959360; break; 
-                case 573: bitm1 = 2147221504; break; 
-                case 574: bitm1 = 2147352576; break; 
-                case 575: bitm1 = 2147418112; break; 
-                case 594: bitm1 = 536870912; break; 
-                case 595: bitm1 = 805306368; break; 
-                case 596: bitm1 = 939524096; break; 
-                case 597: bitm1 = 1006632960; break; 
-                case 598: bitm1 = 1040187392; break; 
-                case 599: bitm1 = 1056964608; break; 
-                case 600: bitm1 = 1065353216; break; 
-                case 601: bitm1 = 1069547520; break; 
-                case 602: bitm1 = 1071644672; break; 
-                case 603: bitm1 = 1072693248; break; 
-                case 604: bitm1 = 1073217536; break; 
-                case 605: bitm1 = 1073479680; break; 
-                case 606: bitm1 = 1073610752; break; 
-                case 607: bitm1 = 1073676288; break; 
-                case 627: bitm1 = 268435456; break; 
-                case 628: bitm1 = 402653184; break; 
-                case 629: bitm1 = 469762048; break; 
-                case 630: bitm1 = 503316480; break; 
-                case 631: bitm1 = 520093696; break; 
-                case 632: bitm1 = 528482304; break; 
-                case 633: bitm1 = 532676608; break; 
-                case 634: bitm1 = 534773760; break; 
-                case 635: bitm1 = 535822336; break; 
-                case 636: bitm1 = 536346624; break; 
-                case 637: bitm1 = 536608768; break; 
-                case 638: bitm1 = 536739840; break; 
-                case 639: bitm1 = 536805376; break; 
-                case 660: bitm1 = 134217728; break; 
-                case 661: bitm1 = 201326592; break; 
-                case 662: bitm1 = 234881024; break; 
-                case 663: bitm1 = 251658240; break; 
-                case 664: bitm1 = 260046848; break; 
-                case 665: bitm1 = 264241152; break; 
-                case 666: bitm1 = 266338304; break; 
-                case 667: bitm1 = 267386880; break; 
-                case 668: bitm1 = 267911168; break; 
-                case 669: bitm1 = 268173312; break; 
-                case 670: bitm1 = 268304384; break; 
-                case 671: bitm1 = 268369920; break; 
-                case 693: bitm1 = 67108864; break; 
-                case 694: bitm1 = 100663296; break; 
-                case 695: bitm1 = 117440512; break; 
-                case 696: bitm1 = 125829120; break; 
-                case 697: bitm1 = 130023424; break; 
-                case 698: bitm1 = 132120576; break; 
-                case 699: bitm1 = 133169152; break; 
-                case 700: bitm1 = 133693440; break; 
-                case 701: bitm1 = 133955584; break; 
-                case 702: bitm1 = 134086656; break; 
-                case 703: bitm1 = 134152192; break; 
-                case 726: bitm1 = 33554432; break; 
-                case 727: bitm1 = 50331648; break; 
-                case 728: bitm1 = 58720256; break; 
-                case 729: bitm1 = 62914560; break; 
-                case 730: bitm1 = 65011712; break; 
-                case 731: bitm1 = 66060288; break; 
-                case 732: bitm1 = 66584576; break; 
-                case 733: bitm1 = 66846720; break; 
-                case 734: bitm1 = 66977792; break; 
-                case 735: bitm1 = 67043328; break; 
-                case 759: bitm1 = 16777216; break; 
-                case 760: bitm1 = 25165824; break; 
-                case 761: bitm1 = 29360128; break; 
-                case 762: bitm1 = 31457280; break; 
-                case 763: bitm1 = 32505856; break; 
-                case 764: bitm1 = 33030144; break; 
-                case 765: bitm1 = 33292288; break; 
-                case 766: bitm1 = 33423360; break; 
-                case 767: bitm1 = 33488896; break; 
-                case 792: bitm1 = 8388608; break; 
-                case 793: bitm1 = 12582912; break; 
-                case 794: bitm1 = 14680064; break; 
-                case 795: bitm1 = 15728640; break; 
-                case 796: bitm1 = 16252928; break; 
-                case 797: bitm1 = 16515072; break; 
-                case 798: bitm1 = 16646144; break; 
-                case 799: bitm1 = 16711680; break; 
-                case 825: bitm1 = 4194304; break; 
-                case 826: bitm1 = 6291456; break; 
-                case 827: bitm1 = 7340032; break; 
-                case 828: bitm1 = 7864320; break; 
-                case 829: bitm1 = 8126464; break; 
-                case 830: bitm1 = 8257536; break; 
-                case 831: bitm1 = 8323072; break; 
-                case 858: bitm1 = 2097152; break; 
-                case 859: bitm1 = 3145728; break; 
-                case 860: bitm1 = 3670016; break; 
-                case 861: bitm1 = 3932160; break; 
-                case 862: bitm1 = 4063232; break; 
-                case 863: bitm1 = 4128768; break; 
-                case 891: bitm1 = 1048576; break; 
-                case 892: bitm1 = 1572864; break; 
-                case 893: bitm1 = 1835008; break; 
-                case 894: bitm1 = 1966080; break; 
-                case 895: bitm1 = 2031616; break; 
-                case 924: bitm1 = 524288; break; 
-                case 925: bitm1 = 786432; break; 
-                case 926: bitm1 = 917504; break; 
-                case 927: bitm1 = 983040; break; 
-                case 957: bitm1 = 262144; break; 
-                case 958: bitm1 = 393216; break; 
-                case 959: bitm1 = 458752; break; 
-                case 990: bitm1 = 131072; break; 
-                case 991: bitm1 = 196608; break; 
-                case 1023: bitm1 = 65536; break;
-            }
-            */
-            // Inline switch statement
-            // int bitm2 = bitmask2Read(0, integerBitEnd);
-            int bitm2 = 0;
-            switch (integerBitEnd) {
-                case 0: bitm2 = 32768; break; 
-                case 1: bitm2 = 49152; break; 
-                case 2: bitm2 = 57344; break; 
-                case 3: bitm2 = 61440; break; 
-                case 4: bitm2 = 63488; break; 
-                case 5: bitm2 = 64512; break; 
-                case 6: bitm2 = 65024; break; 
-                case 7: bitm2 = 65280; break; 
-                case 8: bitm2 = 65408; break; 
-                case 9: bitm2 = 65472; break; 
-                case 10: bitm2 = 65504; break; 
-                case 11: bitm2 = 65520; break; 
-                case 12: bitm2 = 65528; break; 
-                case 13: bitm2 = 65532; break; 
-                case 14: bitm2 = 65534; break; 
-                case 15: bitm2 = 65535; break; 
-                case 16: bitm2 = 2147418112; break; 
-                case 17: bitm2 = 1073676288; break; 
-                case 18: bitm2 = 536805376; break; 
-                case 19: bitm2 = 268369920; break; 
-                case 20: bitm2 = 134152192; break; 
-                case 21: bitm2 = 67043328; break; 
-                case 22: bitm2 = 33488896; break; 
-                case 23: bitm2 = 16711680; break; 
-                case 24: bitm2 = 8323072; break; 
-                case 25: bitm2 = 4128768; break; 
-                case 26: bitm2 = 2031616; break; 
-                case 27: bitm2 = 983040; break; 
-                case 28: bitm2 = 458752; break; 
-                case 29: bitm2 = 196608; break; 
-                case 30: bitm2 = 65536; break; 
-                case 31: bitm2 = 0; break; 
-                case 33: bitm2 = 16384; break; 
-                case 34: bitm2 = 24576; break; 
-                case 35: bitm2 = 28672; break; 
-                case 36: bitm2 = 30720; break; 
-                case 37: bitm2 = 31744; break; 
-                case 38: bitm2 = 32256; break; 
-                case 39: bitm2 = 32512; break; 
-                case 40: bitm2 = 32640; break; 
-                case 41: bitm2 = 32704; break; 
-                case 42: bitm2 = 32736; break; 
-                case 43: bitm2 = 32752; break; 
-                case 44: bitm2 = 32760; break; 
-                case 45: bitm2 = 32764; break; 
-                case 46: bitm2 = 32766; break; 
-                case 47: bitm2 = 32767; break; 
-                case 48: bitm2 = 2147450880; break; 
-                case 49: bitm2 = 1073709056; break; 
-                case 50: bitm2 = 536838144; break; 
-                case 51: bitm2 = 268402688; break; 
-                case 52: bitm2 = 134184960; break; 
-                case 53: bitm2 = 67076096; break; 
-                case 54: bitm2 = 33521664; break; 
-                case 55: bitm2 = 16744448; break; 
-                case 56: bitm2 = 8355840; break; 
-                case 57: bitm2 = 4161536; break; 
-                case 58: bitm2 = 2064384; break; 
-                case 59: bitm2 = 1015808; break; 
-                case 60: bitm2 = 491520; break; 
-                case 61: bitm2 = 229376; break; 
-                case 62: bitm2 = 98304; break; 
-                case 63: bitm2 = 32768; break; 
-                case 66: bitm2 = 8192; break; 
-                case 67: bitm2 = 12288; break; 
-                case 68: bitm2 = 14336; break; 
-                case 69: bitm2 = 15360; break; 
-                case 70: bitm2 = 15872; break; 
-                case 71: bitm2 = 16128; break; 
-                case 72: bitm2 = 16256; break; 
-                case 73: bitm2 = 16320; break; 
-                case 74: bitm2 = 16352; break; 
-                case 75: bitm2 = 16368; break; 
-                case 76: bitm2 = 16376; break; 
-                case 77: bitm2 = 16380; break; 
-                case 78: bitm2 = 16382; break; 
-                case 79: bitm2 = 16383; break; 
-                case 80: bitm2 = 2147467264; break; 
-                case 81: bitm2 = 1073725440; break; 
-                case 82: bitm2 = 536854528; break; 
-                case 83: bitm2 = 268419072; break; 
-                case 84: bitm2 = 134201344; break; 
-                case 85: bitm2 = 67092480; break; 
-                case 86: bitm2 = 33538048; break; 
-                case 87: bitm2 = 16760832; break; 
-                case 88: bitm2 = 8372224; break; 
-                case 89: bitm2 = 4177920; break; 
-                case 90: bitm2 = 2080768; break; 
-                case 91: bitm2 = 1032192; break; 
-                case 92: bitm2 = 507904; break; 
-                case 93: bitm2 = 245760; break; 
-                case 94: bitm2 = 114688; break; 
-                case 95: bitm2 = 49152; break; 
-                case 99: bitm2 = 4096; break; 
-                case 100: bitm2 = 6144; break; 
-                case 101: bitm2 = 7168; break; 
-                case 102: bitm2 = 7680; break; 
-                case 103: bitm2 = 7936; break; 
-                case 104: bitm2 = 8064; break; 
-                case 105: bitm2 = 8128; break; 
-                case 106: bitm2 = 8160; break; 
-                case 107: bitm2 = 8176; break; 
-                case 108: bitm2 = 8184; break; 
-                case 109: bitm2 = 8188; break; 
-                case 110: bitm2 = 8190; break; 
-                case 111: bitm2 = 8191; break; 
-                case 112: bitm2 = 2147475456; break; 
-                case 113: bitm2 = 1073733632; break; 
-                case 114: bitm2 = 536862720; break; 
-                case 115: bitm2 = 268427264; break; 
-                case 116: bitm2 = 134209536; break; 
-                case 117: bitm2 = 67100672; break; 
-                case 118: bitm2 = 33546240; break; 
-                case 119: bitm2 = 16769024; break; 
-                case 120: bitm2 = 8380416; break; 
-                case 121: bitm2 = 4186112; break; 
-                case 122: bitm2 = 2088960; break; 
-                case 123: bitm2 = 1040384; break; 
-                case 124: bitm2 = 516096; break; 
-                case 125: bitm2 = 253952; break; 
-                case 126: bitm2 = 122880; break; 
-                case 127: bitm2 = 57344; break; 
-                case 132: bitm2 = 2048; break; 
-                case 133: bitm2 = 3072; break; 
-                case 134: bitm2 = 3584; break; 
-                case 135: bitm2 = 3840; break; 
-                case 136: bitm2 = 3968; break; 
-                case 137: bitm2 = 4032; break; 
-                case 138: bitm2 = 4064; break; 
-                case 139: bitm2 = 4080; break; 
-                case 140: bitm2 = 4088; break; 
-                case 141: bitm2 = 4092; break; 
-                case 142: bitm2 = 4094; break; 
-                case 143: bitm2 = 4095; break; 
-                case 144: bitm2 = 2147479552; break; 
-                case 145: bitm2 = 1073737728; break; 
-                case 146: bitm2 = 536866816; break; 
-                case 147: bitm2 = 268431360; break; 
-                case 148: bitm2 = 134213632; break; 
-                case 149: bitm2 = 67104768; break; 
-                case 150: bitm2 = 33550336; break; 
-                case 151: bitm2 = 16773120; break; 
-                case 152: bitm2 = 8384512; break; 
-                case 153: bitm2 = 4190208; break; 
-                case 154: bitm2 = 2093056; break; 
-                case 155: bitm2 = 1044480; break; 
-                case 156: bitm2 = 520192; break; 
-                case 157: bitm2 = 258048; break; 
-                case 158: bitm2 = 126976; break; 
-                case 159: bitm2 = 61440; break; 
-                case 165: bitm2 = 1024; break; 
-                case 166: bitm2 = 1536; break; 
-                case 167: bitm2 = 1792; break; 
-                case 168: bitm2 = 1920; break; 
-                case 169: bitm2 = 1984; break; 
-                case 170: bitm2 = 2016; break; 
-                case 171: bitm2 = 2032; break; 
-                case 172: bitm2 = 2040; break; 
-                case 173: bitm2 = 2044; break; 
-                case 174: bitm2 = 2046; break; 
-                case 175: bitm2 = 2047; break; 
-                case 176: bitm2 = 2147481600; break; 
-                case 177: bitm2 = 1073739776; break; 
-                case 178: bitm2 = 536868864; break; 
-                case 179: bitm2 = 268433408; break; 
-                case 180: bitm2 = 134215680; break; 
-                case 181: bitm2 = 67106816; break; 
-                case 182: bitm2 = 33552384; break; 
-                case 183: bitm2 = 16775168; break; 
-                case 184: bitm2 = 8386560; break; 
-                case 185: bitm2 = 4192256; break; 
-                case 186: bitm2 = 2095104; break; 
-                case 187: bitm2 = 1046528; break; 
-                case 188: bitm2 = 522240; break; 
-                case 189: bitm2 = 260096; break; 
-                case 190: bitm2 = 129024; break; 
-                case 191: bitm2 = 63488; break; 
-                case 198: bitm2 = 512; break; 
-                case 199: bitm2 = 768; break; 
-                case 200: bitm2 = 896; break; 
-                case 201: bitm2 = 960; break; 
-                case 202: bitm2 = 992; break; 
-                case 203: bitm2 = 1008; break; 
-                case 204: bitm2 = 1016; break; 
-                case 205: bitm2 = 1020; break; 
-                case 206: bitm2 = 1022; break; 
-                case 207: bitm2 = 1023; break; 
-                case 208: bitm2 = 2147482624; break; 
-                case 209: bitm2 = 1073740800; break; 
-                case 210: bitm2 = 536869888; break; 
-                case 211: bitm2 = 268434432; break; 
-                case 212: bitm2 = 134216704; break; 
-                case 213: bitm2 = 67107840; break; 
-                case 214: bitm2 = 33553408; break; 
-                case 215: bitm2 = 16776192; break; 
-                case 216: bitm2 = 8387584; break; 
-                case 217: bitm2 = 4193280; break; 
-                case 218: bitm2 = 2096128; break; 
-                case 219: bitm2 = 1047552; break; 
-                case 220: bitm2 = 523264; break; 
-                case 221: bitm2 = 261120; break; 
-                case 222: bitm2 = 130048; break; 
-                case 223: bitm2 = 64512; break; 
-                case 231: bitm2 = 256; break; 
-                case 232: bitm2 = 384; break; 
-                case 233: bitm2 = 448; break; 
-                case 234: bitm2 = 480; break; 
-                case 235: bitm2 = 496; break; 
-                case 236: bitm2 = 504; break; 
-                case 237: bitm2 = 508; break; 
-                case 238: bitm2 = 510; break; 
-                case 239: bitm2 = 511; break; 
-                case 240: bitm2 = 2147483136; break; 
-                case 241: bitm2 = 1073741312; break; 
-                case 242: bitm2 = 536870400; break; 
-                case 243: bitm2 = 268434944; break; 
-                case 244: bitm2 = 134217216; break; 
-                case 245: bitm2 = 67108352; break; 
-                case 246: bitm2 = 33553920; break; 
-                case 247: bitm2 = 16776704; break; 
-                case 248: bitm2 = 8388096; break; 
-                case 249: bitm2 = 4193792; break; 
-                case 250: bitm2 = 2096640; break; 
-                case 251: bitm2 = 1048064; break; 
-                case 252: bitm2 = 523776; break; 
-                case 253: bitm2 = 261632; break; 
-                case 254: bitm2 = 130560; break; 
-                case 255: bitm2 = 65024; break; 
-                case 264: bitm2 = 128; break; 
-                case 265: bitm2 = 192; break; 
-                case 266: bitm2 = 224; break; 
-                case 267: bitm2 = 240; break; 
-                case 268: bitm2 = 248; break; 
-                case 269: bitm2 = 252; break; 
-                case 270: bitm2 = 254; break; 
-                case 271: bitm2 = 255; break; 
-                case 272: bitm2 = 2147483392; break; 
-                case 273: bitm2 = 1073741568; break; 
-                case 274: bitm2 = 536870656; break; 
-                case 275: bitm2 = 268435200; break; 
-                case 276: bitm2 = 134217472; break; 
-                case 277: bitm2 = 67108608; break; 
-                case 278: bitm2 = 33554176; break; 
-                case 279: bitm2 = 16776960; break; 
-                case 280: bitm2 = 8388352; break; 
-                case 281: bitm2 = 4194048; break; 
-                case 282: bitm2 = 2096896; break; 
-                case 283: bitm2 = 1048320; break; 
-                case 284: bitm2 = 524032; break; 
-                case 285: bitm2 = 261888; break; 
-                case 286: bitm2 = 130816; break; 
-                case 287: bitm2 = 65280; break; 
-                case 297: bitm2 = 64; break; 
-                case 298: bitm2 = 96; break; 
-                case 299: bitm2 = 112; break; 
-                case 300: bitm2 = 120; break; 
-                case 301: bitm2 = 124; break; 
-                case 302: bitm2 = 126; break; 
-                case 303: bitm2 = 127; break; 
-                case 304: bitm2 = 2147483520; break; 
-                case 305: bitm2 = 1073741696; break; 
-                case 306: bitm2 = 536870784; break; 
-                case 307: bitm2 = 268435328; break; 
-                case 308: bitm2 = 134217600; break; 
-                case 309: bitm2 = 67108736; break; 
-                case 310: bitm2 = 33554304; break; 
-                case 311: bitm2 = 16777088; break; 
-                case 312: bitm2 = 8388480; break; 
-                case 313: bitm2 = 4194176; break; 
-                case 314: bitm2 = 2097024; break; 
-                case 315: bitm2 = 1048448; break; 
-                case 316: bitm2 = 524160; break; 
-                case 317: bitm2 = 262016; break; 
-                case 318: bitm2 = 130944; break; 
-                case 319: bitm2 = 65408; break; 
-                case 330: bitm2 = 32; break; 
-                case 331: bitm2 = 48; break; 
-                case 332: bitm2 = 56; break; 
-                case 333: bitm2 = 60; break; 
-                case 334: bitm2 = 62; break; 
-                case 335: bitm2 = 63; break; 
-                case 336: bitm2 = 2147483584; break; 
-                case 337: bitm2 = 1073741760; break; 
-                case 338: bitm2 = 536870848; break; 
-                case 339: bitm2 = 268435392; break; 
-                case 340: bitm2 = 134217664; break; 
-                case 341: bitm2 = 67108800; break; 
-                case 342: bitm2 = 33554368; break; 
-                case 343: bitm2 = 16777152; break; 
-                case 344: bitm2 = 8388544; break; 
-                case 345: bitm2 = 4194240; break; 
-                case 346: bitm2 = 2097088; break; 
-                case 347: bitm2 = 1048512; break; 
-                case 348: bitm2 = 524224; break; 
-                case 349: bitm2 = 262080; break; 
-                case 350: bitm2 = 131008; break; 
-                case 351: bitm2 = 65472; break; 
-                case 363: bitm2 = 16; break; 
-                case 364: bitm2 = 24; break; 
-                case 365: bitm2 = 28; break; 
-                case 366: bitm2 = 30; break; 
-                case 367: bitm2 = 31; break; 
-                case 368: bitm2 = 2147483616; break; 
-                case 369: bitm2 = 1073741792; break; 
-                case 370: bitm2 = 536870880; break; 
-                case 371: bitm2 = 268435424; break; 
-                case 372: bitm2 = 134217696; break; 
-                case 373: bitm2 = 67108832; break; 
-                case 374: bitm2 = 33554400; break; 
-                case 375: bitm2 = 16777184; break; 
-                case 376: bitm2 = 8388576; break; 
-                case 377: bitm2 = 4194272; break; 
-                case 378: bitm2 = 2097120; break; 
-                case 379: bitm2 = 1048544; break; 
-                case 380: bitm2 = 524256; break; 
-                case 381: bitm2 = 262112; break; 
-                case 382: bitm2 = 131040; break; 
-                case 383: bitm2 = 65504; break; 
-                case 396: bitm2 = 8; break; 
-                case 397: bitm2 = 12; break; 
-                case 398: bitm2 = 14; break; 
-                case 399: bitm2 = 15; break; 
-                case 400: bitm2 = 2147483632; break; 
-                case 401: bitm2 = 1073741808; break; 
-                case 402: bitm2 = 536870896; break; 
-                case 403: bitm2 = 268435440; break; 
-                case 404: bitm2 = 134217712; break; 
-                case 405: bitm2 = 67108848; break; 
-                case 406: bitm2 = 33554416; break; 
-                case 407: bitm2 = 16777200; break; 
-                case 408: bitm2 = 8388592; break; 
-                case 409: bitm2 = 4194288; break; 
-                case 410: bitm2 = 2097136; break; 
-                case 411: bitm2 = 1048560; break; 
-                case 412: bitm2 = 524272; break; 
-                case 413: bitm2 = 262128; break; 
-                case 414: bitm2 = 131056; break; 
-                case 415: bitm2 = 65520; break; 
-                case 429: bitm2 = 4; break; 
-                case 430: bitm2 = 6; break; 
-                case 431: bitm2 = 7; break; 
-                case 432: bitm2 = 2147483640; break; 
-                case 433: bitm2 = 1073741816; break; 
-                case 434: bitm2 = 536870904; break; 
-                case 435: bitm2 = 268435448; break; 
-                case 436: bitm2 = 134217720; break; 
-                case 437: bitm2 = 67108856; break; 
-                case 438: bitm2 = 33554424; break; 
-                case 439: bitm2 = 16777208; break; 
-                case 440: bitm2 = 8388600; break; 
-                case 441: bitm2 = 4194296; break; 
-                case 442: bitm2 = 2097144; break; 
-                case 443: bitm2 = 1048568; break; 
-                case 444: bitm2 = 524280; break; 
-                case 445: bitm2 = 262136; break; 
-                case 446: bitm2 = 131064; break; 
-                case 447: bitm2 = 65528; break; 
-                case 462: bitm2 = 2; break; 
-                case 463: bitm2 = 3; break; 
-                case 464: bitm2 = 2147483644; break; 
-                case 465: bitm2 = 1073741820; break; 
-                case 466: bitm2 = 536870908; break; 
-                case 467: bitm2 = 268435452; break; 
-                case 468: bitm2 = 134217724; break; 
-                case 469: bitm2 = 67108860; break; 
-                case 470: bitm2 = 33554428; break; 
-                case 471: bitm2 = 16777212; break; 
-                case 472: bitm2 = 8388604; break; 
-                case 473: bitm2 = 4194300; break; 
-                case 474: bitm2 = 2097148; break; 
-                case 475: bitm2 = 1048572; break; 
-                case 476: bitm2 = 524284; break; 
-                case 477: bitm2 = 262140; break; 
-                case 478: bitm2 = 131068; break; 
-                case 479: bitm2 = 65532; break; 
-                case 495: bitm2 = 1; break; 
-                case 496: bitm2 = 2147483646; break; 
-                case 497: bitm2 = 1073741822; break; 
-                case 498: bitm2 = 536870910; break; 
-                case 499: bitm2 = 268435454; break; 
-                case 500: bitm2 = 134217726; break; 
-                case 501: bitm2 = 67108862; break; 
-                case 502: bitm2 = 33554430; break; 
-                case 503: bitm2 = 16777214; break; 
-                case 504: bitm2 = 8388606; break; 
-                case 505: bitm2 = 4194302; break; 
-                case 506: bitm2 = 2097150; break; 
-                case 507: bitm2 = 1048574; break; 
-                case 508: bitm2 = 524286; break; 
-                case 509: bitm2 = 262142; break; 
-                case 510: bitm2 = 131070; break; 
-                case 511: bitm2 = 65534; break; 
-                case 528: bitm2 = -2147483648; break; 
-                case 529: bitm2 = -1073741824; break; 
-                case 530: bitm2 = -536870912; break; 
-                case 531: bitm2 = -268435456; break; 
-                case 532: bitm2 = -134217728; break; 
-                case 533: bitm2 = -67108864; break; 
-                case 534: bitm2 = -33554432; break; 
-                case 535: bitm2 = -16777216; break; 
-                case 536: bitm2 = -8388608; break; 
-                case 537: bitm2 = -4194304; break; 
-                case 538: bitm2 = -2097152; break; 
-                case 539: bitm2 = -1048576; break; 
-                case 540: bitm2 = -524288; break; 
-                case 541: bitm2 = -262144; break; 
-                case 542: bitm2 = -131072; break; 
-                case 543: bitm2 = -65536; break; 
-                case 561: bitm2 = 1073741824; break; 
-                case 562: bitm2 = 1610612736; break; 
-                case 563: bitm2 = 1879048192; break; 
-                case 564: bitm2 = 2013265920; break; 
-                case 565: bitm2 = 2080374784; break; 
-                case 566: bitm2 = 2113929216; break; 
-                case 567: bitm2 = 2130706432; break; 
-                case 568: bitm2 = 2139095040; break; 
-                case 569: bitm2 = 2143289344; break; 
-                case 570: bitm2 = 2145386496; break; 
-                case 571: bitm2 = 2146435072; break; 
-                case 572: bitm2 = 2146959360; break; 
-                case 573: bitm2 = 2147221504; break; 
-                case 574: bitm2 = 2147352576; break; 
-                case 575: bitm2 = 2147418112; break; 
-                case 594: bitm2 = 536870912; break; 
-                case 595: bitm2 = 805306368; break; 
-                case 596: bitm2 = 939524096; break; 
-                case 597: bitm2 = 1006632960; break; 
-                case 598: bitm2 = 1040187392; break; 
-                case 599: bitm2 = 1056964608; break; 
-                case 600: bitm2 = 1065353216; break; 
-                case 601: bitm2 = 1069547520; break; 
-                case 602: bitm2 = 1071644672; break; 
-                case 603: bitm2 = 1072693248; break; 
-                case 604: bitm2 = 1073217536; break; 
-                case 605: bitm2 = 1073479680; break; 
-                case 606: bitm2 = 1073610752; break; 
-                case 607: bitm2 = 1073676288; break; 
-                case 627: bitm2 = 268435456; break; 
-                case 628: bitm2 = 402653184; break; 
-                case 629: bitm2 = 469762048; break; 
-                case 630: bitm2 = 503316480; break; 
-                case 631: bitm2 = 520093696; break; 
-                case 632: bitm2 = 528482304; break; 
-                case 633: bitm2 = 532676608; break; 
-                case 634: bitm2 = 534773760; break; 
-                case 635: bitm2 = 535822336; break; 
-                case 636: bitm2 = 536346624; break; 
-                case 637: bitm2 = 536608768; break; 
-                case 638: bitm2 = 536739840; break; 
-                case 639: bitm2 = 536805376; break; 
-                case 660: bitm2 = 134217728; break; 
-                case 661: bitm2 = 201326592; break; 
-                case 662: bitm2 = 234881024; break; 
-                case 663: bitm2 = 251658240; break; 
-                case 664: bitm2 = 260046848; break; 
-                case 665: bitm2 = 264241152; break; 
-                case 666: bitm2 = 266338304; break; 
-                case 667: bitm2 = 267386880; break; 
-                case 668: bitm2 = 267911168; break; 
-                case 669: bitm2 = 268173312; break; 
-                case 670: bitm2 = 268304384; break; 
-                case 671: bitm2 = 268369920; break; 
-                case 693: bitm2 = 67108864; break; 
-                case 694: bitm2 = 100663296; break; 
-                case 695: bitm2 = 117440512; break; 
-                case 696: bitm2 = 125829120; break; 
-                case 697: bitm2 = 130023424; break; 
-                case 698: bitm2 = 132120576; break; 
-                case 699: bitm2 = 133169152; break; 
-                case 700: bitm2 = 133693440; break; 
-                case 701: bitm2 = 133955584; break; 
-                case 702: bitm2 = 134086656; break; 
-                case 703: bitm2 = 134152192; break; 
-                case 726: bitm2 = 33554432; break; 
-                case 727: bitm2 = 50331648; break; 
-                case 728: bitm2 = 58720256; break; 
-                case 729: bitm2 = 62914560; break; 
-                case 730: bitm2 = 65011712; break; 
-                case 731: bitm2 = 66060288; break; 
-                case 732: bitm2 = 66584576; break; 
-                case 733: bitm2 = 66846720; break; 
-                case 734: bitm2 = 66977792; break; 
-                case 735: bitm2 = 67043328; break; 
-                case 759: bitm2 = 16777216; break; 
-                case 760: bitm2 = 25165824; break; 
-                case 761: bitm2 = 29360128; break; 
-                case 762: bitm2 = 31457280; break; 
-                case 763: bitm2 = 32505856; break; 
-                case 764: bitm2 = 33030144; break; 
-                case 765: bitm2 = 33292288; break; 
-                case 766: bitm2 = 33423360; break; 
-                case 767: bitm2 = 33488896; break; 
-                case 792: bitm2 = 8388608; break; 
-                case 793: bitm2 = 12582912; break; 
-                case 794: bitm2 = 14680064; break; 
-                case 795: bitm2 = 15728640; break; 
-                case 796: bitm2 = 16252928; break; 
-                case 797: bitm2 = 16515072; break; 
-                case 798: bitm2 = 16646144; break; 
-                case 799: bitm2 = 16711680; break; 
-                case 825: bitm2 = 4194304; break; 
-                case 826: bitm2 = 6291456; break; 
-                case 827: bitm2 = 7340032; break; 
-                case 828: bitm2 = 7864320; break; 
-                case 829: bitm2 = 8126464; break; 
-                case 830: bitm2 = 8257536; break; 
-                case 831: bitm2 = 8323072; break; 
-                case 858: bitm2 = 2097152; break; 
-                case 859: bitm2 = 3145728; break; 
-                case 860: bitm2 = 3670016; break; 
-                case 861: bitm2 = 3932160; break; 
-                case 862: bitm2 = 4063232; break; 
-                case 863: bitm2 = 4128768; break; 
-                case 891: bitm2 = 1048576; break; 
-                case 892: bitm2 = 1572864; break; 
-                case 893: bitm2 = 1835008; break; 
-                case 894: bitm2 = 1966080; break; 
-                case 895: bitm2 = 2031616; break; 
-                case 924: bitm2 = 524288; break; 
-                case 925: bitm2 = 786432; break; 
-                case 926: bitm2 = 917504; break; 
-                case 927: bitm2 = 983040; break; 
-                case 957: bitm2 = 262144; break; 
-                case 958: bitm2 = 393216; break; 
-                case 959: bitm2 = 458752; break; 
-                case 990: bitm2 = 131072; break; 
-                case 991: bitm2 = 196608; break; 
-                case 1023: bitm2 = 65536; break;
-            }
-            
-            output = (rc.readSharedArray(arrIndexStart) & bitm1) >>> (SHARED_ARRAY_ELEM_SIZE - integerBitBegin - numBits + integerBitEnd + 1);
-            output = output << integerBitEnd + 1;
-            output |= (rc.readSharedArray(arrIndexEnd) & bitm2) >>> (SHARED_ARRAY_ELEM_SIZE - numBits + SHARED_ARRAY_ELEM_SIZE - integerBitBegin);
-        }
-        return output;
     }
 
-    // Replaced with giant switch statement
-    private int bitmask(int start, int end, boolean read) {
-        start += 32 - SHARED_ARRAY_ELEM_SIZE;
-        end += 32 - SHARED_ARRAY_ELEM_SIZE;
-        int bitmask = -1;
-        if(end == 31) {
-            bitmask = 0;
-        } else {
-            bitmask = bitmask >>> (end+1);
+    public int readClusterResourceCount(int idx) throws GameActionException {
+        switch (idx) {
+            case 0:
+                return (rc.readSharedArray(4) & 3584) >>> 9;
+            case 1:
+                return (rc.readSharedArray(4) & 112) >>> 4;
+            case 2:
+                return ((rc.readSharedArray(4) & 3) << 1) + ((rc.readSharedArray(5) & 32768) >>> 15);
+            case 3:
+                return (rc.readSharedArray(5) & 7168) >>> 10;
+            case 4:
+                return (rc.readSharedArray(5) & 224) >>> 5;
+            case 5:
+                return (rc.readSharedArray(5) & 7);
+            case 6:
+                return (rc.readSharedArray(6) & 14336) >>> 11;
+            case 7:
+                return (rc.readSharedArray(6) & 448) >>> 6;
+            case 8:
+                return (rc.readSharedArray(6) & 14) >>> 1;
+            case 9:
+                return (rc.readSharedArray(7) & 28672) >>> 12;
+            case 10:
+                return (rc.readSharedArray(7) & 896) >>> 7;
+            case 11:
+                return (rc.readSharedArray(7) & 28) >>> 2;
+            case 12:
+                return (rc.readSharedArray(8) & 57344) >>> 13;
+            case 13:
+                return (rc.readSharedArray(8) & 1792) >>> 8;
+            case 14:
+                return (rc.readSharedArray(8) & 56) >>> 3;
+            case 15:
+                return ((rc.readSharedArray(8) & 1) << 2) + ((rc.readSharedArray(9) & 49152) >>> 14);
+            case 16:
+                return (rc.readSharedArray(9) & 3584) >>> 9;
+            case 17:
+                return (rc.readSharedArray(9) & 112) >>> 4;
+            case 18:
+                return ((rc.readSharedArray(9) & 3) << 1) + ((rc.readSharedArray(10) & 32768) >>> 15);
+            case 19:
+                return (rc.readSharedArray(10) & 7168) >>> 10;
+            case 20:
+                return (rc.readSharedArray(10) & 224) >>> 5;
+            case 21:
+                return (rc.readSharedArray(10) & 7);
+            case 22:
+                return (rc.readSharedArray(11) & 14336) >>> 11;
+            case 23:
+                return (rc.readSharedArray(11) & 448) >>> 6;
+            case 24:
+                return (rc.readSharedArray(11) & 14) >>> 1;
+            case 25:
+                return (rc.readSharedArray(12) & 28672) >>> 12;
+            case 26:
+                return (rc.readSharedArray(12) & 896) >>> 7;
+            case 27:
+                return (rc.readSharedArray(12) & 28) >>> 2;
+            case 28:
+                return (rc.readSharedArray(13) & 57344) >>> 13;
+            case 29:
+                return (rc.readSharedArray(13) & 1792) >>> 8;
+            case 30:
+                return (rc.readSharedArray(13) & 56) >>> 3;
+            case 31:
+                return ((rc.readSharedArray(13) & 1) << 2) + ((rc.readSharedArray(14) & 49152) >>> 14);
+            case 32:
+                return (rc.readSharedArray(14) & 3584) >>> 9;
+            case 33:
+                return (rc.readSharedArray(14) & 112) >>> 4;
+            case 34:
+                return ((rc.readSharedArray(14) & 3) << 1) + ((rc.readSharedArray(15) & 32768) >>> 15);
+            case 35:
+                return (rc.readSharedArray(15) & 7168) >>> 10;
+            case 36:
+                return (rc.readSharedArray(15) & 224) >>> 5;
+            case 37:
+                return (rc.readSharedArray(15) & 7);
+            case 38:
+                return (rc.readSharedArray(16) & 14336) >>> 11;
+            case 39:
+                return (rc.readSharedArray(16) & 448) >>> 6;
+            case 40:
+                return (rc.readSharedArray(16) & 14) >>> 1;
+            case 41:
+                return (rc.readSharedArray(17) & 28672) >>> 12;
+            case 42:
+                return (rc.readSharedArray(17) & 896) >>> 7;
+            case 43:
+                return (rc.readSharedArray(17) & 28) >>> 2;
+            case 44:
+                return (rc.readSharedArray(18) & 57344) >>> 13;
+            case 45:
+                return (rc.readSharedArray(18) & 1792) >>> 8;
+            case 46:
+                return (rc.readSharedArray(18) & 56) >>> 3;
+            case 47:
+                return ((rc.readSharedArray(18) & 1) << 2) + ((rc.readSharedArray(19) & 49152) >>> 14);
+            case 48:
+                return (rc.readSharedArray(19) & 3584) >>> 9;
+            case 49:
+                return (rc.readSharedArray(19) & 112) >>> 4;
+            case 50:
+                return ((rc.readSharedArray(19) & 3) << 1) + ((rc.readSharedArray(20) & 32768) >>> 15);
+            case 51:
+                return (rc.readSharedArray(20) & 7168) >>> 10;
+            case 52:
+                return (rc.readSharedArray(20) & 224) >>> 5;
+            case 53:
+                return (rc.readSharedArray(20) & 7);
+            case 54:
+                return (rc.readSharedArray(21) & 14336) >>> 11;
+            case 55:
+                return (rc.readSharedArray(21) & 448) >>> 6;
+            case 56:
+                return (rc.readSharedArray(21) & 14) >>> 1;
+            case 57:
+                return (rc.readSharedArray(22) & 28672) >>> 12;
+            case 58:
+                return (rc.readSharedArray(22) & 896) >>> 7;
+            case 59:
+                return (rc.readSharedArray(22) & 28) >>> 2;
+            case 60:
+                return (rc.readSharedArray(23) & 57344) >>> 13;
+            case 61:
+                return (rc.readSharedArray(23) & 1792) >>> 8;
+            case 62:
+                return (rc.readSharedArray(23) & 56) >>> 3;
+            case 63:
+                return ((rc.readSharedArray(23) & 1) << 2) + ((rc.readSharedArray(24) & 49152) >>> 14);
+            case 64:
+                return (rc.readSharedArray(24) & 3584) >>> 9;
+            case 65:
+                return (rc.readSharedArray(24) & 112) >>> 4;
+            case 66:
+                return ((rc.readSharedArray(24) & 3) << 1) + ((rc.readSharedArray(25) & 32768) >>> 15);
+            case 67:
+                return (rc.readSharedArray(25) & 7168) >>> 10;
+            case 68:
+                return (rc.readSharedArray(25) & 224) >>> 5;
+            case 69:
+                return (rc.readSharedArray(25) & 7);
+            case 70:
+                return (rc.readSharedArray(26) & 14336) >>> 11;
+            case 71:
+                return (rc.readSharedArray(26) & 448) >>> 6;
+            case 72:
+                return (rc.readSharedArray(26) & 14) >>> 1;
+            case 73:
+                return (rc.readSharedArray(27) & 28672) >>> 12;
+            case 74:
+                return (rc.readSharedArray(27) & 896) >>> 7;
+            case 75:
+                return (rc.readSharedArray(27) & 28) >>> 2;
+            case 76:
+                return (rc.readSharedArray(28) & 57344) >>> 13;
+            case 77:
+                return (rc.readSharedArray(28) & 1792) >>> 8;
+            case 78:
+                return (rc.readSharedArray(28) & 56) >>> 3;
+            case 79:
+                return ((rc.readSharedArray(28) & 1) << 2) + ((rc.readSharedArray(29) & 49152) >>> 14);
+            case 80:
+                return (rc.readSharedArray(29) & 3584) >>> 9;
+            case 81:
+                return (rc.readSharedArray(29) & 112) >>> 4;
+            case 82:
+                return ((rc.readSharedArray(29) & 3) << 1) + ((rc.readSharedArray(30) & 32768) >>> 15);
+            case 83:
+                return (rc.readSharedArray(30) & 7168) >>> 10;
+            case 84:
+                return (rc.readSharedArray(30) & 224) >>> 5;
+            case 85:
+                return (rc.readSharedArray(30) & 7);
+            case 86:
+                return (rc.readSharedArray(31) & 14336) >>> 11;
+            case 87:
+                return (rc.readSharedArray(31) & 448) >>> 6;
+            case 88:
+                return (rc.readSharedArray(31) & 14) >>> 1;
+            case 89:
+                return (rc.readSharedArray(32) & 28672) >>> 12;
+            case 90:
+                return (rc.readSharedArray(32) & 896) >>> 7;
+            case 91:
+                return (rc.readSharedArray(32) & 28) >>> 2;
+            case 92:
+                return (rc.readSharedArray(33) & 57344) >>> 13;
+            case 93:
+                return (rc.readSharedArray(33) & 1792) >>> 8;
+            case 94:
+                return (rc.readSharedArray(33) & 56) >>> 3;
+            case 95:
+                return ((rc.readSharedArray(33) & 1) << 2) + ((rc.readSharedArray(34) & 49152) >>> 14);
+            case 96:
+                return (rc.readSharedArray(34) & 3584) >>> 9;
+            case 97:
+                return (rc.readSharedArray(34) & 112) >>> 4;
+            case 98:
+                return ((rc.readSharedArray(34) & 3) << 1) + ((rc.readSharedArray(35) & 32768) >>> 15);
+            case 99:
+                return (rc.readSharedArray(35) & 7168) >>> 10;
+            default:
+                return -1;
         }
-        int bitmask2 = -1;
-        bitmask2 = bitmask2 >>> (start);
-        //for reading
-        if (read) {
-            return (bitmask ^ bitmask2);
-        }
-        //for writing
-        return ~(bitmask ^ bitmask2);
     }
 
-    // Replaced with giant switch statement
-    private int whichBit(int index, int bitloc) {
-        if(bitloc < index * SHARED_ARRAY_ELEM_SIZE) {
-            return 0;    //first bit of the number
+    public void writeClusterResourceCount(int idx, int value) throws GameActionException {
+        switch (idx) {
+            case 0:
+                rc.writeSharedArray(4, (rc.readSharedArray(4) & 61951) | (value << 9));
+                break;
+            case 1:
+                rc.writeSharedArray(4, (rc.readSharedArray(4) & 65423) | (value << 4));
+                break;
+            case 2:
+                rc.writeSharedArray(4, (rc.readSharedArray(4) & 65532) | ((value & 6) >>> 1));
+                rc.writeSharedArray(5, (rc.readSharedArray(5) & 32767) | ((value & 1) << 15));
+                break;
+            case 3:
+                rc.writeSharedArray(5, (rc.readSharedArray(5) & 58367) | (value << 10));
+                break;
+            case 4:
+                rc.writeSharedArray(5, (rc.readSharedArray(5) & 65311) | (value << 5));
+                break;
+            case 5:
+                rc.writeSharedArray(5, (rc.readSharedArray(5) & 65528) | (value));
+                break;
+            case 6:
+                rc.writeSharedArray(6, (rc.readSharedArray(6) & 51199) | (value << 11));
+                break;
+            case 7:
+                rc.writeSharedArray(6, (rc.readSharedArray(6) & 65087) | (value << 6));
+                break;
+            case 8:
+                rc.writeSharedArray(6, (rc.readSharedArray(6) & 65521) | (value << 1));
+                break;
+            case 9:
+                rc.writeSharedArray(7, (rc.readSharedArray(7) & 36863) | (value << 12));
+                break;
+            case 10:
+                rc.writeSharedArray(7, (rc.readSharedArray(7) & 64639) | (value << 7));
+                break;
+            case 11:
+                rc.writeSharedArray(7, (rc.readSharedArray(7) & 65507) | (value << 2));
+                break;
+            case 12:
+                rc.writeSharedArray(8, (rc.readSharedArray(8) & 8191) | (value << 13));
+                break;
+            case 13:
+                rc.writeSharedArray(8, (rc.readSharedArray(8) & 63743) | (value << 8));
+                break;
+            case 14:
+                rc.writeSharedArray(8, (rc.readSharedArray(8) & 65479) | (value << 3));
+                break;
+            case 15:
+                rc.writeSharedArray(8, (rc.readSharedArray(8) & 65534) | ((value & 4) >>> 2));
+                rc.writeSharedArray(9, (rc.readSharedArray(9) & 16383) | ((value & 3) << 14));
+                break;
+            case 16:
+                rc.writeSharedArray(9, (rc.readSharedArray(9) & 61951) | (value << 9));
+                break;
+            case 17:
+                rc.writeSharedArray(9, (rc.readSharedArray(9) & 65423) | (value << 4));
+                break;
+            case 18:
+                rc.writeSharedArray(9, (rc.readSharedArray(9) & 65532) | ((value & 6) >>> 1));
+                rc.writeSharedArray(10, (rc.readSharedArray(10) & 32767) | ((value & 1) << 15));
+                break;
+            case 19:
+                rc.writeSharedArray(10, (rc.readSharedArray(10) & 58367) | (value << 10));
+                break;
+            case 20:
+                rc.writeSharedArray(10, (rc.readSharedArray(10) & 65311) | (value << 5));
+                break;
+            case 21:
+                rc.writeSharedArray(10, (rc.readSharedArray(10) & 65528) | (value));
+                break;
+            case 22:
+                rc.writeSharedArray(11, (rc.readSharedArray(11) & 51199) | (value << 11));
+                break;
+            case 23:
+                rc.writeSharedArray(11, (rc.readSharedArray(11) & 65087) | (value << 6));
+                break;
+            case 24:
+                rc.writeSharedArray(11, (rc.readSharedArray(11) & 65521) | (value << 1));
+                break;
+            case 25:
+                rc.writeSharedArray(12, (rc.readSharedArray(12) & 36863) | (value << 12));
+                break;
+            case 26:
+                rc.writeSharedArray(12, (rc.readSharedArray(12) & 64639) | (value << 7));
+                break;
+            case 27:
+                rc.writeSharedArray(12, (rc.readSharedArray(12) & 65507) | (value << 2));
+                break;
+            case 28:
+                rc.writeSharedArray(13, (rc.readSharedArray(13) & 8191) | (value << 13));
+                break;
+            case 29:
+                rc.writeSharedArray(13, (rc.readSharedArray(13) & 63743) | (value << 8));
+                break;
+            case 30:
+                rc.writeSharedArray(13, (rc.readSharedArray(13) & 65479) | (value << 3));
+                break;
+            case 31:
+                rc.writeSharedArray(13, (rc.readSharedArray(13) & 65534) | ((value & 4) >>> 2));
+                rc.writeSharedArray(14, (rc.readSharedArray(14) & 16383) | ((value & 3) << 14));
+                break;
+            case 32:
+                rc.writeSharedArray(14, (rc.readSharedArray(14) & 61951) | (value << 9));
+                break;
+            case 33:
+                rc.writeSharedArray(14, (rc.readSharedArray(14) & 65423) | (value << 4));
+                break;
+            case 34:
+                rc.writeSharedArray(14, (rc.readSharedArray(14) & 65532) | ((value & 6) >>> 1));
+                rc.writeSharedArray(15, (rc.readSharedArray(15) & 32767) | ((value & 1) << 15));
+                break;
+            case 35:
+                rc.writeSharedArray(15, (rc.readSharedArray(15) & 58367) | (value << 10));
+                break;
+            case 36:
+                rc.writeSharedArray(15, (rc.readSharedArray(15) & 65311) | (value << 5));
+                break;
+            case 37:
+                rc.writeSharedArray(15, (rc.readSharedArray(15) & 65528) | (value));
+                break;
+            case 38:
+                rc.writeSharedArray(16, (rc.readSharedArray(16) & 51199) | (value << 11));
+                break;
+            case 39:
+                rc.writeSharedArray(16, (rc.readSharedArray(16) & 65087) | (value << 6));
+                break;
+            case 40:
+                rc.writeSharedArray(16, (rc.readSharedArray(16) & 65521) | (value << 1));
+                break;
+            case 41:
+                rc.writeSharedArray(17, (rc.readSharedArray(17) & 36863) | (value << 12));
+                break;
+            case 42:
+                rc.writeSharedArray(17, (rc.readSharedArray(17) & 64639) | (value << 7));
+                break;
+            case 43:
+                rc.writeSharedArray(17, (rc.readSharedArray(17) & 65507) | (value << 2));
+                break;
+            case 44:
+                rc.writeSharedArray(18, (rc.readSharedArray(18) & 8191) | (value << 13));
+                break;
+            case 45:
+                rc.writeSharedArray(18, (rc.readSharedArray(18) & 63743) | (value << 8));
+                break;
+            case 46:
+                rc.writeSharedArray(18, (rc.readSharedArray(18) & 65479) | (value << 3));
+                break;
+            case 47:
+                rc.writeSharedArray(18, (rc.readSharedArray(18) & 65534) | ((value & 4) >>> 2));
+                rc.writeSharedArray(19, (rc.readSharedArray(19) & 16383) | ((value & 3) << 14));
+                break;
+            case 48:
+                rc.writeSharedArray(19, (rc.readSharedArray(19) & 61951) | (value << 9));
+                break;
+            case 49:
+                rc.writeSharedArray(19, (rc.readSharedArray(19) & 65423) | (value << 4));
+                break;
+            case 50:
+                rc.writeSharedArray(19, (rc.readSharedArray(19) & 65532) | ((value & 6) >>> 1));
+                rc.writeSharedArray(20, (rc.readSharedArray(20) & 32767) | ((value & 1) << 15));
+                break;
+            case 51:
+                rc.writeSharedArray(20, (rc.readSharedArray(20) & 58367) | (value << 10));
+                break;
+            case 52:
+                rc.writeSharedArray(20, (rc.readSharedArray(20) & 65311) | (value << 5));
+                break;
+            case 53:
+                rc.writeSharedArray(20, (rc.readSharedArray(20) & 65528) | (value));
+                break;
+            case 54:
+                rc.writeSharedArray(21, (rc.readSharedArray(21) & 51199) | (value << 11));
+                break;
+            case 55:
+                rc.writeSharedArray(21, (rc.readSharedArray(21) & 65087) | (value << 6));
+                break;
+            case 56:
+                rc.writeSharedArray(21, (rc.readSharedArray(21) & 65521) | (value << 1));
+                break;
+            case 57:
+                rc.writeSharedArray(22, (rc.readSharedArray(22) & 36863) | (value << 12));
+                break;
+            case 58:
+                rc.writeSharedArray(22, (rc.readSharedArray(22) & 64639) | (value << 7));
+                break;
+            case 59:
+                rc.writeSharedArray(22, (rc.readSharedArray(22) & 65507) | (value << 2));
+                break;
+            case 60:
+                rc.writeSharedArray(23, (rc.readSharedArray(23) & 8191) | (value << 13));
+                break;
+            case 61:
+                rc.writeSharedArray(23, (rc.readSharedArray(23) & 63743) | (value << 8));
+                break;
+            case 62:
+                rc.writeSharedArray(23, (rc.readSharedArray(23) & 65479) | (value << 3));
+                break;
+            case 63:
+                rc.writeSharedArray(23, (rc.readSharedArray(23) & 65534) | ((value & 4) >>> 2));
+                rc.writeSharedArray(24, (rc.readSharedArray(24) & 16383) | ((value & 3) << 14));
+                break;
+            case 64:
+                rc.writeSharedArray(24, (rc.readSharedArray(24) & 61951) | (value << 9));
+                break;
+            case 65:
+                rc.writeSharedArray(24, (rc.readSharedArray(24) & 65423) | (value << 4));
+                break;
+            case 66:
+                rc.writeSharedArray(24, (rc.readSharedArray(24) & 65532) | ((value & 6) >>> 1));
+                rc.writeSharedArray(25, (rc.readSharedArray(25) & 32767) | ((value & 1) << 15));
+                break;
+            case 67:
+                rc.writeSharedArray(25, (rc.readSharedArray(25) & 58367) | (value << 10));
+                break;
+            case 68:
+                rc.writeSharedArray(25, (rc.readSharedArray(25) & 65311) | (value << 5));
+                break;
+            case 69:
+                rc.writeSharedArray(25, (rc.readSharedArray(25) & 65528) | (value));
+                break;
+            case 70:
+                rc.writeSharedArray(26, (rc.readSharedArray(26) & 51199) | (value << 11));
+                break;
+            case 71:
+                rc.writeSharedArray(26, (rc.readSharedArray(26) & 65087) | (value << 6));
+                break;
+            case 72:
+                rc.writeSharedArray(26, (rc.readSharedArray(26) & 65521) | (value << 1));
+                break;
+            case 73:
+                rc.writeSharedArray(27, (rc.readSharedArray(27) & 36863) | (value << 12));
+                break;
+            case 74:
+                rc.writeSharedArray(27, (rc.readSharedArray(27) & 64639) | (value << 7));
+                break;
+            case 75:
+                rc.writeSharedArray(27, (rc.readSharedArray(27) & 65507) | (value << 2));
+                break;
+            case 76:
+                rc.writeSharedArray(28, (rc.readSharedArray(28) & 8191) | (value << 13));
+                break;
+            case 77:
+                rc.writeSharedArray(28, (rc.readSharedArray(28) & 63743) | (value << 8));
+                break;
+            case 78:
+                rc.writeSharedArray(28, (rc.readSharedArray(28) & 65479) | (value << 3));
+                break;
+            case 79:
+                rc.writeSharedArray(28, (rc.readSharedArray(28) & 65534) | ((value & 4) >>> 2));
+                rc.writeSharedArray(29, (rc.readSharedArray(29) & 16383) | ((value & 3) << 14));
+                break;
+            case 80:
+                rc.writeSharedArray(29, (rc.readSharedArray(29) & 61951) | (value << 9));
+                break;
+            case 81:
+                rc.writeSharedArray(29, (rc.readSharedArray(29) & 65423) | (value << 4));
+                break;
+            case 82:
+                rc.writeSharedArray(29, (rc.readSharedArray(29) & 65532) | ((value & 6) >>> 1));
+                rc.writeSharedArray(30, (rc.readSharedArray(30) & 32767) | ((value & 1) << 15));
+                break;
+            case 83:
+                rc.writeSharedArray(30, (rc.readSharedArray(30) & 58367) | (value << 10));
+                break;
+            case 84:
+                rc.writeSharedArray(30, (rc.readSharedArray(30) & 65311) | (value << 5));
+                break;
+            case 85:
+                rc.writeSharedArray(30, (rc.readSharedArray(30) & 65528) | (value));
+                break;
+            case 86:
+                rc.writeSharedArray(31, (rc.readSharedArray(31) & 51199) | (value << 11));
+                break;
+            case 87:
+                rc.writeSharedArray(31, (rc.readSharedArray(31) & 65087) | (value << 6));
+                break;
+            case 88:
+                rc.writeSharedArray(31, (rc.readSharedArray(31) & 65521) | (value << 1));
+                break;
+            case 89:
+                rc.writeSharedArray(32, (rc.readSharedArray(32) & 36863) | (value << 12));
+                break;
+            case 90:
+                rc.writeSharedArray(32, (rc.readSharedArray(32) & 64639) | (value << 7));
+                break;
+            case 91:
+                rc.writeSharedArray(32, (rc.readSharedArray(32) & 65507) | (value << 2));
+                break;
+            case 92:
+                rc.writeSharedArray(33, (rc.readSharedArray(33) & 8191) | (value << 13));
+                break;
+            case 93:
+                rc.writeSharedArray(33, (rc.readSharedArray(33) & 63743) | (value << 8));
+                break;
+            case 94:
+                rc.writeSharedArray(33, (rc.readSharedArray(33) & 65479) | (value << 3));
+                break;
+            case 95:
+                rc.writeSharedArray(33, (rc.readSharedArray(33) & 65534) | ((value & 4) >>> 2));
+                rc.writeSharedArray(34, (rc.readSharedArray(34) & 16383) | ((value & 3) << 14));
+                break;
+            case 96:
+                rc.writeSharedArray(34, (rc.readSharedArray(34) & 61951) | (value << 9));
+                break;
+            case 97:
+                rc.writeSharedArray(34, (rc.readSharedArray(34) & 65423) | (value << 4));
+                break;
+            case 98:
+                rc.writeSharedArray(34, (rc.readSharedArray(34) & 65532) | ((value & 6) >>> 1));
+                rc.writeSharedArray(35, (rc.readSharedArray(35) & 32767) | ((value & 1) << 15));
+                break;
+            case 99:
+                rc.writeSharedArray(35, (rc.readSharedArray(35) & 58367) | (value << 10));
+                break;
         }
-        if(bitloc >= (index+1)*SHARED_ARRAY_ELEM_SIZE) {
-            return SHARED_ARRAY_ELEM_SIZE-1;  //last bit of the number
-        }
-        return bitloc % SHARED_ARRAY_ELEM_SIZE;
     }
 
-    /**
-     * Try to inline this as much as possible
-     * @param start
-     * @param end
-     * @return
-     */
-    private int bitmask2Write(int start, int end) {
-        int mask = 32*start + end;
-        switch (mask) {
-            case 0: return -32769; 
-            case 1: return -49153; 
-            case 2: return -57345; 
-            case 3: return -61441; 
-            case 4: return -63489; 
-            case 5: return -64513; 
-            case 6: return -65025; 
-            case 7: return -65281; 
-            case 8: return -65409; 
-            case 9: return -65473; 
-            case 10: return -65505; 
-            case 11: return -65521; 
-            case 12: return -65529; 
-            case 13: return -65533; 
-            case 14: return -65535; 
-            case 15: return -65536; 
-            case 16: return -2147418113; 
-            case 17: return -1073676289; 
-            case 18: return -536805377; 
-            case 19: return -268369921; 
-            case 20: return -134152193; 
-            case 21: return -67043329; 
-            case 22: return -33488897; 
-            case 23: return -16711681; 
-            case 24: return -8323073; 
-            case 25: return -4128769; 
-            case 26: return -2031617; 
-            case 27: return -983041; 
-            case 28: return -458753; 
-            case 29: return -196609; 
-            case 30: return -65537; 
-            case 31: return -1; 
-            case 33: return -16385; 
-            case 34: return -24577; 
-            case 35: return -28673; 
-            case 36: return -30721; 
-            case 37: return -31745; 
-            case 38: return -32257; 
-            case 39: return -32513; 
-            case 40: return -32641; 
-            case 41: return -32705; 
-            case 42: return -32737; 
-            case 43: return -32753; 
-            case 44: return -32761; 
-            case 45: return -32765; 
-            case 46: return -32767; 
-            case 47: return -32768; 
-            case 48: return -2147450881; 
-            case 49: return -1073709057; 
-            case 50: return -536838145; 
-            case 51: return -268402689; 
-            case 52: return -134184961; 
-            case 53: return -67076097; 
-            case 54: return -33521665; 
-            case 55: return -16744449; 
-            case 56: return -8355841; 
-            case 57: return -4161537; 
-            case 58: return -2064385; 
-            case 59: return -1015809; 
-            case 60: return -491521; 
-            case 61: return -229377; 
-            case 62: return -98305; 
-            case 63: return -32769; 
-            case 66: return -8193; 
-            case 67: return -12289; 
-            case 68: return -14337; 
-            case 69: return -15361; 
-            case 70: return -15873; 
-            case 71: return -16129; 
-            case 72: return -16257; 
-            case 73: return -16321; 
-            case 74: return -16353; 
-            case 75: return -16369; 
-            case 76: return -16377; 
-            case 77: return -16381; 
-            case 78: return -16383; 
-            case 79: return -16384; 
-            case 80: return -2147467265; 
-            case 81: return -1073725441; 
-            case 82: return -536854529; 
-            case 83: return -268419073; 
-            case 84: return -134201345; 
-            case 85: return -67092481; 
-            case 86: return -33538049; 
-            case 87: return -16760833; 
-            case 88: return -8372225; 
-            case 89: return -4177921; 
-            case 90: return -2080769; 
-            case 91: return -1032193; 
-            case 92: return -507905; 
-            case 93: return -245761; 
-            case 94: return -114689; 
-            case 95: return -49153; 
-            case 99: return -4097; 
-            case 100: return -6145; 
-            case 101: return -7169; 
-            case 102: return -7681; 
-            case 103: return -7937; 
-            case 104: return -8065; 
-            case 105: return -8129; 
-            case 106: return -8161; 
-            case 107: return -8177; 
-            case 108: return -8185; 
-            case 109: return -8189; 
-            case 110: return -8191; 
-            case 111: return -8192; 
-            case 112: return -2147475457; 
-            case 113: return -1073733633; 
-            case 114: return -536862721; 
-            case 115: return -268427265; 
-            case 116: return -134209537; 
-            case 117: return -67100673; 
-            case 118: return -33546241; 
-            case 119: return -16769025; 
-            case 120: return -8380417; 
-            case 121: return -4186113; 
-            case 122: return -2088961; 
-            case 123: return -1040385; 
-            case 124: return -516097; 
-            case 125: return -253953; 
-            case 126: return -122881; 
-            case 127: return -57345; 
-            case 132: return -2049; 
-            case 133: return -3073; 
-            case 134: return -3585; 
-            case 135: return -3841; 
-            case 136: return -3969; 
-            case 137: return -4033; 
-            case 138: return -4065; 
-            case 139: return -4081; 
-            case 140: return -4089; 
-            case 141: return -4093; 
-            case 142: return -4095; 
-            case 143: return -4096; 
-            case 144: return -2147479553; 
-            case 145: return -1073737729; 
-            case 146: return -536866817; 
-            case 147: return -268431361; 
-            case 148: return -134213633; 
-            case 149: return -67104769; 
-            case 150: return -33550337; 
-            case 151: return -16773121; 
-            case 152: return -8384513; 
-            case 153: return -4190209; 
-            case 154: return -2093057; 
-            case 155: return -1044481; 
-            case 156: return -520193; 
-            case 157: return -258049; 
-            case 158: return -126977; 
-            case 159: return -61441; 
-            case 165: return -1025; 
-            case 166: return -1537; 
-            case 167: return -1793; 
-            case 168: return -1921; 
-            case 169: return -1985; 
-            case 170: return -2017; 
-            case 171: return -2033; 
-            case 172: return -2041; 
-            case 173: return -2045; 
-            case 174: return -2047; 
-            case 175: return -2048; 
-            case 176: return -2147481601; 
-            case 177: return -1073739777; 
-            case 178: return -536868865; 
-            case 179: return -268433409; 
-            case 180: return -134215681; 
-            case 181: return -67106817; 
-            case 182: return -33552385; 
-            case 183: return -16775169; 
-            case 184: return -8386561; 
-            case 185: return -4192257; 
-            case 186: return -2095105; 
-            case 187: return -1046529; 
-            case 188: return -522241; 
-            case 189: return -260097; 
-            case 190: return -129025; 
-            case 191: return -63489; 
-            case 198: return -513; 
-            case 199: return -769; 
-            case 200: return -897; 
-            case 201: return -961; 
-            case 202: return -993; 
-            case 203: return -1009; 
-            case 204: return -1017; 
-            case 205: return -1021; 
-            case 206: return -1023; 
-            case 207: return -1024; 
-            case 208: return -2147482625; 
-            case 209: return -1073740801; 
-            case 210: return -536869889; 
-            case 211: return -268434433; 
-            case 212: return -134216705; 
-            case 213: return -67107841; 
-            case 214: return -33553409; 
-            case 215: return -16776193; 
-            case 216: return -8387585; 
-            case 217: return -4193281; 
-            case 218: return -2096129; 
-            case 219: return -1047553; 
-            case 220: return -523265; 
-            case 221: return -261121; 
-            case 222: return -130049; 
-            case 223: return -64513; 
-            case 231: return -257; 
-            case 232: return -385; 
-            case 233: return -449; 
-            case 234: return -481; 
-            case 235: return -497; 
-            case 236: return -505; 
-            case 237: return -509; 
-            case 238: return -511; 
-            case 239: return -512; 
-            case 240: return -2147483137; 
-            case 241: return -1073741313; 
-            case 242: return -536870401; 
-            case 243: return -268434945; 
-            case 244: return -134217217; 
-            case 245: return -67108353; 
-            case 246: return -33553921; 
-            case 247: return -16776705; 
-            case 248: return -8388097; 
-            case 249: return -4193793; 
-            case 250: return -2096641; 
-            case 251: return -1048065; 
-            case 252: return -523777; 
-            case 253: return -261633; 
-            case 254: return -130561; 
-            case 255: return -65025; 
-            case 264: return -129; 
-            case 265: return -193; 
-            case 266: return -225; 
-            case 267: return -241; 
-            case 268: return -249; 
-            case 269: return -253; 
-            case 270: return -255; 
-            case 271: return -256; 
-            case 272: return -2147483393; 
-            case 273: return -1073741569; 
-            case 274: return -536870657; 
-            case 275: return -268435201; 
-            case 276: return -134217473; 
-            case 277: return -67108609; 
-            case 278: return -33554177; 
-            case 279: return -16776961; 
-            case 280: return -8388353; 
-            case 281: return -4194049; 
-            case 282: return -2096897; 
-            case 283: return -1048321; 
-            case 284: return -524033; 
-            case 285: return -261889; 
-            case 286: return -130817; 
-            case 287: return -65281; 
-            case 297: return -65; 
-            case 298: return -97; 
-            case 299: return -113; 
-            case 300: return -121; 
-            case 301: return -125; 
-            case 302: return -127; 
-            case 303: return -128; 
-            case 304: return -2147483521; 
-            case 305: return -1073741697; 
-            case 306: return -536870785; 
-            case 307: return -268435329; 
-            case 308: return -134217601; 
-            case 309: return -67108737; 
-            case 310: return -33554305; 
-            case 311: return -16777089; 
-            case 312: return -8388481; 
-            case 313: return -4194177; 
-            case 314: return -2097025; 
-            case 315: return -1048449; 
-            case 316: return -524161; 
-            case 317: return -262017; 
-            case 318: return -130945; 
-            case 319: return -65409; 
-            case 330: return -33; 
-            case 331: return -49; 
-            case 332: return -57; 
-            case 333: return -61; 
-            case 334: return -63; 
-            case 335: return -64; 
-            case 336: return -2147483585; 
-            case 337: return -1073741761; 
-            case 338: return -536870849; 
-            case 339: return -268435393; 
-            case 340: return -134217665; 
-            case 341: return -67108801; 
-            case 342: return -33554369; 
-            case 343: return -16777153; 
-            case 344: return -8388545; 
-            case 345: return -4194241; 
-            case 346: return -2097089; 
-            case 347: return -1048513; 
-            case 348: return -524225; 
-            case 349: return -262081; 
-            case 350: return -131009; 
-            case 351: return -65473; 
-            case 363: return -17; 
-            case 364: return -25; 
-            case 365: return -29; 
-            case 366: return -31; 
-            case 367: return -32; 
-            case 368: return -2147483617; 
-            case 369: return -1073741793; 
-            case 370: return -536870881; 
-            case 371: return -268435425; 
-            case 372: return -134217697; 
-            case 373: return -67108833; 
-            case 374: return -33554401; 
-            case 375: return -16777185; 
-            case 376: return -8388577; 
-            case 377: return -4194273; 
-            case 378: return -2097121; 
-            case 379: return -1048545; 
-            case 380: return -524257; 
-            case 381: return -262113; 
-            case 382: return -131041; 
-            case 383: return -65505; 
-            case 396: return -9; 
-            case 397: return -13; 
-            case 398: return -15; 
-            case 399: return -16; 
-            case 400: return -2147483633; 
-            case 401: return -1073741809; 
-            case 402: return -536870897; 
-            case 403: return -268435441; 
-            case 404: return -134217713; 
-            case 405: return -67108849; 
-            case 406: return -33554417; 
-            case 407: return -16777201; 
-            case 408: return -8388593; 
-            case 409: return -4194289; 
-            case 410: return -2097137; 
-            case 411: return -1048561; 
-            case 412: return -524273; 
-            case 413: return -262129; 
-            case 414: return -131057; 
-            case 415: return -65521; 
-            case 429: return -5; 
-            case 430: return -7; 
-            case 431: return -8; 
-            case 432: return -2147483641; 
-            case 433: return -1073741817; 
-            case 434: return -536870905; 
-            case 435: return -268435449; 
-            case 436: return -134217721; 
-            case 437: return -67108857; 
-            case 438: return -33554425; 
-            case 439: return -16777209; 
-            case 440: return -8388601; 
-            case 441: return -4194297; 
-            case 442: return -2097145; 
-            case 443: return -1048569; 
-            case 444: return -524281; 
-            case 445: return -262137; 
-            case 446: return -131065; 
-            case 447: return -65529; 
-            case 462: return -3; 
-            case 463: return -4; 
-            case 464: return -2147483645; 
-            case 465: return -1073741821; 
-            case 466: return -536870909; 
-            case 467: return -268435453; 
-            case 468: return -134217725; 
-            case 469: return -67108861; 
-            case 470: return -33554429; 
-            case 471: return -16777213; 
-            case 472: return -8388605; 
-            case 473: return -4194301; 
-            case 474: return -2097149; 
-            case 475: return -1048573; 
-            case 476: return -524285; 
-            case 477: return -262141; 
-            case 478: return -131069; 
-            case 479: return -65533; 
-            case 495: return -2; 
-            case 496: return -2147483647; 
-            case 497: return -1073741823; 
-            case 498: return -536870911; 
-            case 499: return -268435455; 
-            case 500: return -134217727; 
-            case 501: return -67108863; 
-            case 502: return -33554431; 
-            case 503: return -16777215; 
-            case 504: return -8388607; 
-            case 505: return -4194303; 
-            case 506: return -2097151; 
-            case 507: return -1048575; 
-            case 508: return -524287; 
-            case 509: return -262143; 
-            case 510: return -131071; 
-            case 511: return -65535; 
-            case 528: return 2147483647; 
-            case 529: return 1073741823; 
-            case 530: return 536870911; 
-            case 531: return 268435455; 
-            case 532: return 134217727; 
-            case 533: return 67108863; 
-            case 534: return 33554431; 
-            case 535: return 16777215; 
-            case 536: return 8388607; 
-            case 537: return 4194303; 
-            case 538: return 2097151; 
-            case 539: return 1048575; 
-            case 540: return 524287; 
-            case 541: return 262143; 
-            case 542: return 131071; 
-            case 543: return 65535; 
-            case 561: return -1073741825; 
-            case 562: return -1610612737; 
-            case 563: return -1879048193; 
-            case 564: return -2013265921; 
-            case 565: return -2080374785; 
-            case 566: return -2113929217; 
-            case 567: return -2130706433; 
-            case 568: return -2139095041; 
-            case 569: return -2143289345; 
-            case 570: return -2145386497; 
-            case 571: return -2146435073; 
-            case 572: return -2146959361; 
-            case 573: return -2147221505; 
-            case 574: return -2147352577; 
-            case 575: return -2147418113; 
-            case 594: return -536870913; 
-            case 595: return -805306369; 
-            case 596: return -939524097; 
-            case 597: return -1006632961; 
-            case 598: return -1040187393; 
-            case 599: return -1056964609; 
-            case 600: return -1065353217; 
-            case 601: return -1069547521; 
-            case 602: return -1071644673; 
-            case 603: return -1072693249; 
-            case 604: return -1073217537; 
-            case 605: return -1073479681; 
-            case 606: return -1073610753; 
-            case 607: return -1073676289; 
-            case 627: return -268435457; 
-            case 628: return -402653185; 
-            case 629: return -469762049; 
-            case 630: return -503316481; 
-            case 631: return -520093697; 
-            case 632: return -528482305; 
-            case 633: return -532676609; 
-            case 634: return -534773761; 
-            case 635: return -535822337; 
-            case 636: return -536346625; 
-            case 637: return -536608769; 
-            case 638: return -536739841; 
-            case 639: return -536805377; 
-            case 660: return -134217729; 
-            case 661: return -201326593; 
-            case 662: return -234881025; 
-            case 663: return -251658241; 
-            case 664: return -260046849; 
-            case 665: return -264241153; 
-            case 666: return -266338305; 
-            case 667: return -267386881; 
-            case 668: return -267911169; 
-            case 669: return -268173313; 
-            case 670: return -268304385; 
-            case 671: return -268369921; 
-            case 693: return -67108865; 
-            case 694: return -100663297; 
-            case 695: return -117440513; 
-            case 696: return -125829121; 
-            case 697: return -130023425; 
-            case 698: return -132120577; 
-            case 699: return -133169153; 
-            case 700: return -133693441; 
-            case 701: return -133955585; 
-            case 702: return -134086657; 
-            case 703: return -134152193; 
-            case 726: return -33554433; 
-            case 727: return -50331649; 
-            case 728: return -58720257; 
-            case 729: return -62914561; 
-            case 730: return -65011713; 
-            case 731: return -66060289; 
-            case 732: return -66584577; 
-            case 733: return -66846721; 
-            case 734: return -66977793; 
-            case 735: return -67043329; 
-            case 759: return -16777217; 
-            case 760: return -25165825; 
-            case 761: return -29360129; 
-            case 762: return -31457281; 
-            case 763: return -32505857; 
-            case 764: return -33030145; 
-            case 765: return -33292289; 
-            case 766: return -33423361; 
-            case 767: return -33488897; 
-            case 792: return -8388609; 
-            case 793: return -12582913; 
-            case 794: return -14680065; 
-            case 795: return -15728641; 
-            case 796: return -16252929; 
-            case 797: return -16515073; 
-            case 798: return -16646145; 
-            case 799: return -16711681; 
-            case 825: return -4194305; 
-            case 826: return -6291457; 
-            case 827: return -7340033; 
-            case 828: return -7864321; 
-            case 829: return -8126465; 
-            case 830: return -8257537; 
-            case 831: return -8323073; 
-            case 858: return -2097153; 
-            case 859: return -3145729; 
-            case 860: return -3670017; 
-            case 861: return -3932161; 
-            case 862: return -4063233; 
-            case 863: return -4128769; 
-            case 891: return -1048577; 
-            case 892: return -1572865; 
-            case 893: return -1835009; 
-            case 894: return -1966081; 
-            case 895: return -2031617; 
-            case 924: return -524289; 
-            case 925: return -786433; 
-            case 926: return -917505; 
-            case 927: return -983041; 
-            case 957: return -262145; 
-            case 958: return -393217; 
-            case 959: return -458753; 
-            case 990: return -131073; 
-            case 991: return -196609; 
-            case 1023: return -65537;
+    public int readClusterAll(int idx) throws GameActionException {
+        switch (idx) {
+            case 0:
+                return (rc.readSharedArray(4) & 15872) >>> 9;
+            case 1:
+                return (rc.readSharedArray(4) & 496) >>> 4;
+            case 2:
+                return ((rc.readSharedArray(4) & 15) << 1) + ((rc.readSharedArray(5) & 32768) >>> 15);
+            case 3:
+                return (rc.readSharedArray(5) & 31744) >>> 10;
+            case 4:
+                return (rc.readSharedArray(5) & 992) >>> 5;
+            case 5:
+                return (rc.readSharedArray(5) & 31);
+            case 6:
+                return (rc.readSharedArray(6) & 63488) >>> 11;
+            case 7:
+                return (rc.readSharedArray(6) & 1984) >>> 6;
+            case 8:
+                return (rc.readSharedArray(6) & 62) >>> 1;
+            case 9:
+                return ((rc.readSharedArray(6) & 1) << 4) + ((rc.readSharedArray(7) & 61440) >>> 12);
+            case 10:
+                return (rc.readSharedArray(7) & 3968) >>> 7;
+            case 11:
+                return (rc.readSharedArray(7) & 124) >>> 2;
+            case 12:
+                return ((rc.readSharedArray(7) & 3) << 3) + ((rc.readSharedArray(8) & 57344) >>> 13);
+            case 13:
+                return (rc.readSharedArray(8) & 7936) >>> 8;
+            case 14:
+                return (rc.readSharedArray(8) & 248) >>> 3;
+            case 15:
+                return ((rc.readSharedArray(8) & 7) << 2) + ((rc.readSharedArray(9) & 49152) >>> 14);
+            case 16:
+                return (rc.readSharedArray(9) & 15872) >>> 9;
+            case 17:
+                return (rc.readSharedArray(9) & 496) >>> 4;
+            case 18:
+                return ((rc.readSharedArray(9) & 15) << 1) + ((rc.readSharedArray(10) & 32768) >>> 15);
+            case 19:
+                return (rc.readSharedArray(10) & 31744) >>> 10;
+            case 20:
+                return (rc.readSharedArray(10) & 992) >>> 5;
+            case 21:
+                return (rc.readSharedArray(10) & 31);
+            case 22:
+                return (rc.readSharedArray(11) & 63488) >>> 11;
+            case 23:
+                return (rc.readSharedArray(11) & 1984) >>> 6;
+            case 24:
+                return (rc.readSharedArray(11) & 62) >>> 1;
+            case 25:
+                return ((rc.readSharedArray(11) & 1) << 4) + ((rc.readSharedArray(12) & 61440) >>> 12);
+            case 26:
+                return (rc.readSharedArray(12) & 3968) >>> 7;
+            case 27:
+                return (rc.readSharedArray(12) & 124) >>> 2;
+            case 28:
+                return ((rc.readSharedArray(12) & 3) << 3) + ((rc.readSharedArray(13) & 57344) >>> 13);
+            case 29:
+                return (rc.readSharedArray(13) & 7936) >>> 8;
+            case 30:
+                return (rc.readSharedArray(13) & 248) >>> 3;
+            case 31:
+                return ((rc.readSharedArray(13) & 7) << 2) + ((rc.readSharedArray(14) & 49152) >>> 14);
+            case 32:
+                return (rc.readSharedArray(14) & 15872) >>> 9;
+            case 33:
+                return (rc.readSharedArray(14) & 496) >>> 4;
+            case 34:
+                return ((rc.readSharedArray(14) & 15) << 1) + ((rc.readSharedArray(15) & 32768) >>> 15);
+            case 35:
+                return (rc.readSharedArray(15) & 31744) >>> 10;
+            case 36:
+                return (rc.readSharedArray(15) & 992) >>> 5;
+            case 37:
+                return (rc.readSharedArray(15) & 31);
+            case 38:
+                return (rc.readSharedArray(16) & 63488) >>> 11;
+            case 39:
+                return (rc.readSharedArray(16) & 1984) >>> 6;
+            case 40:
+                return (rc.readSharedArray(16) & 62) >>> 1;
+            case 41:
+                return ((rc.readSharedArray(16) & 1) << 4) + ((rc.readSharedArray(17) & 61440) >>> 12);
+            case 42:
+                return (rc.readSharedArray(17) & 3968) >>> 7;
+            case 43:
+                return (rc.readSharedArray(17) & 124) >>> 2;
+            case 44:
+                return ((rc.readSharedArray(17) & 3) << 3) + ((rc.readSharedArray(18) & 57344) >>> 13);
+            case 45:
+                return (rc.readSharedArray(18) & 7936) >>> 8;
+            case 46:
+                return (rc.readSharedArray(18) & 248) >>> 3;
+            case 47:
+                return ((rc.readSharedArray(18) & 7) << 2) + ((rc.readSharedArray(19) & 49152) >>> 14);
+            case 48:
+                return (rc.readSharedArray(19) & 15872) >>> 9;
+            case 49:
+                return (rc.readSharedArray(19) & 496) >>> 4;
+            case 50:
+                return ((rc.readSharedArray(19) & 15) << 1) + ((rc.readSharedArray(20) & 32768) >>> 15);
+            case 51:
+                return (rc.readSharedArray(20) & 31744) >>> 10;
+            case 52:
+                return (rc.readSharedArray(20) & 992) >>> 5;
+            case 53:
+                return (rc.readSharedArray(20) & 31);
+            case 54:
+                return (rc.readSharedArray(21) & 63488) >>> 11;
+            case 55:
+                return (rc.readSharedArray(21) & 1984) >>> 6;
+            case 56:
+                return (rc.readSharedArray(21) & 62) >>> 1;
+            case 57:
+                return ((rc.readSharedArray(21) & 1) << 4) + ((rc.readSharedArray(22) & 61440) >>> 12);
+            case 58:
+                return (rc.readSharedArray(22) & 3968) >>> 7;
+            case 59:
+                return (rc.readSharedArray(22) & 124) >>> 2;
+            case 60:
+                return ((rc.readSharedArray(22) & 3) << 3) + ((rc.readSharedArray(23) & 57344) >>> 13);
+            case 61:
+                return (rc.readSharedArray(23) & 7936) >>> 8;
+            case 62:
+                return (rc.readSharedArray(23) & 248) >>> 3;
+            case 63:
+                return ((rc.readSharedArray(23) & 7) << 2) + ((rc.readSharedArray(24) & 49152) >>> 14);
+            case 64:
+                return (rc.readSharedArray(24) & 15872) >>> 9;
+            case 65:
+                return (rc.readSharedArray(24) & 496) >>> 4;
+            case 66:
+                return ((rc.readSharedArray(24) & 15) << 1) + ((rc.readSharedArray(25) & 32768) >>> 15);
+            case 67:
+                return (rc.readSharedArray(25) & 31744) >>> 10;
+            case 68:
+                return (rc.readSharedArray(25) & 992) >>> 5;
+            case 69:
+                return (rc.readSharedArray(25) & 31);
+            case 70:
+                return (rc.readSharedArray(26) & 63488) >>> 11;
+            case 71:
+                return (rc.readSharedArray(26) & 1984) >>> 6;
+            case 72:
+                return (rc.readSharedArray(26) & 62) >>> 1;
+            case 73:
+                return ((rc.readSharedArray(26) & 1) << 4) + ((rc.readSharedArray(27) & 61440) >>> 12);
+            case 74:
+                return (rc.readSharedArray(27) & 3968) >>> 7;
+            case 75:
+                return (rc.readSharedArray(27) & 124) >>> 2;
+            case 76:
+                return ((rc.readSharedArray(27) & 3) << 3) + ((rc.readSharedArray(28) & 57344) >>> 13);
+            case 77:
+                return (rc.readSharedArray(28) & 7936) >>> 8;
+            case 78:
+                return (rc.readSharedArray(28) & 248) >>> 3;
+            case 79:
+                return ((rc.readSharedArray(28) & 7) << 2) + ((rc.readSharedArray(29) & 49152) >>> 14);
+            case 80:
+                return (rc.readSharedArray(29) & 15872) >>> 9;
+            case 81:
+                return (rc.readSharedArray(29) & 496) >>> 4;
+            case 82:
+                return ((rc.readSharedArray(29) & 15) << 1) + ((rc.readSharedArray(30) & 32768) >>> 15);
+            case 83:
+                return (rc.readSharedArray(30) & 31744) >>> 10;
+            case 84:
+                return (rc.readSharedArray(30) & 992) >>> 5;
+            case 85:
+                return (rc.readSharedArray(30) & 31);
+            case 86:
+                return (rc.readSharedArray(31) & 63488) >>> 11;
+            case 87:
+                return (rc.readSharedArray(31) & 1984) >>> 6;
+            case 88:
+                return (rc.readSharedArray(31) & 62) >>> 1;
+            case 89:
+                return ((rc.readSharedArray(31) & 1) << 4) + ((rc.readSharedArray(32) & 61440) >>> 12);
+            case 90:
+                return (rc.readSharedArray(32) & 3968) >>> 7;
+            case 91:
+                return (rc.readSharedArray(32) & 124) >>> 2;
+            case 92:
+                return ((rc.readSharedArray(32) & 3) << 3) + ((rc.readSharedArray(33) & 57344) >>> 13);
+            case 93:
+                return (rc.readSharedArray(33) & 7936) >>> 8;
+            case 94:
+                return (rc.readSharedArray(33) & 248) >>> 3;
+            case 95:
+                return ((rc.readSharedArray(33) & 7) << 2) + ((rc.readSharedArray(34) & 49152) >>> 14);
+            case 96:
+                return (rc.readSharedArray(34) & 15872) >>> 9;
+            case 97:
+                return (rc.readSharedArray(34) & 496) >>> 4;
+            case 98:
+                return ((rc.readSharedArray(34) & 15) << 1) + ((rc.readSharedArray(35) & 32768) >>> 15);
+            case 99:
+                return (rc.readSharedArray(35) & 31744) >>> 10;
+            default:
+                return -1;
         }
-        return 0;
     }
 
-    /**
-     * Try to inline tihs as much as possible
-     */
-    private int bitmask2Read(int start, int end) {
-        int mask = 32*start + end;
-        switch (mask) {
-            case 0: return 32768; 
-            case 1: return 49152; 
-            case 2: return 57344; 
-            case 3: return 61440; 
-            case 4: return 63488; 
-            case 5: return 64512; 
-            case 6: return 65024; 
-            case 7: return 65280; 
-            case 8: return 65408; 
-            case 9: return 65472; 
-            case 10: return 65504; 
-            case 11: return 65520; 
-            case 12: return 65528; 
-            case 13: return 65532; 
-            case 14: return 65534; 
-            case 15: return 65535; 
-            case 16: return 2147418112; 
-            case 17: return 1073676288; 
-            case 18: return 536805376; 
-            case 19: return 268369920; 
-            case 20: return 134152192; 
-            case 21: return 67043328; 
-            case 22: return 33488896; 
-            case 23: return 16711680; 
-            case 24: return 8323072; 
-            case 25: return 4128768; 
-            case 26: return 2031616; 
-            case 27: return 983040; 
-            case 28: return 458752; 
-            case 29: return 196608; 
-            case 30: return 65536; 
-            case 31: return 0; 
-            case 33: return 16384; 
-            case 34: return 24576; 
-            case 35: return 28672; 
-            case 36: return 30720; 
-            case 37: return 31744; 
-            case 38: return 32256; 
-            case 39: return 32512; 
-            case 40: return 32640; 
-            case 41: return 32704; 
-            case 42: return 32736; 
-            case 43: return 32752; 
-            case 44: return 32760; 
-            case 45: return 32764; 
-            case 46: return 32766; 
-            case 47: return 32767; 
-            case 48: return 2147450880; 
-            case 49: return 1073709056; 
-            case 50: return 536838144; 
-            case 51: return 268402688; 
-            case 52: return 134184960; 
-            case 53: return 67076096; 
-            case 54: return 33521664; 
-            case 55: return 16744448; 
-            case 56: return 8355840; 
-            case 57: return 4161536; 
-            case 58: return 2064384; 
-            case 59: return 1015808; 
-            case 60: return 491520; 
-            case 61: return 229376; 
-            case 62: return 98304; 
-            case 63: return 32768; 
-            case 66: return 8192; 
-            case 67: return 12288; 
-            case 68: return 14336; 
-            case 69: return 15360; 
-            case 70: return 15872; 
-            case 71: return 16128; 
-            case 72: return 16256; 
-            case 73: return 16320; 
-            case 74: return 16352; 
-            case 75: return 16368; 
-            case 76: return 16376; 
-            case 77: return 16380; 
-            case 78: return 16382; 
-            case 79: return 16383; 
-            case 80: return 2147467264; 
-            case 81: return 1073725440; 
-            case 82: return 536854528; 
-            case 83: return 268419072; 
-            case 84: return 134201344; 
-            case 85: return 67092480; 
-            case 86: return 33538048; 
-            case 87: return 16760832; 
-            case 88: return 8372224; 
-            case 89: return 4177920; 
-            case 90: return 2080768; 
-            case 91: return 1032192; 
-            case 92: return 507904; 
-            case 93: return 245760; 
-            case 94: return 114688; 
-            case 95: return 49152; 
-            case 99: return 4096; 
-            case 100: return 6144; 
-            case 101: return 7168; 
-            case 102: return 7680; 
-            case 103: return 7936; 
-            case 104: return 8064; 
-            case 105: return 8128; 
-            case 106: return 8160; 
-            case 107: return 8176; 
-            case 108: return 8184; 
-            case 109: return 8188; 
-            case 110: return 8190; 
-            case 111: return 8191; 
-            case 112: return 2147475456; 
-            case 113: return 1073733632; 
-            case 114: return 536862720; 
-            case 115: return 268427264; 
-            case 116: return 134209536; 
-            case 117: return 67100672; 
-            case 118: return 33546240; 
-            case 119: return 16769024; 
-            case 120: return 8380416; 
-            case 121: return 4186112; 
-            case 122: return 2088960; 
-            case 123: return 1040384; 
-            case 124: return 516096; 
-            case 125: return 253952; 
-            case 126: return 122880; 
-            case 127: return 57344; 
-            case 132: return 2048; 
-            case 133: return 3072; 
-            case 134: return 3584; 
-            case 135: return 3840; 
-            case 136: return 3968; 
-            case 137: return 4032; 
-            case 138: return 4064; 
-            case 139: return 4080; 
-            case 140: return 4088; 
-            case 141: return 4092; 
-            case 142: return 4094; 
-            case 143: return 4095; 
-            case 144: return 2147479552; 
-            case 145: return 1073737728; 
-            case 146: return 536866816; 
-            case 147: return 268431360; 
-            case 148: return 134213632; 
-            case 149: return 67104768; 
-            case 150: return 33550336; 
-            case 151: return 16773120; 
-            case 152: return 8384512; 
-            case 153: return 4190208; 
-            case 154: return 2093056; 
-            case 155: return 1044480; 
-            case 156: return 520192; 
-            case 157: return 258048; 
-            case 158: return 126976; 
-            case 159: return 61440; 
-            case 165: return 1024; 
-            case 166: return 1536; 
-            case 167: return 1792; 
-            case 168: return 1920; 
-            case 169: return 1984; 
-            case 170: return 2016; 
-            case 171: return 2032; 
-            case 172: return 2040; 
-            case 173: return 2044; 
-            case 174: return 2046; 
-            case 175: return 2047; 
-            case 176: return 2147481600; 
-            case 177: return 1073739776; 
-            case 178: return 536868864; 
-            case 179: return 268433408; 
-            case 180: return 134215680; 
-            case 181: return 67106816; 
-            case 182: return 33552384; 
-            case 183: return 16775168; 
-            case 184: return 8386560; 
-            case 185: return 4192256; 
-            case 186: return 2095104; 
-            case 187: return 1046528; 
-            case 188: return 522240; 
-            case 189: return 260096; 
-            case 190: return 129024; 
-            case 191: return 63488; 
-            case 198: return 512; 
-            case 199: return 768; 
-            case 200: return 896; 
-            case 201: return 960; 
-            case 202: return 992; 
-            case 203: return 1008; 
-            case 204: return 1016; 
-            case 205: return 1020; 
-            case 206: return 1022; 
-            case 207: return 1023; 
-            case 208: return 2147482624; 
-            case 209: return 1073740800; 
-            case 210: return 536869888; 
-            case 211: return 268434432; 
-            case 212: return 134216704; 
-            case 213: return 67107840; 
-            case 214: return 33553408; 
-            case 215: return 16776192; 
-            case 216: return 8387584; 
-            case 217: return 4193280; 
-            case 218: return 2096128; 
-            case 219: return 1047552; 
-            case 220: return 523264; 
-            case 221: return 261120; 
-            case 222: return 130048; 
-            case 223: return 64512; 
-            case 231: return 256; 
-            case 232: return 384; 
-            case 233: return 448; 
-            case 234: return 480; 
-            case 235: return 496; 
-            case 236: return 504; 
-            case 237: return 508; 
-            case 238: return 510; 
-            case 239: return 511; 
-            case 240: return 2147483136; 
-            case 241: return 1073741312; 
-            case 242: return 536870400; 
-            case 243: return 268434944; 
-            case 244: return 134217216; 
-            case 245: return 67108352; 
-            case 246: return 33553920; 
-            case 247: return 16776704; 
-            case 248: return 8388096; 
-            case 249: return 4193792; 
-            case 250: return 2096640; 
-            case 251: return 1048064; 
-            case 252: return 523776; 
-            case 253: return 261632; 
-            case 254: return 130560; 
-            case 255: return 65024; 
-            case 264: return 128; 
-            case 265: return 192; 
-            case 266: return 224; 
-            case 267: return 240; 
-            case 268: return 248; 
-            case 269: return 252; 
-            case 270: return 254; 
-            case 271: return 255; 
-            case 272: return 2147483392; 
-            case 273: return 1073741568; 
-            case 274: return 536870656; 
-            case 275: return 268435200; 
-            case 276: return 134217472; 
-            case 277: return 67108608; 
-            case 278: return 33554176; 
-            case 279: return 16776960; 
-            case 280: return 8388352; 
-            case 281: return 4194048; 
-            case 282: return 2096896; 
-            case 283: return 1048320; 
-            case 284: return 524032; 
-            case 285: return 261888; 
-            case 286: return 130816; 
-            case 287: return 65280; 
-            case 297: return 64; 
-            case 298: return 96; 
-            case 299: return 112; 
-            case 300: return 120; 
-            case 301: return 124; 
-            case 302: return 126; 
-            case 303: return 127; 
-            case 304: return 2147483520; 
-            case 305: return 1073741696; 
-            case 306: return 536870784; 
-            case 307: return 268435328; 
-            case 308: return 134217600; 
-            case 309: return 67108736; 
-            case 310: return 33554304; 
-            case 311: return 16777088; 
-            case 312: return 8388480; 
-            case 313: return 4194176; 
-            case 314: return 2097024; 
-            case 315: return 1048448; 
-            case 316: return 524160; 
-            case 317: return 262016; 
-            case 318: return 130944; 
-            case 319: return 65408; 
-            case 330: return 32; 
-            case 331: return 48; 
-            case 332: return 56; 
-            case 333: return 60; 
-            case 334: return 62; 
-            case 335: return 63; 
-            case 336: return 2147483584; 
-            case 337: return 1073741760; 
-            case 338: return 536870848; 
-            case 339: return 268435392; 
-            case 340: return 134217664; 
-            case 341: return 67108800; 
-            case 342: return 33554368; 
-            case 343: return 16777152; 
-            case 344: return 8388544; 
-            case 345: return 4194240; 
-            case 346: return 2097088; 
-            case 347: return 1048512; 
-            case 348: return 524224; 
-            case 349: return 262080; 
-            case 350: return 131008; 
-            case 351: return 65472; 
-            case 363: return 16; 
-            case 364: return 24; 
-            case 365: return 28; 
-            case 366: return 30; 
-            case 367: return 31; 
-            case 368: return 2147483616; 
-            case 369: return 1073741792; 
-            case 370: return 536870880; 
-            case 371: return 268435424; 
-            case 372: return 134217696; 
-            case 373: return 67108832; 
-            case 374: return 33554400; 
-            case 375: return 16777184; 
-            case 376: return 8388576; 
-            case 377: return 4194272; 
-            case 378: return 2097120; 
-            case 379: return 1048544; 
-            case 380: return 524256; 
-            case 381: return 262112; 
-            case 382: return 131040; 
-            case 383: return 65504; 
-            case 396: return 8; 
-            case 397: return 12; 
-            case 398: return 14; 
-            case 399: return 15; 
-            case 400: return 2147483632; 
-            case 401: return 1073741808; 
-            case 402: return 536870896; 
-            case 403: return 268435440; 
-            case 404: return 134217712; 
-            case 405: return 67108848; 
-            case 406: return 33554416; 
-            case 407: return 16777200; 
-            case 408: return 8388592; 
-            case 409: return 4194288; 
-            case 410: return 2097136; 
-            case 411: return 1048560; 
-            case 412: return 524272; 
-            case 413: return 262128; 
-            case 414: return 131056; 
-            case 415: return 65520; 
-            case 429: return 4; 
-            case 430: return 6; 
-            case 431: return 7; 
-            case 432: return 2147483640; 
-            case 433: return 1073741816; 
-            case 434: return 536870904; 
-            case 435: return 268435448; 
-            case 436: return 134217720; 
-            case 437: return 67108856; 
-            case 438: return 33554424; 
-            case 439: return 16777208; 
-            case 440: return 8388600; 
-            case 441: return 4194296; 
-            case 442: return 2097144; 
-            case 443: return 1048568; 
-            case 444: return 524280; 
-            case 445: return 262136; 
-            case 446: return 131064; 
-            case 447: return 65528; 
-            case 462: return 2; 
-            case 463: return 3; 
-            case 464: return 2147483644; 
-            case 465: return 1073741820; 
-            case 466: return 536870908; 
-            case 467: return 268435452; 
-            case 468: return 134217724; 
-            case 469: return 67108860; 
-            case 470: return 33554428; 
-            case 471: return 16777212; 
-            case 472: return 8388604; 
-            case 473: return 4194300; 
-            case 474: return 2097148; 
-            case 475: return 1048572; 
-            case 476: return 524284; 
-            case 477: return 262140; 
-            case 478: return 131068; 
-            case 479: return 65532; 
-            case 495: return 1; 
-            case 496: return 2147483646; 
-            case 497: return 1073741822; 
-            case 498: return 536870910; 
-            case 499: return 268435454; 
-            case 500: return 134217726; 
-            case 501: return 67108862; 
-            case 502: return 33554430; 
-            case 503: return 16777214; 
-            case 504: return 8388606; 
-            case 505: return 4194302; 
-            case 506: return 2097150; 
-            case 507: return 1048574; 
-            case 508: return 524286; 
-            case 509: return 262142; 
-            case 510: return 131070; 
-            case 511: return 65534; 
-            case 528: return -2147483648; 
-            case 529: return -1073741824; 
-            case 530: return -536870912; 
-            case 531: return -268435456; 
-            case 532: return -134217728; 
-            case 533: return -67108864; 
-            case 534: return -33554432; 
-            case 535: return -16777216; 
-            case 536: return -8388608; 
-            case 537: return -4194304; 
-            case 538: return -2097152; 
-            case 539: return -1048576; 
-            case 540: return -524288; 
-            case 541: return -262144; 
-            case 542: return -131072; 
-            case 543: return -65536; 
-            case 561: return 1073741824; 
-            case 562: return 1610612736; 
-            case 563: return 1879048192; 
-            case 564: return 2013265920; 
-            case 565: return 2080374784; 
-            case 566: return 2113929216; 
-            case 567: return 2130706432; 
-            case 568: return 2139095040; 
-            case 569: return 2143289344; 
-            case 570: return 2145386496; 
-            case 571: return 2146435072; 
-            case 572: return 2146959360; 
-            case 573: return 2147221504; 
-            case 574: return 2147352576; 
-            case 575: return 2147418112; 
-            case 594: return 536870912; 
-            case 595: return 805306368; 
-            case 596: return 939524096; 
-            case 597: return 1006632960; 
-            case 598: return 1040187392; 
-            case 599: return 1056964608; 
-            case 600: return 1065353216; 
-            case 601: return 1069547520; 
-            case 602: return 1071644672; 
-            case 603: return 1072693248; 
-            case 604: return 1073217536; 
-            case 605: return 1073479680; 
-            case 606: return 1073610752; 
-            case 607: return 1073676288; 
-            case 627: return 268435456; 
-            case 628: return 402653184; 
-            case 629: return 469762048; 
-            case 630: return 503316480; 
-            case 631: return 520093696; 
-            case 632: return 528482304; 
-            case 633: return 532676608; 
-            case 634: return 534773760; 
-            case 635: return 535822336; 
-            case 636: return 536346624; 
-            case 637: return 536608768; 
-            case 638: return 536739840; 
-            case 639: return 536805376; 
-            case 660: return 134217728; 
-            case 661: return 201326592; 
-            case 662: return 234881024; 
-            case 663: return 251658240; 
-            case 664: return 260046848; 
-            case 665: return 264241152; 
-            case 666: return 266338304; 
-            case 667: return 267386880; 
-            case 668: return 267911168; 
-            case 669: return 268173312; 
-            case 670: return 268304384; 
-            case 671: return 268369920; 
-            case 693: return 67108864; 
-            case 694: return 100663296; 
-            case 695: return 117440512; 
-            case 696: return 125829120; 
-            case 697: return 130023424; 
-            case 698: return 132120576; 
-            case 699: return 133169152; 
-            case 700: return 133693440; 
-            case 701: return 133955584; 
-            case 702: return 134086656; 
-            case 703: return 134152192; 
-            case 726: return 33554432; 
-            case 727: return 50331648; 
-            case 728: return 58720256; 
-            case 729: return 62914560; 
-            case 730: return 65011712; 
-            case 731: return 66060288; 
-            case 732: return 66584576; 
-            case 733: return 66846720; 
-            case 734: return 66977792; 
-            case 735: return 67043328; 
-            case 759: return 16777216; 
-            case 760: return 25165824; 
-            case 761: return 29360128; 
-            case 762: return 31457280; 
-            case 763: return 32505856; 
-            case 764: return 33030144; 
-            case 765: return 33292288; 
-            case 766: return 33423360; 
-            case 767: return 33488896; 
-            case 792: return 8388608; 
-            case 793: return 12582912; 
-            case 794: return 14680064; 
-            case 795: return 15728640; 
-            case 796: return 16252928; 
-            case 797: return 16515072; 
-            case 798: return 16646144; 
-            case 799: return 16711680; 
-            case 825: return 4194304; 
-            case 826: return 6291456; 
-            case 827: return 7340032; 
-            case 828: return 7864320; 
-            case 829: return 8126464; 
-            case 830: return 8257536; 
-            case 831: return 8323072; 
-            case 858: return 2097152; 
-            case 859: return 3145728; 
-            case 860: return 3670016; 
-            case 861: return 3932160; 
-            case 862: return 4063232; 
-            case 863: return 4128768; 
-            case 891: return 1048576; 
-            case 892: return 1572864; 
-            case 893: return 1835008; 
-            case 894: return 1966080; 
-            case 895: return 2031616; 
-            case 924: return 524288; 
-            case 925: return 786432; 
-            case 926: return 917504; 
-            case 927: return 983040; 
-            case 957: return 262144; 
-            case 958: return 393216; 
-            case 959: return 458752; 
-            case 990: return 131072; 
-            case 991: return 196608; 
-            case 1023: return 65536;
+    public void writeClusterAll(int idx, int value) throws GameActionException {
+        switch (idx) {
+            case 0:
+                rc.writeSharedArray(4, (rc.readSharedArray(4) & 49663) | (value << 9));
+                break;
+            case 1:
+                rc.writeSharedArray(4, (rc.readSharedArray(4) & 65039) | (value << 4));
+                break;
+            case 2:
+                rc.writeSharedArray(4, (rc.readSharedArray(4) & 65520) | ((value & 30) >>> 1));
+                rc.writeSharedArray(5, (rc.readSharedArray(5) & 32767) | ((value & 1) << 15));
+                break;
+            case 3:
+                rc.writeSharedArray(5, (rc.readSharedArray(5) & 33791) | (value << 10));
+                break;
+            case 4:
+                rc.writeSharedArray(5, (rc.readSharedArray(5) & 64543) | (value << 5));
+                break;
+            case 5:
+                rc.writeSharedArray(5, (rc.readSharedArray(5) & 65504) | (value));
+                break;
+            case 6:
+                rc.writeSharedArray(6, (rc.readSharedArray(6) & 2047) | (value << 11));
+                break;
+            case 7:
+                rc.writeSharedArray(6, (rc.readSharedArray(6) & 63551) | (value << 6));
+                break;
+            case 8:
+                rc.writeSharedArray(6, (rc.readSharedArray(6) & 65473) | (value << 1));
+                break;
+            case 9:
+                rc.writeSharedArray(6, (rc.readSharedArray(6) & 65534) | ((value & 16) >>> 4));
+                rc.writeSharedArray(7, (rc.readSharedArray(7) & 4095) | ((value & 15) << 12));
+                break;
+            case 10:
+                rc.writeSharedArray(7, (rc.readSharedArray(7) & 61567) | (value << 7));
+                break;
+            case 11:
+                rc.writeSharedArray(7, (rc.readSharedArray(7) & 65411) | (value << 2));
+                break;
+            case 12:
+                rc.writeSharedArray(7, (rc.readSharedArray(7) & 65532) | ((value & 24) >>> 3));
+                rc.writeSharedArray(8, (rc.readSharedArray(8) & 8191) | ((value & 7) << 13));
+                break;
+            case 13:
+                rc.writeSharedArray(8, (rc.readSharedArray(8) & 57599) | (value << 8));
+                break;
+            case 14:
+                rc.writeSharedArray(8, (rc.readSharedArray(8) & 65287) | (value << 3));
+                break;
+            case 15:
+                rc.writeSharedArray(8, (rc.readSharedArray(8) & 65528) | ((value & 28) >>> 2));
+                rc.writeSharedArray(9, (rc.readSharedArray(9) & 16383) | ((value & 3) << 14));
+                break;
+            case 16:
+                rc.writeSharedArray(9, (rc.readSharedArray(9) & 49663) | (value << 9));
+                break;
+            case 17:
+                rc.writeSharedArray(9, (rc.readSharedArray(9) & 65039) | (value << 4));
+                break;
+            case 18:
+                rc.writeSharedArray(9, (rc.readSharedArray(9) & 65520) | ((value & 30) >>> 1));
+                rc.writeSharedArray(10, (rc.readSharedArray(10) & 32767) | ((value & 1) << 15));
+                break;
+            case 19:
+                rc.writeSharedArray(10, (rc.readSharedArray(10) & 33791) | (value << 10));
+                break;
+            case 20:
+                rc.writeSharedArray(10, (rc.readSharedArray(10) & 64543) | (value << 5));
+                break;
+            case 21:
+                rc.writeSharedArray(10, (rc.readSharedArray(10) & 65504) | (value));
+                break;
+            case 22:
+                rc.writeSharedArray(11, (rc.readSharedArray(11) & 2047) | (value << 11));
+                break;
+            case 23:
+                rc.writeSharedArray(11, (rc.readSharedArray(11) & 63551) | (value << 6));
+                break;
+            case 24:
+                rc.writeSharedArray(11, (rc.readSharedArray(11) & 65473) | (value << 1));
+                break;
+            case 25:
+                rc.writeSharedArray(11, (rc.readSharedArray(11) & 65534) | ((value & 16) >>> 4));
+                rc.writeSharedArray(12, (rc.readSharedArray(12) & 4095) | ((value & 15) << 12));
+                break;
+            case 26:
+                rc.writeSharedArray(12, (rc.readSharedArray(12) & 61567) | (value << 7));
+                break;
+            case 27:
+                rc.writeSharedArray(12, (rc.readSharedArray(12) & 65411) | (value << 2));
+                break;
+            case 28:
+                rc.writeSharedArray(12, (rc.readSharedArray(12) & 65532) | ((value & 24) >>> 3));
+                rc.writeSharedArray(13, (rc.readSharedArray(13) & 8191) | ((value & 7) << 13));
+                break;
+            case 29:
+                rc.writeSharedArray(13, (rc.readSharedArray(13) & 57599) | (value << 8));
+                break;
+            case 30:
+                rc.writeSharedArray(13, (rc.readSharedArray(13) & 65287) | (value << 3));
+                break;
+            case 31:
+                rc.writeSharedArray(13, (rc.readSharedArray(13) & 65528) | ((value & 28) >>> 2));
+                rc.writeSharedArray(14, (rc.readSharedArray(14) & 16383) | ((value & 3) << 14));
+                break;
+            case 32:
+                rc.writeSharedArray(14, (rc.readSharedArray(14) & 49663) | (value << 9));
+                break;
+            case 33:
+                rc.writeSharedArray(14, (rc.readSharedArray(14) & 65039) | (value << 4));
+                break;
+            case 34:
+                rc.writeSharedArray(14, (rc.readSharedArray(14) & 65520) | ((value & 30) >>> 1));
+                rc.writeSharedArray(15, (rc.readSharedArray(15) & 32767) | ((value & 1) << 15));
+                break;
+            case 35:
+                rc.writeSharedArray(15, (rc.readSharedArray(15) & 33791) | (value << 10));
+                break;
+            case 36:
+                rc.writeSharedArray(15, (rc.readSharedArray(15) & 64543) | (value << 5));
+                break;
+            case 37:
+                rc.writeSharedArray(15, (rc.readSharedArray(15) & 65504) | (value));
+                break;
+            case 38:
+                rc.writeSharedArray(16, (rc.readSharedArray(16) & 2047) | (value << 11));
+                break;
+            case 39:
+                rc.writeSharedArray(16, (rc.readSharedArray(16) & 63551) | (value << 6));
+                break;
+            case 40:
+                rc.writeSharedArray(16, (rc.readSharedArray(16) & 65473) | (value << 1));
+                break;
+            case 41:
+                rc.writeSharedArray(16, (rc.readSharedArray(16) & 65534) | ((value & 16) >>> 4));
+                rc.writeSharedArray(17, (rc.readSharedArray(17) & 4095) | ((value & 15) << 12));
+                break;
+            case 42:
+                rc.writeSharedArray(17, (rc.readSharedArray(17) & 61567) | (value << 7));
+                break;
+            case 43:
+                rc.writeSharedArray(17, (rc.readSharedArray(17) & 65411) | (value << 2));
+                break;
+            case 44:
+                rc.writeSharedArray(17, (rc.readSharedArray(17) & 65532) | ((value & 24) >>> 3));
+                rc.writeSharedArray(18, (rc.readSharedArray(18) & 8191) | ((value & 7) << 13));
+                break;
+            case 45:
+                rc.writeSharedArray(18, (rc.readSharedArray(18) & 57599) | (value << 8));
+                break;
+            case 46:
+                rc.writeSharedArray(18, (rc.readSharedArray(18) & 65287) | (value << 3));
+                break;
+            case 47:
+                rc.writeSharedArray(18, (rc.readSharedArray(18) & 65528) | ((value & 28) >>> 2));
+                rc.writeSharedArray(19, (rc.readSharedArray(19) & 16383) | ((value & 3) << 14));
+                break;
+            case 48:
+                rc.writeSharedArray(19, (rc.readSharedArray(19) & 49663) | (value << 9));
+                break;
+            case 49:
+                rc.writeSharedArray(19, (rc.readSharedArray(19) & 65039) | (value << 4));
+                break;
+            case 50:
+                rc.writeSharedArray(19, (rc.readSharedArray(19) & 65520) | ((value & 30) >>> 1));
+                rc.writeSharedArray(20, (rc.readSharedArray(20) & 32767) | ((value & 1) << 15));
+                break;
+            case 51:
+                rc.writeSharedArray(20, (rc.readSharedArray(20) & 33791) | (value << 10));
+                break;
+            case 52:
+                rc.writeSharedArray(20, (rc.readSharedArray(20) & 64543) | (value << 5));
+                break;
+            case 53:
+                rc.writeSharedArray(20, (rc.readSharedArray(20) & 65504) | (value));
+                break;
+            case 54:
+                rc.writeSharedArray(21, (rc.readSharedArray(21) & 2047) | (value << 11));
+                break;
+            case 55:
+                rc.writeSharedArray(21, (rc.readSharedArray(21) & 63551) | (value << 6));
+                break;
+            case 56:
+                rc.writeSharedArray(21, (rc.readSharedArray(21) & 65473) | (value << 1));
+                break;
+            case 57:
+                rc.writeSharedArray(21, (rc.readSharedArray(21) & 65534) | ((value & 16) >>> 4));
+                rc.writeSharedArray(22, (rc.readSharedArray(22) & 4095) | ((value & 15) << 12));
+                break;
+            case 58:
+                rc.writeSharedArray(22, (rc.readSharedArray(22) & 61567) | (value << 7));
+                break;
+            case 59:
+                rc.writeSharedArray(22, (rc.readSharedArray(22) & 65411) | (value << 2));
+                break;
+            case 60:
+                rc.writeSharedArray(22, (rc.readSharedArray(22) & 65532) | ((value & 24) >>> 3));
+                rc.writeSharedArray(23, (rc.readSharedArray(23) & 8191) | ((value & 7) << 13));
+                break;
+            case 61:
+                rc.writeSharedArray(23, (rc.readSharedArray(23) & 57599) | (value << 8));
+                break;
+            case 62:
+                rc.writeSharedArray(23, (rc.readSharedArray(23) & 65287) | (value << 3));
+                break;
+            case 63:
+                rc.writeSharedArray(23, (rc.readSharedArray(23) & 65528) | ((value & 28) >>> 2));
+                rc.writeSharedArray(24, (rc.readSharedArray(24) & 16383) | ((value & 3) << 14));
+                break;
+            case 64:
+                rc.writeSharedArray(24, (rc.readSharedArray(24) & 49663) | (value << 9));
+                break;
+            case 65:
+                rc.writeSharedArray(24, (rc.readSharedArray(24) & 65039) | (value << 4));
+                break;
+            case 66:
+                rc.writeSharedArray(24, (rc.readSharedArray(24) & 65520) | ((value & 30) >>> 1));
+                rc.writeSharedArray(25, (rc.readSharedArray(25) & 32767) | ((value & 1) << 15));
+                break;
+            case 67:
+                rc.writeSharedArray(25, (rc.readSharedArray(25) & 33791) | (value << 10));
+                break;
+            case 68:
+                rc.writeSharedArray(25, (rc.readSharedArray(25) & 64543) | (value << 5));
+                break;
+            case 69:
+                rc.writeSharedArray(25, (rc.readSharedArray(25) & 65504) | (value));
+                break;
+            case 70:
+                rc.writeSharedArray(26, (rc.readSharedArray(26) & 2047) | (value << 11));
+                break;
+            case 71:
+                rc.writeSharedArray(26, (rc.readSharedArray(26) & 63551) | (value << 6));
+                break;
+            case 72:
+                rc.writeSharedArray(26, (rc.readSharedArray(26) & 65473) | (value << 1));
+                break;
+            case 73:
+                rc.writeSharedArray(26, (rc.readSharedArray(26) & 65534) | ((value & 16) >>> 4));
+                rc.writeSharedArray(27, (rc.readSharedArray(27) & 4095) | ((value & 15) << 12));
+                break;
+            case 74:
+                rc.writeSharedArray(27, (rc.readSharedArray(27) & 61567) | (value << 7));
+                break;
+            case 75:
+                rc.writeSharedArray(27, (rc.readSharedArray(27) & 65411) | (value << 2));
+                break;
+            case 76:
+                rc.writeSharedArray(27, (rc.readSharedArray(27) & 65532) | ((value & 24) >>> 3));
+                rc.writeSharedArray(28, (rc.readSharedArray(28) & 8191) | ((value & 7) << 13));
+                break;
+            case 77:
+                rc.writeSharedArray(28, (rc.readSharedArray(28) & 57599) | (value << 8));
+                break;
+            case 78:
+                rc.writeSharedArray(28, (rc.readSharedArray(28) & 65287) | (value << 3));
+                break;
+            case 79:
+                rc.writeSharedArray(28, (rc.readSharedArray(28) & 65528) | ((value & 28) >>> 2));
+                rc.writeSharedArray(29, (rc.readSharedArray(29) & 16383) | ((value & 3) << 14));
+                break;
+            case 80:
+                rc.writeSharedArray(29, (rc.readSharedArray(29) & 49663) | (value << 9));
+                break;
+            case 81:
+                rc.writeSharedArray(29, (rc.readSharedArray(29) & 65039) | (value << 4));
+                break;
+            case 82:
+                rc.writeSharedArray(29, (rc.readSharedArray(29) & 65520) | ((value & 30) >>> 1));
+                rc.writeSharedArray(30, (rc.readSharedArray(30) & 32767) | ((value & 1) << 15));
+                break;
+            case 83:
+                rc.writeSharedArray(30, (rc.readSharedArray(30) & 33791) | (value << 10));
+                break;
+            case 84:
+                rc.writeSharedArray(30, (rc.readSharedArray(30) & 64543) | (value << 5));
+                break;
+            case 85:
+                rc.writeSharedArray(30, (rc.readSharedArray(30) & 65504) | (value));
+                break;
+            case 86:
+                rc.writeSharedArray(31, (rc.readSharedArray(31) & 2047) | (value << 11));
+                break;
+            case 87:
+                rc.writeSharedArray(31, (rc.readSharedArray(31) & 63551) | (value << 6));
+                break;
+            case 88:
+                rc.writeSharedArray(31, (rc.readSharedArray(31) & 65473) | (value << 1));
+                break;
+            case 89:
+                rc.writeSharedArray(31, (rc.readSharedArray(31) & 65534) | ((value & 16) >>> 4));
+                rc.writeSharedArray(32, (rc.readSharedArray(32) & 4095) | ((value & 15) << 12));
+                break;
+            case 90:
+                rc.writeSharedArray(32, (rc.readSharedArray(32) & 61567) | (value << 7));
+                break;
+            case 91:
+                rc.writeSharedArray(32, (rc.readSharedArray(32) & 65411) | (value << 2));
+                break;
+            case 92:
+                rc.writeSharedArray(32, (rc.readSharedArray(32) & 65532) | ((value & 24) >>> 3));
+                rc.writeSharedArray(33, (rc.readSharedArray(33) & 8191) | ((value & 7) << 13));
+                break;
+            case 93:
+                rc.writeSharedArray(33, (rc.readSharedArray(33) & 57599) | (value << 8));
+                break;
+            case 94:
+                rc.writeSharedArray(33, (rc.readSharedArray(33) & 65287) | (value << 3));
+                break;
+            case 95:
+                rc.writeSharedArray(33, (rc.readSharedArray(33) & 65528) | ((value & 28) >>> 2));
+                rc.writeSharedArray(34, (rc.readSharedArray(34) & 16383) | ((value & 3) << 14));
+                break;
+            case 96:
+                rc.writeSharedArray(34, (rc.readSharedArray(34) & 49663) | (value << 9));
+                break;
+            case 97:
+                rc.writeSharedArray(34, (rc.readSharedArray(34) & 65039) | (value << 4));
+                break;
+            case 98:
+                rc.writeSharedArray(34, (rc.readSharedArray(34) & 65520) | ((value & 30) >>> 1));
+                rc.writeSharedArray(35, (rc.readSharedArray(35) & 32767) | ((value & 1) << 15));
+                break;
+            case 99:
+                rc.writeSharedArray(35, (rc.readSharedArray(35) & 33791) | (value << 10));
+                break;
         }
-        return 0;
     }
 
-    /**
-     * Try to inline this as much as possible
-     * @param index
-     * @param bitloc
-     * @return
-     */
-    private int whichBit2(int index, int bitloc) {
-        int bit = bitloc + index*2000;
-        switch (bit) {
-            case 0: return 0;
-            case 1: return 1;
-            case 2: return 2;
-            case 3: return 3;
-            case 4: return 4;
-            case 5: return 5;
-            case 6: return 6;
-            case 7: return 7;
-            case 8: return 8;
-            case 9: return 9;
-            case 10: return 10;
-            case 11: return 11;
-            case 12: return 12;
-            case 13: return 13;
-            case 14: return 14;
-            case 15: return 15;
-            case 2016: return 0;
-            case 2017: return 1;
-            case 2018: return 2;
-            case 2019: return 3;
-            case 2020: return 4;
-            case 2021: return 5;
-            case 2022: return 6;
-            case 2023: return 7;
-            case 2024: return 8;
-            case 2025: return 9;
-            case 2026: return 10;
-            case 2027: return 11;
-            case 2028: return 12;
-            case 2029: return 13;
-            case 2030: return 14;
-            case 2031: return 15;
-            case 4032: return 0;
-            case 4033: return 1;
-            case 4034: return 2;
-            case 4035: return 3;
-            case 4036: return 4;
-            case 4037: return 5;
-            case 4038: return 6;
-            case 4039: return 7;
-            case 4040: return 8;
-            case 4041: return 9;
-            case 4042: return 10;
-            case 4043: return 11;
-            case 4044: return 12;
-            case 4045: return 13;
-            case 4046: return 14;
-            case 4047: return 15;
-            case 6048: return 0;
-            case 6049: return 1;
-            case 6050: return 2;
-            case 6051: return 3;
-            case 6052: return 4;
-            case 6053: return 5;
-            case 6054: return 6;
-            case 6055: return 7;
-            case 6056: return 8;
-            case 6057: return 9;
-            case 6058: return 10;
-            case 6059: return 11;
-            case 6060: return 12;
-            case 6061: return 13;
-            case 6062: return 14;
-            case 6063: return 15;
-            case 8064: return 0;
-            case 8065: return 1;
-            case 8066: return 2;
-            case 8067: return 3;
-            case 8068: return 4;
-            case 8069: return 5;
-            case 8070: return 6;
-            case 8071: return 7;
-            case 8072: return 8;
-            case 8073: return 9;
-            case 8074: return 10;
-            case 8075: return 11;
-            case 8076: return 12;
-            case 8077: return 13;
-            case 8078: return 14;
-            case 8079: return 15;
-            case 10080: return 0;
-            case 10081: return 1;
-            case 10082: return 2;
-            case 10083: return 3;
-            case 10084: return 4;
-            case 10085: return 5;
-            case 10086: return 6;
-            case 10087: return 7;
-            case 10088: return 8;
-            case 10089: return 9;
-            case 10090: return 10;
-            case 10091: return 11;
-            case 10092: return 12;
-            case 10093: return 13;
-            case 10094: return 14;
-            case 10095: return 15;
-            case 12096: return 0;
-            case 12097: return 1;
-            case 12098: return 2;
-            case 12099: return 3;
-            case 12100: return 4;
-            case 12101: return 5;
-            case 12102: return 6;
-            case 12103: return 7;
-            case 12104: return 8;
-            case 12105: return 9;
-            case 12106: return 10;
-            case 12107: return 11;
-            case 12108: return 12;
-            case 12109: return 13;
-            case 12110: return 14;
-            case 12111: return 15;
-            case 14112: return 0;
-            case 14113: return 1;
-            case 14114: return 2;
-            case 14115: return 3;
-            case 14116: return 4;
-            case 14117: return 5;
-            case 14118: return 6;
-            case 14119: return 7;
-            case 14120: return 8;
-            case 14121: return 9;
-            case 14122: return 10;
-            case 14123: return 11;
-            case 14124: return 12;
-            case 14125: return 13;
-            case 14126: return 14;
-            case 14127: return 15;
-            case 16128: return 0;
-            case 16129: return 1;
-            case 16130: return 2;
-            case 16131: return 3;
-            case 16132: return 4;
-            case 16133: return 5;
-            case 16134: return 6;
-            case 16135: return 7;
-            case 16136: return 8;
-            case 16137: return 9;
-            case 16138: return 10;
-            case 16139: return 11;
-            case 16140: return 12;
-            case 16141: return 13;
-            case 16142: return 14;
-            case 16143: return 15;
-            case 18144: return 0;
-            case 18145: return 1;
-            case 18146: return 2;
-            case 18147: return 3;
-            case 18148: return 4;
-            case 18149: return 5;
-            case 18150: return 6;
-            case 18151: return 7;
-            case 18152: return 8;
-            case 18153: return 9;
-            case 18154: return 10;
-            case 18155: return 11;
-            case 18156: return 12;
-            case 18157: return 13;
-            case 18158: return 14;
-            case 18159: return 15;
-            case 20160: return 0;
-            case 20161: return 1;
-            case 20162: return 2;
-            case 20163: return 3;
-            case 20164: return 4;
-            case 20165: return 5;
-            case 20166: return 6;
-            case 20167: return 7;
-            case 20168: return 8;
-            case 20169: return 9;
-            case 20170: return 10;
-            case 20171: return 11;
-            case 20172: return 12;
-            case 20173: return 13;
-            case 20174: return 14;
-            case 20175: return 15;
-            case 22176: return 0;
-            case 22177: return 1;
-            case 22178: return 2;
-            case 22179: return 3;
-            case 22180: return 4;
-            case 22181: return 5;
-            case 22182: return 6;
-            case 22183: return 7;
-            case 22184: return 8;
-            case 22185: return 9;
-            case 22186: return 10;
-            case 22187: return 11;
-            case 22188: return 12;
-            case 22189: return 13;
-            case 22190: return 14;
-            case 22191: return 15;
-            case 24192: return 0;
-            case 24193: return 1;
-            case 24194: return 2;
-            case 24195: return 3;
-            case 24196: return 4;
-            case 24197: return 5;
-            case 24198: return 6;
-            case 24199: return 7;
-            case 24200: return 8;
-            case 24201: return 9;
-            case 24202: return 10;
-            case 24203: return 11;
-            case 24204: return 12;
-            case 24205: return 13;
-            case 24206: return 14;
-            case 24207: return 15;
-            case 26208: return 0;
-            case 26209: return 1;
-            case 26210: return 2;
-            case 26211: return 3;
-            case 26212: return 4;
-            case 26213: return 5;
-            case 26214: return 6;
-            case 26215: return 7;
-            case 26216: return 8;
-            case 26217: return 9;
-            case 26218: return 10;
-            case 26219: return 11;
-            case 26220: return 12;
-            case 26221: return 13;
-            case 26222: return 14;
-            case 26223: return 15;
-            case 28224: return 0;
-            case 28225: return 1;
-            case 28226: return 2;
-            case 28227: return 3;
-            case 28228: return 4;
-            case 28229: return 5;
-            case 28230: return 6;
-            case 28231: return 7;
-            case 28232: return 8;
-            case 28233: return 9;
-            case 28234: return 10;
-            case 28235: return 11;
-            case 28236: return 12;
-            case 28237: return 13;
-            case 28238: return 14;
-            case 28239: return 15;
-            case 30240: return 0;
-            case 30241: return 1;
-            case 30242: return 2;
-            case 30243: return 3;
-            case 30244: return 4;
-            case 30245: return 5;
-            case 30246: return 6;
-            case 30247: return 7;
-            case 30248: return 8;
-            case 30249: return 9;
-            case 30250: return 10;
-            case 30251: return 11;
-            case 30252: return 12;
-            case 30253: return 13;
-            case 30254: return 14;
-            case 30255: return 15;
-            case 32256: return 0;
-            case 32257: return 1;
-            case 32258: return 2;
-            case 32259: return 3;
-            case 32260: return 4;
-            case 32261: return 5;
-            case 32262: return 6;
-            case 32263: return 7;
-            case 32264: return 8;
-            case 32265: return 9;
-            case 32266: return 10;
-            case 32267: return 11;
-            case 32268: return 12;
-            case 32269: return 13;
-            case 32270: return 14;
-            case 32271: return 15;
-            case 34272: return 0;
-            case 34273: return 1;
-            case 34274: return 2;
-            case 34275: return 3;
-            case 34276: return 4;
-            case 34277: return 5;
-            case 34278: return 6;
-            case 34279: return 7;
-            case 34280: return 8;
-            case 34281: return 9;
-            case 34282: return 10;
-            case 34283: return 11;
-            case 34284: return 12;
-            case 34285: return 13;
-            case 34286: return 14;
-            case 34287: return 15;
-            case 36288: return 0;
-            case 36289: return 1;
-            case 36290: return 2;
-            case 36291: return 3;
-            case 36292: return 4;
-            case 36293: return 5;
-            case 36294: return 6;
-            case 36295: return 7;
-            case 36296: return 8;
-            case 36297: return 9;
-            case 36298: return 10;
-            case 36299: return 11;
-            case 36300: return 12;
-            case 36301: return 13;
-            case 36302: return 14;
-            case 36303: return 15;
-            case 38304: return 0;
-            case 38305: return 1;
-            case 38306: return 2;
-            case 38307: return 3;
-            case 38308: return 4;
-            case 38309: return 5;
-            case 38310: return 6;
-            case 38311: return 7;
-            case 38312: return 8;
-            case 38313: return 9;
-            case 38314: return 10;
-            case 38315: return 11;
-            case 38316: return 12;
-            case 38317: return 13;
-            case 38318: return 14;
-            case 38319: return 15;
-            case 40320: return 0;
-            case 40321: return 1;
-            case 40322: return 2;
-            case 40323: return 3;
-            case 40324: return 4;
-            case 40325: return 5;
-            case 40326: return 6;
-            case 40327: return 7;
-            case 40328: return 8;
-            case 40329: return 9;
-            case 40330: return 10;
-            case 40331: return 11;
-            case 40332: return 12;
-            case 40333: return 13;
-            case 40334: return 14;
-            case 40335: return 15;
-            case 42336: return 0;
-            case 42337: return 1;
-            case 42338: return 2;
-            case 42339: return 3;
-            case 42340: return 4;
-            case 42341: return 5;
-            case 42342: return 6;
-            case 42343: return 7;
-            case 42344: return 8;
-            case 42345: return 9;
-            case 42346: return 10;
-            case 42347: return 11;
-            case 42348: return 12;
-            case 42349: return 13;
-            case 42350: return 14;
-            case 42351: return 15;
-            case 44352: return 0;
-            case 44353: return 1;
-            case 44354: return 2;
-            case 44355: return 3;
-            case 44356: return 4;
-            case 44357: return 5;
-            case 44358: return 6;
-            case 44359: return 7;
-            case 44360: return 8;
-            case 44361: return 9;
-            case 44362: return 10;
-            case 44363: return 11;
-            case 44364: return 12;
-            case 44365: return 13;
-            case 44366: return 14;
-            case 44367: return 15;
-            case 46368: return 0;
-            case 46369: return 1;
-            case 46370: return 2;
-            case 46371: return 3;
-            case 46372: return 4;
-            case 46373: return 5;
-            case 46374: return 6;
-            case 46375: return 7;
-            case 46376: return 8;
-            case 46377: return 9;
-            case 46378: return 10;
-            case 46379: return 11;
-            case 46380: return 12;
-            case 46381: return 13;
-            case 46382: return 14;
-            case 46383: return 15;
-            case 48384: return 0;
-            case 48385: return 1;
-            case 48386: return 2;
-            case 48387: return 3;
-            case 48388: return 4;
-            case 48389: return 5;
-            case 48390: return 6;
-            case 48391: return 7;
-            case 48392: return 8;
-            case 48393: return 9;
-            case 48394: return 10;
-            case 48395: return 11;
-            case 48396: return 12;
-            case 48397: return 13;
-            case 48398: return 14;
-            case 48399: return 15;
-            case 50400: return 0;
-            case 50401: return 1;
-            case 50402: return 2;
-            case 50403: return 3;
-            case 50404: return 4;
-            case 50405: return 5;
-            case 50406: return 6;
-            case 50407: return 7;
-            case 50408: return 8;
-            case 50409: return 9;
-            case 50410: return 10;
-            case 50411: return 11;
-            case 50412: return 12;
-            case 50413: return 13;
-            case 50414: return 14;
-            case 50415: return 15;
-            case 52416: return 0;
-            case 52417: return 1;
-            case 52418: return 2;
-            case 52419: return 3;
-            case 52420: return 4;
-            case 52421: return 5;
-            case 52422: return 6;
-            case 52423: return 7;
-            case 52424: return 8;
-            case 52425: return 9;
-            case 52426: return 10;
-            case 52427: return 11;
-            case 52428: return 12;
-            case 52429: return 13;
-            case 52430: return 14;
-            case 52431: return 15;
-            case 54432: return 0;
-            case 54433: return 1;
-            case 54434: return 2;
-            case 54435: return 3;
-            case 54436: return 4;
-            case 54437: return 5;
-            case 54438: return 6;
-            case 54439: return 7;
-            case 54440: return 8;
-            case 54441: return 9;
-            case 54442: return 10;
-            case 54443: return 11;
-            case 54444: return 12;
-            case 54445: return 13;
-            case 54446: return 14;
-            case 54447: return 15;
-            case 56448: return 0;
-            case 56449: return 1;
-            case 56450: return 2;
-            case 56451: return 3;
-            case 56452: return 4;
-            case 56453: return 5;
-            case 56454: return 6;
-            case 56455: return 7;
-            case 56456: return 8;
-            case 56457: return 9;
-            case 56458: return 10;
-            case 56459: return 11;
-            case 56460: return 12;
-            case 56461: return 13;
-            case 56462: return 14;
-            case 56463: return 15;
-            case 58464: return 0;
-            case 58465: return 1;
-            case 58466: return 2;
-            case 58467: return 3;
-            case 58468: return 4;
-            case 58469: return 5;
-            case 58470: return 6;
-            case 58471: return 7;
-            case 58472: return 8;
-            case 58473: return 9;
-            case 58474: return 10;
-            case 58475: return 11;
-            case 58476: return 12;
-            case 58477: return 13;
-            case 58478: return 14;
-            case 58479: return 15;
-            case 60480: return 0;
-            case 60481: return 1;
-            case 60482: return 2;
-            case 60483: return 3;
-            case 60484: return 4;
-            case 60485: return 5;
-            case 60486: return 6;
-            case 60487: return 7;
-            case 60488: return 8;
-            case 60489: return 9;
-            case 60490: return 10;
-            case 60491: return 11;
-            case 60492: return 12;
-            case 60493: return 13;
-            case 60494: return 14;
-            case 60495: return 15;
-            case 62496: return 0;
-            case 62497: return 1;
-            case 62498: return 2;
-            case 62499: return 3;
-            case 62500: return 4;
-            case 62501: return 5;
-            case 62502: return 6;
-            case 62503: return 7;
-            case 62504: return 8;
-            case 62505: return 9;
-            case 62506: return 10;
-            case 62507: return 11;
-            case 62508: return 12;
-            case 62509: return 13;
-            case 62510: return 14;
-            case 62511: return 15;
-            case 64512: return 0;
-            case 64513: return 1;
-            case 64514: return 2;
-            case 64515: return 3;
-            case 64516: return 4;
-            case 64517: return 5;
-            case 64518: return 6;
-            case 64519: return 7;
-            case 64520: return 8;
-            case 64521: return 9;
-            case 64522: return 10;
-            case 64523: return 11;
-            case 64524: return 12;
-            case 64525: return 13;
-            case 64526: return 14;
-            case 64527: return 15;
-            case 66528: return 0;
-            case 66529: return 1;
-            case 66530: return 2;
-            case 66531: return 3;
-            case 66532: return 4;
-            case 66533: return 5;
-            case 66534: return 6;
-            case 66535: return 7;
-            case 66536: return 8;
-            case 66537: return 9;
-            case 66538: return 10;
-            case 66539: return 11;
-            case 66540: return 12;
-            case 66541: return 13;
-            case 66542: return 14;
-            case 66543: return 15;
-            case 68544: return 0;
-            case 68545: return 1;
-            case 68546: return 2;
-            case 68547: return 3;
-            case 68548: return 4;
-            case 68549: return 5;
-            case 68550: return 6;
-            case 68551: return 7;
-            case 68552: return 8;
-            case 68553: return 9;
-            case 68554: return 10;
-            case 68555: return 11;
-            case 68556: return 12;
-            case 68557: return 13;
-            case 68558: return 14;
-            case 68559: return 15;
-            case 70560: return 0;
-            case 70561: return 1;
-            case 70562: return 2;
-            case 70563: return 3;
-            case 70564: return 4;
-            case 70565: return 5;
-            case 70566: return 6;
-            case 70567: return 7;
-            case 70568: return 8;
-            case 70569: return 9;
-            case 70570: return 10;
-            case 70571: return 11;
-            case 70572: return 12;
-            case 70573: return 13;
-            case 70574: return 14;
-            case 70575: return 15;
-            case 72576: return 0;
-            case 72577: return 1;
-            case 72578: return 2;
-            case 72579: return 3;
-            case 72580: return 4;
-            case 72581: return 5;
-            case 72582: return 6;
-            case 72583: return 7;
-            case 72584: return 8;
-            case 72585: return 9;
-            case 72586: return 10;
-            case 72587: return 11;
-            case 72588: return 12;
-            case 72589: return 13;
-            case 72590: return 14;
-            case 72591: return 15;
-            case 74592: return 0;
-            case 74593: return 1;
-            case 74594: return 2;
-            case 74595: return 3;
-            case 74596: return 4;
-            case 74597: return 5;
-            case 74598: return 6;
-            case 74599: return 7;
-            case 74600: return 8;
-            case 74601: return 9;
-            case 74602: return 10;
-            case 74603: return 11;
-            case 74604: return 12;
-            case 74605: return 13;
-            case 74606: return 14;
-            case 74607: return 15;
-            case 76608: return 0;
-            case 76609: return 1;
-            case 76610: return 2;
-            case 76611: return 3;
-            case 76612: return 4;
-            case 76613: return 5;
-            case 76614: return 6;
-            case 76615: return 7;
-            case 76616: return 8;
-            case 76617: return 9;
-            case 76618: return 10;
-            case 76619: return 11;
-            case 76620: return 12;
-            case 76621: return 13;
-            case 76622: return 14;
-            case 76623: return 15;
-            case 78624: return 0;
-            case 78625: return 1;
-            case 78626: return 2;
-            case 78627: return 3;
-            case 78628: return 4;
-            case 78629: return 5;
-            case 78630: return 6;
-            case 78631: return 7;
-            case 78632: return 8;
-            case 78633: return 9;
-            case 78634: return 10;
-            case 78635: return 11;
-            case 78636: return 12;
-            case 78637: return 13;
-            case 78638: return 14;
-            case 78639: return 15;
-            case 80640: return 0;
-            case 80641: return 1;
-            case 80642: return 2;
-            case 80643: return 3;
-            case 80644: return 4;
-            case 80645: return 5;
-            case 80646: return 6;
-            case 80647: return 7;
-            case 80648: return 8;
-            case 80649: return 9;
-            case 80650: return 10;
-            case 80651: return 11;
-            case 80652: return 12;
-            case 80653: return 13;
-            case 80654: return 14;
-            case 80655: return 15;
-            case 82656: return 0;
-            case 82657: return 1;
-            case 82658: return 2;
-            case 82659: return 3;
-            case 82660: return 4;
-            case 82661: return 5;
-            case 82662: return 6;
-            case 82663: return 7;
-            case 82664: return 8;
-            case 82665: return 9;
-            case 82666: return 10;
-            case 82667: return 11;
-            case 82668: return 12;
-            case 82669: return 13;
-            case 82670: return 14;
-            case 82671: return 15;
-            case 84672: return 0;
-            case 84673: return 1;
-            case 84674: return 2;
-            case 84675: return 3;
-            case 84676: return 4;
-            case 84677: return 5;
-            case 84678: return 6;
-            case 84679: return 7;
-            case 84680: return 8;
-            case 84681: return 9;
-            case 84682: return 10;
-            case 84683: return 11;
-            case 84684: return 12;
-            case 84685: return 13;
-            case 84686: return 14;
-            case 84687: return 15;
-            case 86688: return 0;
-            case 86689: return 1;
-            case 86690: return 2;
-            case 86691: return 3;
-            case 86692: return 4;
-            case 86693: return 5;
-            case 86694: return 6;
-            case 86695: return 7;
-            case 86696: return 8;
-            case 86697: return 9;
-            case 86698: return 10;
-            case 86699: return 11;
-            case 86700: return 12;
-            case 86701: return 13;
-            case 86702: return 14;
-            case 86703: return 15;
-            case 88704: return 0;
-            case 88705: return 1;
-            case 88706: return 2;
-            case 88707: return 3;
-            case 88708: return 4;
-            case 88709: return 5;
-            case 88710: return 6;
-            case 88711: return 7;
-            case 88712: return 8;
-            case 88713: return 9;
-            case 88714: return 10;
-            case 88715: return 11;
-            case 88716: return 12;
-            case 88717: return 13;
-            case 88718: return 14;
-            case 88719: return 15;
-            case 90720: return 0;
-            case 90721: return 1;
-            case 90722: return 2;
-            case 90723: return 3;
-            case 90724: return 4;
-            case 90725: return 5;
-            case 90726: return 6;
-            case 90727: return 7;
-            case 90728: return 8;
-            case 90729: return 9;
-            case 90730: return 10;
-            case 90731: return 11;
-            case 90732: return 12;
-            case 90733: return 13;
-            case 90734: return 14;
-            case 90735: return 15;
-            case 92736: return 0;
-            case 92737: return 1;
-            case 92738: return 2;
-            case 92739: return 3;
-            case 92740: return 4;
-            case 92741: return 5;
-            case 92742: return 6;
-            case 92743: return 7;
-            case 92744: return 8;
-            case 92745: return 9;
-            case 92746: return 10;
-            case 92747: return 11;
-            case 92748: return 12;
-            case 92749: return 13;
-            case 92750: return 14;
-            case 92751: return 15;
-            case 94752: return 0;
-            case 94753: return 1;
-            case 94754: return 2;
-            case 94755: return 3;
-            case 94756: return 4;
-            case 94757: return 5;
-            case 94758: return 6;
-            case 94759: return 7;
-            case 94760: return 8;
-            case 94761: return 9;
-            case 94762: return 10;
-            case 94763: return 11;
-            case 94764: return 12;
-            case 94765: return 13;
-            case 94766: return 14;
-            case 94767: return 15;
-            case 96768: return 0;
-            case 96769: return 1;
-            case 96770: return 2;
-            case 96771: return 3;
-            case 96772: return 4;
-            case 96773: return 5;
-            case 96774: return 6;
-            case 96775: return 7;
-            case 96776: return 8;
-            case 96777: return 9;
-            case 96778: return 10;
-            case 96779: return 11;
-            case 96780: return 12;
-            case 96781: return 13;
-            case 96782: return 14;
-            case 96783: return 15;
-            case 98784: return 0;
-            case 98785: return 1;
-            case 98786: return 2;
-            case 98787: return 3;
-            case 98788: return 4;
-            case 98789: return 5;
-            case 98790: return 6;
-            case 98791: return 7;
-            case 98792: return 8;
-            case 98793: return 9;
-            case 98794: return 10;
-            case 98795: return 11;
-            case 98796: return 12;
-            case 98797: return 13;
-            case 98798: return 14;
-            case 98799: return 15;
-            case 100800: return 0;
-            case 100801: return 1;
-            case 100802: return 2;
-            case 100803: return 3;
-            case 100804: return 4;
-            case 100805: return 5;
-            case 100806: return 6;
-            case 100807: return 7;
-            case 100808: return 8;
-            case 100809: return 9;
-            case 100810: return 10;
-            case 100811: return 11;
-            case 100812: return 12;
-            case 100813: return 13;
-            case 100814: return 14;
-            case 100815: return 15;
-            case 102816: return 0;
-            case 102817: return 1;
-            case 102818: return 2;
-            case 102819: return 3;
-            case 102820: return 4;
-            case 102821: return 5;
-            case 102822: return 6;
-            case 102823: return 7;
-            case 102824: return 8;
-            case 102825: return 9;
-            case 102826: return 10;
-            case 102827: return 11;
-            case 102828: return 12;
-            case 102829: return 13;
-            case 102830: return 14;
-            case 102831: return 15;
-            case 104832: return 0;
-            case 104833: return 1;
-            case 104834: return 2;
-            case 104835: return 3;
-            case 104836: return 4;
-            case 104837: return 5;
-            case 104838: return 6;
-            case 104839: return 7;
-            case 104840: return 8;
-            case 104841: return 9;
-            case 104842: return 10;
-            case 104843: return 11;
-            case 104844: return 12;
-            case 104845: return 13;
-            case 104846: return 14;
-            case 104847: return 15;
-            case 106848: return 0;
-            case 106849: return 1;
-            case 106850: return 2;
-            case 106851: return 3;
-            case 106852: return 4;
-            case 106853: return 5;
-            case 106854: return 6;
-            case 106855: return 7;
-            case 106856: return 8;
-            case 106857: return 9;
-            case 106858: return 10;
-            case 106859: return 11;
-            case 106860: return 12;
-            case 106861: return 13;
-            case 106862: return 14;
-            case 106863: return 15;
-            case 108864: return 0;
-            case 108865: return 1;
-            case 108866: return 2;
-            case 108867: return 3;
-            case 108868: return 4;
-            case 108869: return 5;
-            case 108870: return 6;
-            case 108871: return 7;
-            case 108872: return 8;
-            case 108873: return 9;
-            case 108874: return 10;
-            case 108875: return 11;
-            case 108876: return 12;
-            case 108877: return 13;
-            case 108878: return 14;
-            case 108879: return 15;
-            case 110880: return 0;
-            case 110881: return 1;
-            case 110882: return 2;
-            case 110883: return 3;
-            case 110884: return 4;
-            case 110885: return 5;
-            case 110886: return 6;
-            case 110887: return 7;
-            case 110888: return 8;
-            case 110889: return 9;
-            case 110890: return 10;
-            case 110891: return 11;
-            case 110892: return 12;
-            case 110893: return 13;
-            case 110894: return 14;
-            case 110895: return 15;
-            case 112896: return 0;
-            case 112897: return 1;
-            case 112898: return 2;
-            case 112899: return 3;
-            case 112900: return 4;
-            case 112901: return 5;
-            case 112902: return 6;
-            case 112903: return 7;
-            case 112904: return 8;
-            case 112905: return 9;
-            case 112906: return 10;
-            case 112907: return 11;
-            case 112908: return 12;
-            case 112909: return 13;
-            case 112910: return 14;
-            case 112911: return 15;
-            case 114912: return 0;
-            case 114913: return 1;
-            case 114914: return 2;
-            case 114915: return 3;
-            case 114916: return 4;
-            case 114917: return 5;
-            case 114918: return 6;
-            case 114919: return 7;
-            case 114920: return 8;
-            case 114921: return 9;
-            case 114922: return 10;
-            case 114923: return 11;
-            case 114924: return 12;
-            case 114925: return 13;
-            case 114926: return 14;
-            case 114927: return 15;
-            case 116928: return 0;
-            case 116929: return 1;
-            case 116930: return 2;
-            case 116931: return 3;
-            case 116932: return 4;
-            case 116933: return 5;
-            case 116934: return 6;
-            case 116935: return 7;
-            case 116936: return 8;
-            case 116937: return 9;
-            case 116938: return 10;
-            case 116939: return 11;
-            case 116940: return 12;
-            case 116941: return 13;
-            case 116942: return 14;
-            case 116943: return 15;
-            case 118944: return 0;
-            case 118945: return 1;
-            case 118946: return 2;
-            case 118947: return 3;
-            case 118948: return 4;
-            case 118949: return 5;
-            case 118950: return 6;
-            case 118951: return 7;
-            case 118952: return 8;
-            case 118953: return 9;
-            case 118954: return 10;
-            case 118955: return 11;
-            case 118956: return 12;
-            case 118957: return 13;
-            case 118958: return 14;
-            case 118959: return 15;
-            case 120960: return 0;
-            case 120961: return 1;
-            case 120962: return 2;
-            case 120963: return 3;
-            case 120964: return 4;
-            case 120965: return 5;
-            case 120966: return 6;
-            case 120967: return 7;
-            case 120968: return 8;
-            case 120969: return 9;
-            case 120970: return 10;
-            case 120971: return 11;
-            case 120972: return 12;
-            case 120973: return 13;
-            case 120974: return 14;
-            case 120975: return 15;
-            case 122976: return 0;
-            case 122977: return 1;
-            case 122978: return 2;
-            case 122979: return 3;
-            case 122980: return 4;
-            case 122981: return 5;
-            case 122982: return 6;
-            case 122983: return 7;
-            case 122984: return 8;
-            case 122985: return 9;
-            case 122986: return 10;
-            case 122987: return 11;
-            case 122988: return 12;
-            case 122989: return 13;
-            case 122990: return 14;
-            case 122991: return 15;
-            case 124992: return 0;
-            case 124993: return 1;
-            case 124994: return 2;
-            case 124995: return 3;
-            case 124996: return 4;
-            case 124997: return 5;
-            case 124998: return 6;
-            case 124999: return 7;
-            case 125000: return 8;
-            case 125001: return 9;
-            case 125002: return 10;
-            case 125003: return 11;
-            case 125004: return 12;
-            case 125005: return 13;
-            case 125006: return 14;
-            case 125007: return 15;
-            case 127008: return 0;
-            case 127009: return 1;
-            case 127010: return 2;
-            case 127011: return 3;
-            case 127012: return 4;
-            case 127013: return 5;
-            case 127014: return 6;
-            case 127015: return 7;
-            case 127016: return 8;
-            case 127017: return 9;
-            case 127018: return 10;
-            case 127019: return 11;
-            case 127020: return 12;
-            case 127021: return 13;
-            case 127022: return 14;
-            case 127023: return 15;
+    public int readCombatClusterIndex(int idx) throws GameActionException {
+        switch (idx) {
+            case 0:
+                return (rc.readSharedArray(35) & 1016) >>> 3;
+            case 1:
+                return ((rc.readSharedArray(35) & 7) << 4) + ((rc.readSharedArray(36) & 61440) >>> 12);
+            case 2:
+                return (rc.readSharedArray(36) & 4064) >>> 5;
+            case 3:
+                return ((rc.readSharedArray(36) & 31) << 2) + ((rc.readSharedArray(37) & 49152) >>> 14);
+            case 4:
+                return (rc.readSharedArray(37) & 16256) >>> 7;
+            default:
+                return -1;
         }
-        return 0;
     }
 
+    public void writeCombatClusterIndex(int idx, int value) throws GameActionException {
+        switch (idx) {
+            case 0:
+                rc.writeSharedArray(35, (rc.readSharedArray(35) & 64519) | (value << 3));
+                break;
+            case 1:
+                rc.writeSharedArray(35, (rc.readSharedArray(35) & 65528) | ((value & 112) >>> 4));
+                rc.writeSharedArray(36, (rc.readSharedArray(36) & 4095) | ((value & 15) << 12));
+                break;
+            case 2:
+                rc.writeSharedArray(36, (rc.readSharedArray(36) & 61471) | (value << 5));
+                break;
+            case 3:
+                rc.writeSharedArray(36, (rc.readSharedArray(36) & 65504) | ((value & 124) >>> 2));
+                rc.writeSharedArray(37, (rc.readSharedArray(37) & 16383) | ((value & 3) << 14));
+                break;
+            case 4:
+                rc.writeSharedArray(37, (rc.readSharedArray(37) & 49279) | (value << 7));
+                break;
+        }
+    }
+
+    public int readCombatClusterAll(int idx) throws GameActionException {
+        switch (idx) {
+            case 0:
+                return (rc.readSharedArray(35) & 1016) >>> 3;
+            case 1:
+                return ((rc.readSharedArray(35) & 7) << 4) + ((rc.readSharedArray(36) & 61440) >>> 12);
+            case 2:
+                return (rc.readSharedArray(36) & 4064) >>> 5;
+            case 3:
+                return ((rc.readSharedArray(36) & 31) << 2) + ((rc.readSharedArray(37) & 49152) >>> 14);
+            case 4:
+                return (rc.readSharedArray(37) & 16256) >>> 7;
+            default:
+                return -1;
+        }
+    }
+
+    public void writeCombatClusterAll(int idx, int value) throws GameActionException {
+        switch (idx) {
+            case 0:
+                rc.writeSharedArray(35, (rc.readSharedArray(35) & 64519) | (value << 3));
+                break;
+            case 1:
+                rc.writeSharedArray(35, (rc.readSharedArray(35) & 65528) | ((value & 112) >>> 4));
+                rc.writeSharedArray(36, (rc.readSharedArray(36) & 4095) | ((value & 15) << 12));
+                break;
+            case 2:
+                rc.writeSharedArray(36, (rc.readSharedArray(36) & 61471) | (value << 5));
+                break;
+            case 3:
+                rc.writeSharedArray(36, (rc.readSharedArray(36) & 65504) | ((value & 124) >>> 2));
+                rc.writeSharedArray(37, (rc.readSharedArray(37) & 16383) | ((value & 3) << 14));
+                break;
+            case 4:
+                rc.writeSharedArray(37, (rc.readSharedArray(37) & 49279) | (value << 7));
+                break;
+        }
+    }
+
+    public int readExploreClusterClaimStatus(int idx) throws GameActionException {
+        switch (idx) {
+            case 0:
+                return (rc.readSharedArray(37) & 64) >>> 6;
+            case 1:
+                return (rc.readSharedArray(38) & 16384) >>> 14;
+            case 2:
+                return (rc.readSharedArray(38) & 64) >>> 6;
+            case 3:
+                return (rc.readSharedArray(39) & 16384) >>> 14;
+            case 4:
+                return (rc.readSharedArray(39) & 64) >>> 6;
+            case 5:
+                return (rc.readSharedArray(40) & 16384) >>> 14;
+            case 6:
+                return (rc.readSharedArray(40) & 64) >>> 6;
+            case 7:
+                return (rc.readSharedArray(41) & 16384) >>> 14;
+            case 8:
+                return (rc.readSharedArray(41) & 64) >>> 6;
+            case 9:
+                return (rc.readSharedArray(42) & 16384) >>> 14;
+            default:
+                return -1;
+        }
+    }
+
+    public void writeExploreClusterClaimStatus(int idx, int value) throws GameActionException {
+        switch (idx) {
+            case 0:
+                rc.writeSharedArray(37, (rc.readSharedArray(37) & 65471) | (value << 6));
+                break;
+            case 1:
+                rc.writeSharedArray(38, (rc.readSharedArray(38) & 49151) | (value << 14));
+                break;
+            case 2:
+                rc.writeSharedArray(38, (rc.readSharedArray(38) & 65471) | (value << 6));
+                break;
+            case 3:
+                rc.writeSharedArray(39, (rc.readSharedArray(39) & 49151) | (value << 14));
+                break;
+            case 4:
+                rc.writeSharedArray(39, (rc.readSharedArray(39) & 65471) | (value << 6));
+                break;
+            case 5:
+                rc.writeSharedArray(40, (rc.readSharedArray(40) & 49151) | (value << 14));
+                break;
+            case 6:
+                rc.writeSharedArray(40, (rc.readSharedArray(40) & 65471) | (value << 6));
+                break;
+            case 7:
+                rc.writeSharedArray(41, (rc.readSharedArray(41) & 49151) | (value << 14));
+                break;
+            case 8:
+                rc.writeSharedArray(41, (rc.readSharedArray(41) & 65471) | (value << 6));
+                break;
+            case 9:
+                rc.writeSharedArray(42, (rc.readSharedArray(42) & 49151) | (value << 14));
+                break;
+        }
+    }
+
+    public int readExploreClusterIndex(int idx) throws GameActionException {
+        switch (idx) {
+            case 0:
+                return ((rc.readSharedArray(37) & 63) << 1) + ((rc.readSharedArray(38) & 32768) >>> 15);
+            case 1:
+                return (rc.readSharedArray(38) & 16256) >>> 7;
+            case 2:
+                return ((rc.readSharedArray(38) & 63) << 1) + ((rc.readSharedArray(39) & 32768) >>> 15);
+            case 3:
+                return (rc.readSharedArray(39) & 16256) >>> 7;
+            case 4:
+                return ((rc.readSharedArray(39) & 63) << 1) + ((rc.readSharedArray(40) & 32768) >>> 15);
+            case 5:
+                return (rc.readSharedArray(40) & 16256) >>> 7;
+            case 6:
+                return ((rc.readSharedArray(40) & 63) << 1) + ((rc.readSharedArray(41) & 32768) >>> 15);
+            case 7:
+                return (rc.readSharedArray(41) & 16256) >>> 7;
+            case 8:
+                return ((rc.readSharedArray(41) & 63) << 1) + ((rc.readSharedArray(42) & 32768) >>> 15);
+            case 9:
+                return (rc.readSharedArray(42) & 16256) >>> 7;
+            default:
+                return -1;
+        }
+    }
+
+    public void writeExploreClusterIndex(int idx, int value) throws GameActionException {
+        switch (idx) {
+            case 0:
+                rc.writeSharedArray(37, (rc.readSharedArray(37) & 65472) | ((value & 126) >>> 1));
+                rc.writeSharedArray(38, (rc.readSharedArray(38) & 32767) | ((value & 1) << 15));
+                break;
+            case 1:
+                rc.writeSharedArray(38, (rc.readSharedArray(38) & 49279) | (value << 7));
+                break;
+            case 2:
+                rc.writeSharedArray(38, (rc.readSharedArray(38) & 65472) | ((value & 126) >>> 1));
+                rc.writeSharedArray(39, (rc.readSharedArray(39) & 32767) | ((value & 1) << 15));
+                break;
+            case 3:
+                rc.writeSharedArray(39, (rc.readSharedArray(39) & 49279) | (value << 7));
+                break;
+            case 4:
+                rc.writeSharedArray(39, (rc.readSharedArray(39) & 65472) | ((value & 126) >>> 1));
+                rc.writeSharedArray(40, (rc.readSharedArray(40) & 32767) | ((value & 1) << 15));
+                break;
+            case 5:
+                rc.writeSharedArray(40, (rc.readSharedArray(40) & 49279) | (value << 7));
+                break;
+            case 6:
+                rc.writeSharedArray(40, (rc.readSharedArray(40) & 65472) | ((value & 126) >>> 1));
+                rc.writeSharedArray(41, (rc.readSharedArray(41) & 32767) | ((value & 1) << 15));
+                break;
+            case 7:
+                rc.writeSharedArray(41, (rc.readSharedArray(41) & 49279) | (value << 7));
+                break;
+            case 8:
+                rc.writeSharedArray(41, (rc.readSharedArray(41) & 65472) | ((value & 126) >>> 1));
+                rc.writeSharedArray(42, (rc.readSharedArray(42) & 32767) | ((value & 1) << 15));
+                break;
+            case 9:
+                rc.writeSharedArray(42, (rc.readSharedArray(42) & 49279) | (value << 7));
+                break;
+        }
+    }
+
+    public int readExploreClusterAll(int idx) throws GameActionException {
+        switch (idx) {
+            case 0:
+                return ((rc.readSharedArray(37) & 127) << 1) + ((rc.readSharedArray(38) & 32768) >>> 15);
+            case 1:
+                return (rc.readSharedArray(38) & 32640) >>> 7;
+            case 2:
+                return ((rc.readSharedArray(38) & 127) << 1) + ((rc.readSharedArray(39) & 32768) >>> 15);
+            case 3:
+                return (rc.readSharedArray(39) & 32640) >>> 7;
+            case 4:
+                return ((rc.readSharedArray(39) & 127) << 1) + ((rc.readSharedArray(40) & 32768) >>> 15);
+            case 5:
+                return (rc.readSharedArray(40) & 32640) >>> 7;
+            case 6:
+                return ((rc.readSharedArray(40) & 127) << 1) + ((rc.readSharedArray(41) & 32768) >>> 15);
+            case 7:
+                return (rc.readSharedArray(41) & 32640) >>> 7;
+            case 8:
+                return ((rc.readSharedArray(41) & 127) << 1) + ((rc.readSharedArray(42) & 32768) >>> 15);
+            case 9:
+                return (rc.readSharedArray(42) & 32640) >>> 7;
+            default:
+                return -1;
+        }
+    }
+
+    public void writeExploreClusterAll(int idx, int value) throws GameActionException {
+        switch (idx) {
+            case 0:
+                rc.writeSharedArray(37, (rc.readSharedArray(37) & 65408) | ((value & 254) >>> 1));
+                rc.writeSharedArray(38, (rc.readSharedArray(38) & 32767) | ((value & 1) << 15));
+                break;
+            case 1:
+                rc.writeSharedArray(38, (rc.readSharedArray(38) & 32895) | (value << 7));
+                break;
+            case 2:
+                rc.writeSharedArray(38, (rc.readSharedArray(38) & 65408) | ((value & 254) >>> 1));
+                rc.writeSharedArray(39, (rc.readSharedArray(39) & 32767) | ((value & 1) << 15));
+                break;
+            case 3:
+                rc.writeSharedArray(39, (rc.readSharedArray(39) & 32895) | (value << 7));
+                break;
+            case 4:
+                rc.writeSharedArray(39, (rc.readSharedArray(39) & 65408) | ((value & 254) >>> 1));
+                rc.writeSharedArray(40, (rc.readSharedArray(40) & 32767) | ((value & 1) << 15));
+                break;
+            case 5:
+                rc.writeSharedArray(40, (rc.readSharedArray(40) & 32895) | (value << 7));
+                break;
+            case 6:
+                rc.writeSharedArray(40, (rc.readSharedArray(40) & 65408) | ((value & 254) >>> 1));
+                rc.writeSharedArray(41, (rc.readSharedArray(41) & 32767) | ((value & 1) << 15));
+                break;
+            case 7:
+                rc.writeSharedArray(41, (rc.readSharedArray(41) & 32895) | (value << 7));
+                break;
+            case 8:
+                rc.writeSharedArray(41, (rc.readSharedArray(41) & 65408) | ((value & 254) >>> 1));
+                rc.writeSharedArray(42, (rc.readSharedArray(42) & 32767) | ((value & 1) << 15));
+                break;
+            case 9:
+                rc.writeSharedArray(42, (rc.readSharedArray(42) & 32895) | (value << 7));
+                break;
+        }
+    }
+
+    public int readMineClusterClaimStatus(int idx) throws GameActionException {
+        switch (idx) {
+            case 0:
+                return (rc.readSharedArray(42) & 112) >>> 4;
+            case 1:
+                return (rc.readSharedArray(43) & 7168) >>> 10;
+            case 2:
+                return (rc.readSharedArray(43) & 7);
+            case 3:
+                return (rc.readSharedArray(44) & 448) >>> 6;
+            case 4:
+                return (rc.readSharedArray(45) & 28672) >>> 12;
+            case 5:
+                return (rc.readSharedArray(45) & 28) >>> 2;
+            case 6:
+                return (rc.readSharedArray(46) & 1792) >>> 8;
+            case 7:
+                return ((rc.readSharedArray(46) & 1) << 2) + ((rc.readSharedArray(47) & 49152) >>> 14);
+            case 8:
+                return (rc.readSharedArray(47) & 112) >>> 4;
+            case 9:
+                return (rc.readSharedArray(48) & 7168) >>> 10;
+            default:
+                return -1;
+        }
+    }
+
+    public void writeMineClusterClaimStatus(int idx, int value) throws GameActionException {
+        switch (idx) {
+            case 0:
+                rc.writeSharedArray(42, (rc.readSharedArray(42) & 65423) | (value << 4));
+                break;
+            case 1:
+                rc.writeSharedArray(43, (rc.readSharedArray(43) & 58367) | (value << 10));
+                break;
+            case 2:
+                rc.writeSharedArray(43, (rc.readSharedArray(43) & 65528) | (value));
+                break;
+            case 3:
+                rc.writeSharedArray(44, (rc.readSharedArray(44) & 65087) | (value << 6));
+                break;
+            case 4:
+                rc.writeSharedArray(45, (rc.readSharedArray(45) & 36863) | (value << 12));
+                break;
+            case 5:
+                rc.writeSharedArray(45, (rc.readSharedArray(45) & 65507) | (value << 2));
+                break;
+            case 6:
+                rc.writeSharedArray(46, (rc.readSharedArray(46) & 63743) | (value << 8));
+                break;
+            case 7:
+                rc.writeSharedArray(46, (rc.readSharedArray(46) & 65534) | ((value & 4) >>> 2));
+                rc.writeSharedArray(47, (rc.readSharedArray(47) & 16383) | ((value & 3) << 14));
+                break;
+            case 8:
+                rc.writeSharedArray(47, (rc.readSharedArray(47) & 65423) | (value << 4));
+                break;
+            case 9:
+                rc.writeSharedArray(48, (rc.readSharedArray(48) & 58367) | (value << 10));
+                break;
+        }
+    }
+
+    public int readMineClusterIndex(int idx) throws GameActionException {
+        switch (idx) {
+            case 0:
+                return ((rc.readSharedArray(42) & 15) << 3) + ((rc.readSharedArray(43) & 57344) >>> 13);
+            case 1:
+                return (rc.readSharedArray(43) & 1016) >>> 3;
+            case 2:
+                return (rc.readSharedArray(44) & 65024) >>> 9;
+            case 3:
+                return ((rc.readSharedArray(44) & 63) << 1) + ((rc.readSharedArray(45) & 32768) >>> 15);
+            case 4:
+                return (rc.readSharedArray(45) & 4064) >>> 5;
+            case 5:
+                return ((rc.readSharedArray(45) & 3) << 5) + ((rc.readSharedArray(46) & 63488) >>> 11);
+            case 6:
+                return (rc.readSharedArray(46) & 254) >>> 1;
+            case 7:
+                return (rc.readSharedArray(47) & 16256) >>> 7;
+            case 8:
+                return ((rc.readSharedArray(47) & 15) << 3) + ((rc.readSharedArray(48) & 57344) >>> 13);
+            case 9:
+                return (rc.readSharedArray(48) & 1016) >>> 3;
+            default:
+                return -1;
+        }
+    }
+
+    public void writeMineClusterIndex(int idx, int value) throws GameActionException {
+        switch (idx) {
+            case 0:
+                rc.writeSharedArray(42, (rc.readSharedArray(42) & 65520) | ((value & 120) >>> 3));
+                rc.writeSharedArray(43, (rc.readSharedArray(43) & 8191) | ((value & 7) << 13));
+                break;
+            case 1:
+                rc.writeSharedArray(43, (rc.readSharedArray(43) & 64519) | (value << 3));
+                break;
+            case 2:
+                rc.writeSharedArray(44, (rc.readSharedArray(44) & 511) | (value << 9));
+                break;
+            case 3:
+                rc.writeSharedArray(44, (rc.readSharedArray(44) & 65472) | ((value & 126) >>> 1));
+                rc.writeSharedArray(45, (rc.readSharedArray(45) & 32767) | ((value & 1) << 15));
+                break;
+            case 4:
+                rc.writeSharedArray(45, (rc.readSharedArray(45) & 61471) | (value << 5));
+                break;
+            case 5:
+                rc.writeSharedArray(45, (rc.readSharedArray(45) & 65532) | ((value & 96) >>> 5));
+                rc.writeSharedArray(46, (rc.readSharedArray(46) & 2047) | ((value & 31) << 11));
+                break;
+            case 6:
+                rc.writeSharedArray(46, (rc.readSharedArray(46) & 65281) | (value << 1));
+                break;
+            case 7:
+                rc.writeSharedArray(47, (rc.readSharedArray(47) & 49279) | (value << 7));
+                break;
+            case 8:
+                rc.writeSharedArray(47, (rc.readSharedArray(47) & 65520) | ((value & 120) >>> 3));
+                rc.writeSharedArray(48, (rc.readSharedArray(48) & 8191) | ((value & 7) << 13));
+                break;
+            case 9:
+                rc.writeSharedArray(48, (rc.readSharedArray(48) & 64519) | (value << 3));
+                break;
+        }
+    }
+
+    public int readMineClusterAll(int idx) throws GameActionException {
+        switch (idx) {
+            case 0:
+                return ((rc.readSharedArray(42) & 127) << 3) + ((rc.readSharedArray(43) & 57344) >>> 13);
+            case 1:
+                return (rc.readSharedArray(43) & 8184) >>> 3;
+            case 2:
+                return ((rc.readSharedArray(43) & 7) << 7) + ((rc.readSharedArray(44) & 65024) >>> 9);
+            case 3:
+                return ((rc.readSharedArray(44) & 511) << 1) + ((rc.readSharedArray(45) & 32768) >>> 15);
+            case 4:
+                return (rc.readSharedArray(45) & 32736) >>> 5;
+            case 5:
+                return ((rc.readSharedArray(45) & 31) << 5) + ((rc.readSharedArray(46) & 63488) >>> 11);
+            case 6:
+                return (rc.readSharedArray(46) & 2046) >>> 1;
+            case 7:
+                return ((rc.readSharedArray(46) & 1) << 9) + ((rc.readSharedArray(47) & 65408) >>> 7);
+            case 8:
+                return ((rc.readSharedArray(47) & 127) << 3) + ((rc.readSharedArray(48) & 57344) >>> 13);
+            case 9:
+                return (rc.readSharedArray(48) & 8184) >>> 3;
+            default:
+                return -1;
+        }
+    }
+
+    public void writeMineClusterAll(int idx, int value) throws GameActionException {
+        switch (idx) {
+            case 0:
+                rc.writeSharedArray(42, (rc.readSharedArray(42) & 65408) | ((value & 1016) >>> 3));
+                rc.writeSharedArray(43, (rc.readSharedArray(43) & 8191) | ((value & 7) << 13));
+                break;
+            case 1:
+                rc.writeSharedArray(43, (rc.readSharedArray(43) & 57351) | (value << 3));
+                break;
+            case 2:
+                rc.writeSharedArray(43, (rc.readSharedArray(43) & 65528) | ((value & 896) >>> 7));
+                rc.writeSharedArray(44, (rc.readSharedArray(44) & 511) | ((value & 127) << 9));
+                break;
+            case 3:
+                rc.writeSharedArray(44, (rc.readSharedArray(44) & 65024) | ((value & 1022) >>> 1));
+                rc.writeSharedArray(45, (rc.readSharedArray(45) & 32767) | ((value & 1) << 15));
+                break;
+            case 4:
+                rc.writeSharedArray(45, (rc.readSharedArray(45) & 32799) | (value << 5));
+                break;
+            case 5:
+                rc.writeSharedArray(45, (rc.readSharedArray(45) & 65504) | ((value & 992) >>> 5));
+                rc.writeSharedArray(46, (rc.readSharedArray(46) & 2047) | ((value & 31) << 11));
+                break;
+            case 6:
+                rc.writeSharedArray(46, (rc.readSharedArray(46) & 63489) | (value << 1));
+                break;
+            case 7:
+                rc.writeSharedArray(46, (rc.readSharedArray(46) & 65534) | ((value & 512) >>> 9));
+                rc.writeSharedArray(47, (rc.readSharedArray(47) & 127) | ((value & 511) << 7));
+                break;
+            case 8:
+                rc.writeSharedArray(47, (rc.readSharedArray(47) & 65408) | ((value & 1016) >>> 3));
+                rc.writeSharedArray(48, (rc.readSharedArray(48) & 8191) | ((value & 7) << 13));
+                break;
+            case 9:
+                rc.writeSharedArray(48, (rc.readSharedArray(48) & 57351) | (value << 3));
+                break;
+        }
+    }
 }
