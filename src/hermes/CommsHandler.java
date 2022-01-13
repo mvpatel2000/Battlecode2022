@@ -331,6 +331,16 @@ public class CommsHandler {
         return writeChunkPortion(clusterIndex, EXPLORE_CLUSTER_OFFSET + exploreClusterIndex, 1, 7);
     }
 
+    /**
+     * Reads all of mine cluster
+     * @param mineClusterIndex
+     * @return
+     * @throws GameActionException
+     */
+    public int readMineClusterAll(int mineClusterIndex) throws GameActionException {
+        return readChunkPortion(MINE_CLUSTER_OFFSET + mineClusterIndex, 0, 10);
+    }
+
     /** 
      * Returns the claim status of the specified mining cluster, in the range [0, 7].
      * 
