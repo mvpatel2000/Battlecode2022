@@ -36,22 +36,6 @@ public class CommsHandler {
         this.rc = rc;
     }
 
-    /**
-     * Initial setup of comms which wipes the clusters
-     * @throws GameActionException
-     */
-    public void clearShortlist() throws GameActionException {
-        for (int i = 0; i < COMBAT_CLUSTER_SLOTS; i++) {
-            writeCombatClusterIndex(i, UNDEFINED_CLUSTER_INDEX);
-        }
-        for (int i = 0; i < EXPLORE_CLUSTER_SLOTS; i++) {
-            writeExploreClusterIndex(i, UNDEFINED_CLUSTER_INDEX);
-        }
-        for (int i = 0; i < MINE_CLUSTER_SLOTS; i++) {
-            writeMineClusterIndex(i, UNDEFINED_CLUSTER_INDEX);
-        }
-    }
-
     public MapLocation getOurArchonLocation(int idx) throws GameActionException {
         return new MapLocation(readOurArchonXCoord(idx), readOurArchonYCoord(idx));
     }
@@ -60,6 +44,8 @@ public class CommsHandler {
         writeOurArchonXCoord(idx, loc.x);
         writeOurArchonYCoord(idx, loc.y);
     }
+    
+    // PRIORITY CLUSTER INIT
 
     // TO BE GENERATED
 }

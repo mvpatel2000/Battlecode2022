@@ -6,6 +6,12 @@ public class Archon extends Robot {
 
     int myArchonNum = -1;
 
+    // my build counts (not all archons, just me)
+    int numMinersBuilt = 0;
+    int numSoldiersBuilt = 0;
+    int numSagesBuilt = 0;
+    int numBuildersBuilt = 0;
+
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
     }
@@ -168,9 +174,15 @@ public class Archon extends Robot {
         if (pass) {
             return;
         }
+        
+        RobotType toBuild = RobotType.SOLDIER;
+        int initialMiners = ((mapHeight * mapWidth / 200) + 2) / numOurArchons; // 20x20: 4 total; 60x60: 20 total
+        if (numMinersBuilt < initialMiners) {
+            toBuild = RobotType.MINER;
+        } else if (numMinersBuilt < rc.getRobotCount() / (5 * numOurArchons)) { // account for lost archons?
+            toBuild = RobotType.MINER;
+        }
 
-        boolean shouldBuildMiner = turnCount < 20 ? true : (turnCount < 100 ? rng.nextDouble() < (0.2 + 0.0001 * mapHeight * mapWidth) : rng.nextDouble() < (0.05 + 0.00005 * mapHeight * mapWidth));
-        RobotType toBuild = shouldBuildMiner ? RobotType.MINER : RobotType.SOLDIER;
         // Build builders if lots of lead for watchtowers
         if (rc.getTeamLeadAmount(allyTeam) > 500 && rng.nextDouble() < 0.3) {
             toBuild = RobotType.BUILDER;
@@ -197,8 +209,28 @@ public class Archon extends Robot {
             }
         }
         if (optimalDir != null && rc.canBuildRobot(toBuild, optimalDir)) {
-            rc.buildRobot(toBuild, optimalDir);
+            buildRobot(toBuild, optimalDir);
         }
+    }
+
+    private void buildRobot(RobotType type, Direction dir) throws GameActionException {
+        switch (type) {
+            case MINER:
+                numMinersBuilt++;
+                break;
+            case SOLDIER:
+                numSoldiersBuilt++;
+                break;
+            case SAGE:
+                numSagesBuilt++;
+                break;
+            case BUILDER:
+                numBuildersBuilt++;
+                break;
+            default:
+                break;
+        }
+        rc.buildRobot(type, dir);
     }
 
     /**
