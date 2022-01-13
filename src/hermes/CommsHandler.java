@@ -264,7 +264,7 @@ public class CommsHandler {
 
     /**
      * Returns the cluster index of the specified combat cluster.
-     * Returns UNDEFINED_CLUSTER_INDEX if the combat cluster is not specified.
+     * Returns UNDEFINED_CLUSTER_INDEX if the combat cluster is not set.
      * 
      * @param combatClusterIndex the combat cluster index, in the range [0, COMBAT_CLUSTER_SLOTS - 1]
      * @return the cluster index of the specified combat cluster
@@ -334,7 +334,7 @@ public class CommsHandler {
 
     /** 
      * Returns the cluster index of the specified exploration cluster.
-     * Returns UNDEFINED_CLUSTER_INDEX if the exploration cluster is not specified.
+     * Returns UNDEFINED_CLUSTER_INDEX if the exploration cluster is not set.
      * 
      * @param exploreClusterIndex the exploration cluster index, in the range [0, EXPLORE_CLUSTER_SLOTS - 1]
      * @return the cluster index of the specified exploration cluster
@@ -381,7 +381,7 @@ public class CommsHandler {
 
     /**
      * Returns the cluster index of the specified mining cluster.
-     * Returns UNDEFINED_CLUSTER_INDEX if the mining cluster is not specified.
+     * Returns UNDEFINED_CLUSTER_INDEX if the mining cluster is not set.
      * 
      * @param mineClusterIndex the mining cluster index, in the range [0, MINE_CLUSTER_SLOTS - 1]
      * @return the cluster index of the specified mining cluster
