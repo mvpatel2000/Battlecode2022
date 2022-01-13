@@ -8,21 +8,22 @@ public class Archon extends Robot {
 
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
-        commsHandler.clearShortlist();
     }
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 400) {
+        // if (currentRound > 5) {
         //     //rc.resign\();
         // }
+        
         if (currentRound <= 3) { // temporary fix to round 1 TLE
             computeArchonNum();
         }
-        mainLoop();
-    }
 
-    public void mainLoop() throws GameActionException {
+        // Prepare comms by wiping shortlist
+        if (currentRound == 2) {
+            commsHandler.clearShortlist();
+        }
         setPriorityClusters();
 
         build();
