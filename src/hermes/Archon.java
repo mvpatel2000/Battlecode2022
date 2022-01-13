@@ -8,6 +8,7 @@ public class Archon extends Robot {
 
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
+        commsHandler.clearShortlist();
     }
 
     @Override

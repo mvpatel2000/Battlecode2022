@@ -127,6 +127,13 @@ public class CommsHandler {
         for (int i = 0; i < CHUNK_SIZES.length; i++) { // TODO: remove once we precompute CHUNK_OFFSETS
             CHUNK_OFFSETS[i] = (i == 0) ? 0 : CHUNK_OFFSETS[i-1] + CHUNK_SIZES[i-1];
         }
+    }
+
+    /**
+     * Initial setup of comms which wipes the clusters
+     * @throws GameActionException
+     */
+    public void clearShortlist() throws GameActionException {
         for (int i = 0; i < COMBAT_CLUSTER_SLOTS; i++) {
             writeCombatClusterIndex(i, UNDEFINED_CLUSTER_INDEX);
         }
