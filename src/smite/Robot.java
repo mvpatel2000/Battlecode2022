@@ -86,9 +86,6 @@ public class Robot {
         mapWidth = rc.getMapWidth();
         setupClusters();
         precomputeClusterCenters();
-        clusterResources = new int[numClusters];
-        clusterControls = new int[numClusters];
-        markedClustersBuffer = new int[numClusters];
         destination = null;
         exploreMode = false;
         priorDestinations = new ArrayList<MapLocation>();
@@ -124,6 +121,12 @@ public class Robot {
         // Before unit runs
         turnCount++;
         currentRound = rc.getRoundNum();
+        // Move certain initialization work to turn 2
+        if (turnCount == 2) {
+            clusterResources = new int[numClusters];
+            clusterControls = new int[numClusters];
+            markedClustersBuffer = new int[numClusters];
+        }
         setClusterStates();
         nearbyEnemies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, enemyTeam);
 
@@ -145,13 +148,19 @@ public class Robot {
      * and aggregates into clusterControls and clusterResoruces as buffers. Uses 
      * markedClustersBuffer to track which buffers have been modified each turn to reset them.
      * Alternates whether control or resources are scanned each turn to conserve bytecode.
+     * 
+     * Note: This is not set up until turn 2 to save compute on initialization.
      * @throws GameActionException
      */
     public void setClusterStates() throws GameActionException {
         // int bytecodeUsed = Clock.getBytecodeNum();
 
-        // Ignore if you are a turret it's past your second turn because you don't move
-        if (rc.getMode() == RobotMode.TURRET && turnCount > 2) {
+        // Not initialized until turn 2
+        if (turnCount == 1) {
+            return;
+        }
+        // Turrets only run on turns 2 and 3
+        if (rc.getMode() == RobotMode.TURRET && turnCount > 3) {
             return;
         }
         
@@ -169,10 +178,8 @@ public class Robot {
     /**
      * Updates cluster information. Scans nearby tiles and enemy locations and aggregates into 
      * clusterControls as a buffer. Uses markedClustersBuffer to track which buffers have been
-     * modified each turn to write them. In clusterControls, we set the tens digit to be the new
-     * value and only read/write if it is different from the previous state.
-     * 
-     * TODO: replace 10 with bitshifting by 2
+     * modified each turn to write them. In clusterControls, we set the 3rd and 4th bits to be
+     * the new value and only read/write if it is different from the previous state.
      * 
      * @throws GameActionException
      */
@@ -187,8 +194,8 @@ public class Robot {
                 // int clusterIdx = whichCluster(shiftedLocation); Note: Inlined to save bytecode
                 int clusterIdx = whichXLoc[shiftedLocation.x] + whichYLoc[shiftedLocation.y];
                 // Write new status to buffer if we haven't yet
-                if (clusterControls[clusterIdx] < 10) {
-                    clusterControls[clusterIdx] += 10;
+                if (clusterControls[clusterIdx] < 4) {
+                    clusterControls[clusterIdx] += 4;
                     markedClustersBuffer[markedClustersCount] = clusterIdx;
                     markedClustersCount++;
                 }
@@ -203,21 +210,21 @@ public class Robot {
             // int clusterIdx = whichCluster(enemy.location); Note: Inlined to save bytecode
             int clusterIdx = whichXLoc[enemy.location.x] + whichYLoc[enemy.location.y];
             // Write new status to buffer if we haven't marked as enemy controlled yet
-            if (clusterControls[clusterIdx] < 20) {
+            if (clusterControls[clusterIdx] < 8) {
                 // Only add to modified list if we haven't marked this cluster yet
-                if (clusterControls[clusterIdx] < 10) {
+                if (clusterControls[clusterIdx] < 4) {
                     markedClustersBuffer[markedClustersCount] = clusterIdx;
                     markedClustersCount++;
                 }
-                clusterControls[clusterIdx] = 20 + (clusterControls[clusterIdx] % 10);
+                clusterControls[clusterIdx] = 8 + clusterControls[clusterIdx] & 3;
             }
         }
 
         // Flush control buffer and write to comms
         for (int i = 0; i < markedClustersCount; i++) {
             int clusterIdx = markedClustersBuffer[i];
-            int oldClusterStatus = clusterControls[clusterIdx] % 10;
-            int newClusterStatus = (clusterControls[clusterIdx] - oldClusterStatus)/10;
+            int oldClusterStatus = clusterControls[clusterIdx] & 3;
+            int newClusterStatus = (clusterControls[clusterIdx] - oldClusterStatus) >>> 2;
             if (oldClusterStatus != newClusterStatus 
                     && newClusterStatus != commsHandler.readClusterControlStatus(clusterIdx)) {
                 commsHandler.writeClusterControlStatus(clusterIdx, newClusterStatus);
@@ -229,10 +236,8 @@ public class Robot {
     /**
      * Updates cluster information. Scans nearby resources and aggregates into clusterResoruces as
      * a buffer. Uses markedClustersBuffer to track which buffers have been modified each turn to
-     * reset them. In clusterResoruces, we set the ten millions digit to be the old value and only 
+     * reset them. In clusterResoruces, we set bits 16-30 to be the old value and only 
      * read/write if it is different from the previous state.
-     * 
-     * TODO: replace 10000000 with bitshifting by 3
      * 
      * @throws GameActionException
      */
@@ -245,7 +250,7 @@ public class Robot {
             // int clusterIdx = whichCluster(tile); Note: Inlined to save bytecode
             int clusterIdx = whichXLoc[tile.x] + whichYLoc[tile.y];
             // Only add to modified list if we haven't marked this cluster yet
-            if (clusterResources[clusterIdx] % 10000000 == 0) {
+            if ((clusterResources[clusterIdx] & 32767) == 0) {
                 markedClustersBuffer[markedClustersCount] = clusterIdx;
                 markedClustersCount++;
             }
@@ -255,7 +260,7 @@ public class Robot {
             // int clusterIdx = whichCluster(tile); Note: Inlined to save bytecode
             int clusterIdx = whichXLoc[tile.x] + whichYLoc[tile.y];
             // Only add to modified list if we haven't marked this cluster yet
-            if (clusterResources[clusterIdx] % 10000000 == 0) {
+            if ((clusterResources[clusterIdx] & 32767) == 0) {
                 markedClustersBuffer[markedClustersCount] = clusterIdx;
                 markedClustersCount++;
             }
@@ -270,7 +275,7 @@ public class Robot {
             if (rc.canSenseLocation(shiftedLocation)) {
                 // int clusterIdx = whichCluster(shiftedLocation); Note: Inlined to save bytecode
                 int clusterIdx = whichXLoc[shiftedLocation.x] + whichYLoc[shiftedLocation.y];
-                if (clusterResources[clusterIdx] % 10000000 == 0) {
+                if ((clusterResources[clusterIdx] & 32767) == 0) {
                     markedClustersBuffer[markedClustersCount] = clusterIdx;
                     markedClustersCount++;
                 }
@@ -280,14 +285,14 @@ public class Robot {
         // Flush resource buffer and write to comms
         for (int i = 0; i < markedClustersCount; i++) {
             int clusterIdx = markedClustersBuffer[i];
-            int rawResourceCount = clusterResources[clusterIdx] % 10000000;
+            int rawResourceCount = clusterResources[clusterIdx] & 32767;
             int newResourceCount = compressResourceCount(rawResourceCount);
-            int oldResourceCount = (clusterResources[clusterIdx] - rawResourceCount)/10000000;
+            int oldResourceCount = (clusterResources[clusterIdx] - rawResourceCount) >>> 15;
             if (oldResourceCount != newResourceCount 
                     && newResourceCount != commsHandler.readClusterResourceCount(clusterIdx)) {
                 commsHandler.writeClusterResourceCount(clusterIdx, newResourceCount);
             }
-            clusterResources[clusterIdx] = newResourceCount * 10000000;
+            clusterResources[clusterIdx] = newResourceCount << 15;
         }
     }
 
@@ -483,10 +488,16 @@ public class Robot {
         int closestClusterIndex = commsHandler.UNDEFINED_CLUSTER_INDEX;
         int closestDistance = Integer.MAX_VALUE;
         for (int i = 0; i < commsHandler.EXPLORE_CLUSTER_SLOTS; i++) {
-            int nearestCluster = commsHandler.readExploreClusterIndex(i);
+            int nearestClusterAll = commsHandler.readExploreClusterAll(i);
+            int nearestCluster = nearestClusterAll & 127; // 7 lowest order bits
             // Break if no more combat clusters exist
             if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 break;
+            }
+            // Skip clusters which are fully claimed
+            int nearestClusterStatus = (nearestClusterAll & 128) >> 7; // 2^7
+            if (nearestClusterStatus == CommsHandler.ClaimStatus.CLAIMED) {
+                continue;
             }
             int distance = myLocation.distanceSquaredTo(clusterCenters[nearestCluster]);
             if (distance < closestDistance) {

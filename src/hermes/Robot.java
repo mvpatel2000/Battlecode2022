@@ -86,9 +86,6 @@ public class Robot {
         mapWidth = rc.getMapWidth();
         setupClusters();
         precomputeClusterCenters();
-        clusterResources = new int[numClusters];
-        clusterControls = new int[numClusters];
-        markedClustersBuffer = new int[numClusters];
         destination = null;
         exploreMode = false;
         priorDestinations = new ArrayList<MapLocation>();
@@ -124,6 +121,12 @@ public class Robot {
         // Before unit runs
         turnCount++;
         currentRound = rc.getRoundNum();
+        // Move certain initialization work to turn 2
+        if (turnCount == 2) {
+            clusterResources = new int[numClusters];
+            clusterControls = new int[numClusters];
+            markedClustersBuffer = new int[numClusters];
+        }
         setClusterStates();
         nearbyEnemies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, enemyTeam);
 
@@ -145,13 +148,19 @@ public class Robot {
      * and aggregates into clusterControls and clusterResoruces as buffers. Uses 
      * markedClustersBuffer to track which buffers have been modified each turn to reset them.
      * Alternates whether control or resources are scanned each turn to conserve bytecode.
+     * 
+     * Note: This is not set up until turn 2 to save compute on initialization.
      * @throws GameActionException
      */
     public void setClusterStates() throws GameActionException {
         // int bytecodeUsed = Clock.getBytecodeNum();
 
-        // Ignore if you are a turret it's past your second turn because you don't move
-        if (rc.getMode() == RobotMode.TURRET && turnCount > 2) {
+        // Not initialized until turn 2
+        if (turnCount == 1) {
+            return;
+        }
+        // Turrets only run on turns 2 and 3
+        if (rc.getMode() == RobotMode.TURRET && turnCount > 3) {
             return;
         }
         
@@ -479,10 +488,16 @@ public class Robot {
         int closestClusterIndex = commsHandler.UNDEFINED_CLUSTER_INDEX;
         int closestDistance = Integer.MAX_VALUE;
         for (int i = 0; i < commsHandler.EXPLORE_CLUSTER_SLOTS; i++) {
-            int nearestCluster = commsHandler.readExploreClusterIndex(i);
+            int nearestClusterAll = commsHandler.readExploreClusterAll(i);
+            int nearestCluster = nearestClusterAll & 127; // 7 lowest order bits
             // Break if no more combat clusters exist
             if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 break;
+            }
+            // Skip clusters which are fully claimed
+            int nearestClusterStatus = (nearestClusterAll & 128) >> 7; // 2^7
+            if (nearestClusterStatus == CommsHandler.ClaimStatus.CLAIMED) {
+                continue;
             }
             int distance = myLocation.distanceSquaredTo(clusterCenters[nearestCluster]);
             if (distance < closestDistance) {
