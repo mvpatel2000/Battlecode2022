@@ -114,15 +114,6 @@ public class CommsHandler {
         // System.out.println("Total bits used: " + (CHUNK_OFFSETS[CHUNK_OFFSETS.length-1] + CHUNK_SIZES[CHUNK_SIZES.length-1]));
     }
 
-    // public CommsHandler() throws GameActionException { // for unit test only
-    //     unitTest = true;
-    //     sharedArray = new int[GameConstants.SHARED_ARRAY_LENGTH];
-    //     for (int j = 0; j < sharedArray.length; j++) {
-    //         sharedArray[j] = 0;
-    //     }
-    //     init();
-    // }
-
     private void init() throws GameActionException {
         for (int i = 0; i < CHUNK_SIZES.length; i++) { // TODO: remove once we precompute CHUNK_OFFSETS
             CHUNK_OFFSETS[i] = (i == 0) ? 0 : CHUNK_OFFSETS[i-1] + CHUNK_SIZES[i-1];
@@ -285,6 +276,26 @@ public class CommsHandler {
     }
 
     /**
+     * Reads all of an explore cluster
+     * @param exploreClusterIndex
+     * @return
+     * @throws GameActionException
+     */
+    public int readExploreClusterAll(int exploreClusterIndex) throws GameActionException {
+        return readChunkPortion(EXPLORE_CLUSTER_OFFSET + exploreClusterIndex, 0, 8);
+    }
+
+    /**
+     * Writes all of an explore cluster
+     * @param exploreClusterIndex
+     * @return
+     * @throws GameActionException
+     */
+    public boolean writeExploreClusterAll(int exploreClusterIndex, int data) throws GameActionException {
+        return writeChunkPortion(data, EXPLORE_CLUSTER_OFFSET + exploreClusterIndex, 0, 8);
+    }
+
+    /**
      * Returns the claim status of the specified exploration cluster; 0: unclaimed, 1: claimed.
      * 
      * @param exploreClusterIndex the exploration cluster index, in the range [0, EXPLORE_CLUSTER_SLOTS - 1]
@@ -339,6 +350,16 @@ public class CommsHandler {
      */
     public int readMineClusterAll(int mineClusterIndex) throws GameActionException {
         return readChunkPortion(MINE_CLUSTER_OFFSET + mineClusterIndex, 0, 10);
+    }
+
+    /**
+     * Writes all of mine cluster
+     * @param mineClusterIndex
+     * @return
+     * @throws GameActionException
+     */
+    public boolean writeMineClusterAll(int mineClusterIndex, int data) throws GameActionException {
+        return writeChunkPortion(data, MINE_CLUSTER_OFFSET + mineClusterIndex, 0, 10);
     }
 
     /** 
