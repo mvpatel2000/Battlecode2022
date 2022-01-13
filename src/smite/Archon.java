@@ -8,6 +8,7 @@ public class Archon extends Robot {
 
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
+        commsHandler.clearShortlist();
     }
 
     @Override
@@ -60,9 +61,14 @@ public class Archon extends Robot {
             mineClusterIndex++;
         }
         // Preserve explore clusters which still have not been claimed
-        while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS
-                && commsHandler.readExploreClusterIndex(exploreClusterIndex) != commsHandler.UNDEFINED_CLUSTER_INDEX
-                && commsHandler.readExploreClusterClaimStatus(exploreClusterIndex) == CommsHandler.ClaimStatus.UNCLAIMED) {
+        while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS) {
+            int nearestClusterAll = commsHandler.readExploreClusterAll(exploreClusterIndex);
+            int nearestCluster = nearestClusterAll & 127; // 7 lowest order bits
+            int nearestClusterStatus = (nearestClusterAll & 128) >> 7; // 2^7
+            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX
+                || nearestClusterStatus == CommsHandler.ClaimStatus.CLAIMED) {
+                break;
+            }
             exploreClusterIndex++;
         }
 
@@ -111,8 +117,7 @@ public class Archon extends Robot {
             if (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
                 int resourceCount = commsHandler.readClusterResourceCount(i);
                 if (resourceCount > 0) {
-                    commsHandler.writeMineClusterIndex(mineClusterIndex, i);
-                    commsHandler.writeMineClusterClaimStatus(mineClusterIndex, resourceCount);
+                    commsHandler.writeMineClusterAll(mineClusterIndex, i + (resourceCount << 7));
                     mineClusterIndex++;
 
                     // Preserve mining clusters which still have resources
@@ -131,14 +136,18 @@ public class Archon extends Robot {
             // Explore cluster
             if (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS
                     && controlStatus == CommsHandler.ControlStatus.UNKNOWN) {
-                commsHandler.writeExploreClusterIndex(exploreClusterIndex, i);
-                commsHandler.writeExploreClusterClaimStatus(exploreClusterIndex, CommsHandler.ClaimStatus.UNCLAIMED);
+                commsHandler.writeExploreClusterAll(exploreClusterIndex, i + (CommsHandler.ClaimStatus.UNCLAIMED << 7));
                 exploreClusterIndex++;
 
-                // Preserve explore clusters which still have not been claimed
-                while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS
-                    && commsHandler.readExploreClusterIndex(exploreClusterIndex) != commsHandler.UNDEFINED_CLUSTER_INDEX
-                    && commsHandler.readExploreClusterClaimStatus(exploreClusterIndex) == CommsHandler.ClaimStatus.UNCLAIMED) {
+                /// Preserve explore clusters which still have not been claimed
+                while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS) {
+                    int nearestClusterAll = commsHandler.readExploreClusterAll(exploreClusterIndex);
+                    int nearestCluster = nearestClusterAll & 127; // 7 lowest order bits
+                    int nearestClusterStatus = (nearestClusterAll & 128) >> 7; // 2^7
+                    if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX
+                        || nearestClusterStatus == CommsHandler.ClaimStatus.CLAIMED) {
+                        break;
+                    }
                     exploreClusterIndex++;
                 }
             }
