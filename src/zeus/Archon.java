@@ -1,4 +1,4 @@
-package hermes;
+package zeus;
 
 import battlecode.common.*;
 
@@ -6,23 +6,30 @@ public class Archon extends Robot {
 
     int myArchonNum = -1;
 
+    // my build counts (not all archons, just me)
+    int numMinersBuilt = 0;
+    int numSoldiersBuilt = 0;
+    int numSagesBuilt = 0;
+    int numBuildersBuilt = 0;
+
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
-        commsHandler.clearShortlist();
     }
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 30) {
+        // if (currentRound > 25) {
         //     rc.resign();
         // }
+        
         if (currentRound <= 3) { // temporary fix to round 1 TLE
             computeArchonNum();
         }
-        mainLoop();
-    }
 
-    public void mainLoop() throws GameActionException {
+        // Prepare comms by wiping shortlist
+        if (currentRound == 2) {
+            commsHandler.clearShortlist();
+        }
         setPriorityClusters();
 
         build();
@@ -61,9 +68,14 @@ public class Archon extends Robot {
             mineClusterIndex++;
         }
         // Preserve explore clusters which still have not been claimed
-        while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS
-                && commsHandler.readExploreClusterIndex(exploreClusterIndex) != commsHandler.UNDEFINED_CLUSTER_INDEX
-                && commsHandler.readExploreClusterClaimStatus(exploreClusterIndex) == CommsHandler.ClaimStatus.UNCLAIMED) {
+        while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS) {
+            int nearestClusterAll = commsHandler.readExploreClusterAll(exploreClusterIndex);
+            int nearestCluster = nearestClusterAll & 127; // 7 lowest order bits
+            int nearestClusterStatus = (nearestClusterAll & 128) >> 7; // 2^7
+            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX
+                || nearestClusterStatus == CommsHandler.ClaimStatus.CLAIMED) {
+                break;
+            }
             exploreClusterIndex++;
         }
 
@@ -112,8 +124,7 @@ public class Archon extends Robot {
             if (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
                 int resourceCount = commsHandler.readClusterResourceCount(i);
                 if (resourceCount > 0) {
-                    commsHandler.writeMineClusterIndex(mineClusterIndex, i);
-                    commsHandler.writeMineClusterClaimStatus(mineClusterIndex, resourceCount);
+                    commsHandler.writeMineClusterAll(mineClusterIndex, i + (resourceCount << 7));
                     mineClusterIndex++;
 
                     // Preserve mining clusters which still have resources
@@ -132,14 +143,18 @@ public class Archon extends Robot {
             // Explore cluster
             if (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS
                     && controlStatus == CommsHandler.ControlStatus.UNKNOWN) {
-                commsHandler.writeExploreClusterIndex(exploreClusterIndex, i);
-                commsHandler.writeExploreClusterClaimStatus(exploreClusterIndex, CommsHandler.ClaimStatus.UNCLAIMED);
+                commsHandler.writeExploreClusterAll(exploreClusterIndex, i + (CommsHandler.ClaimStatus.UNCLAIMED << 7));
                 exploreClusterIndex++;
 
-                // Preserve explore clusters which still have not been claimed
-                while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS
-                    && commsHandler.readExploreClusterIndex(exploreClusterIndex) != commsHandler.UNDEFINED_CLUSTER_INDEX
-                    && commsHandler.readExploreClusterClaimStatus(exploreClusterIndex) == CommsHandler.ClaimStatus.UNCLAIMED) {
+                /// Preserve explore clusters which still have not been claimed
+                while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS) {
+                    int nearestClusterAll = commsHandler.readExploreClusterAll(exploreClusterIndex);
+                    int nearestCluster = nearestClusterAll & 127; // 7 lowest order bits
+                    int nearestClusterStatus = (nearestClusterAll & 128) >> 7; // 2^7
+                    if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX
+                        || nearestClusterStatus == CommsHandler.ClaimStatus.CLAIMED) {
+                        break;
+                    }
                     exploreClusterIndex++;
                 }
             }
@@ -159,9 +174,15 @@ public class Archon extends Robot {
         if (pass) {
             return;
         }
+        
+        RobotType toBuild = RobotType.SOLDIER;
+        int initialMiners = ((mapHeight * mapWidth / 200) + 2) / numOurArchons; // 20x20: 4 total; 60x60: 20 total
+        if (numMinersBuilt < initialMiners) {
+            toBuild = RobotType.MINER;
+        } else if (numMinersBuilt < rc.getRobotCount() / (5 * numOurArchons)) { // account for lost archons?
+            toBuild = RobotType.MINER;
+        }
 
-        boolean shouldBuildMiner = turnCount < 20 ? true : (turnCount < 100 ? rng.nextDouble() < (0.2 + 0.0001 * mapHeight * mapWidth) : rng.nextDouble() < (0.05 + 0.00005 * mapHeight * mapWidth));
-        RobotType toBuild = shouldBuildMiner ? RobotType.MINER : RobotType.SOLDIER;
         // Build builders if lots of lead for watchtowers
         if (rc.getTeamLeadAmount(allyTeam) > 500 && rng.nextDouble() < 0.3) {
             toBuild = RobotType.BUILDER;
@@ -188,8 +209,28 @@ public class Archon extends Robot {
             }
         }
         if (optimalDir != null && rc.canBuildRobot(toBuild, optimalDir)) {
-            rc.buildRobot(toBuild, optimalDir);
+            buildRobot(toBuild, optimalDir);
         }
+    }
+
+    private void buildRobot(RobotType type, Direction dir) throws GameActionException {
+        switch (type) {
+            case MINER:
+                numMinersBuilt++;
+                break;
+            case SOLDIER:
+                numSoldiersBuilt++;
+                break;
+            case SAGE:
+                numSagesBuilt++;
+                break;
+            case BUILDER:
+                numBuildersBuilt++;
+                break;
+            default:
+                break;
+        }
+        rc.buildRobot(type, dir);
     }
 
     /**
