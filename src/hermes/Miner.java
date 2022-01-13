@@ -1,5 +1,7 @@
 package hermes;
 
+import java.util.Map;
+
 import battlecode.common.*;
 
 public class Miner extends Robot {
@@ -59,23 +61,26 @@ public class Miner extends Robot {
         if (!rc.isActionReady()) {
             return;
         }
-        MapLocation me = rc.getLocation();
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                MapLocation mineLocation = new MapLocation(me.x + dx, me.y + dy);
-                if (!rc.onTheMap(mineLocation)) {
-                    continue;
-                }
-                // Notice that the Miner's action cooldown is very low.
-                // You can mine multiple times per turn!
-                while (rc.canMineGold(mineLocation)) {
-                    rc.mineGold(mineLocation);
-                }
-                int leadCount = rc.senseLead(mineLocation);
-                while (rc.canMineLead(mineLocation) && leadCount > 1) {
-                    rc.mineLead(mineLocation);
-                    leadCount--;
-                }
+        MapLocation[] mineLocations = rc.senseNearbyLocationsWithGold(RobotType.MINER.actionRadiusSquared);
+        for (MapLocation mineLocation : mineLocations) {
+            while (rc.canMineGold(mineLocation)) {
+                rc.mineGold(mineLocation);
+            }
+            // No longer able to mine
+            if (!rc.isActionReady()) {
+                return;
+            }
+        }
+        mineLocations = rc.senseNearbyLocationsWithLead(RobotType.MINER.actionRadiusSquared, 2);
+        for (MapLocation mineLocation : mineLocations) {
+            int leadCount = rc.senseLead(mineLocation);
+            while (rc.canMineLead(mineLocation) && leadCount > 1) {
+                rc.mineLead(mineLocation);
+                leadCount--;
+            }
+            // No longer able to mine
+            if (!rc.isActionReady()) {
+                return;
             }
         }
     }
