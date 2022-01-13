@@ -14,6 +14,10 @@ public class Archon extends Robot {
 
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
+        computeArchonNum();
+        if (myArchonNum == 0) {
+            commsHandler.initPriorityClusters();
+        }
     }
 
     @Override
@@ -21,13 +25,6 @@ public class Archon extends Robot {
         // if (currentRound > 25) {
         //     rc.resign();
         // }
-        
-        if (currentRound == 1) {
-            computeArchonNum();
-            if (myArchonNum == 0) {
-                commsHandler.initPriorityClusters();
-            }
-        }
 
         setPriorityClusters();
 
