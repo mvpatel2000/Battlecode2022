@@ -12,12 +12,29 @@ public class Archon extends Robot {
     int numSagesBuilt = 0;
     int numBuildersBuilt = 0;
 
+    MapLocation optimalResourceBuildLocation;
+
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
         computeArchonNum();
         if (myArchonNum == 0) {
             commsHandler.initPriorityClusters();
         }
+
+        // Get best build direction closest to resources
+        Direction toResources = Direction.CENTER;
+        int nearestDistance = Integer.MAX_VALUE;
+        MapLocation[] resourceLocations = rc.senseNearbyLocationsWithLead(RobotType.ARCHON.visionRadiusSquared);
+        int length = Math.min(resourceLocations.length, 10);
+        for (int i = 0; i < length; i++) {
+            MapLocation tile = resourceLocations[i];
+            int distance = myLocation.distanceSquaredTo(tile);
+            if (distance <= nearestDistance) {
+                nearestDistance = distance;
+                toResources = myLocation.directionTo(tile);
+            }
+        }
+        optimalResourceBuildLocation = myLocation.add(toResources);
     }
 
     @Override
@@ -193,14 +210,16 @@ public class Archon extends Robot {
             }
         }
 
+        // Prioritize building towards resources on low rubble
         Direction optimalDir = null;
-        int optimalRubble = Integer.MAX_VALUE;
+        int optimalScore = Integer.MAX_VALUE;
         for (Direction dir : directionsWithoutCenter) {
             if (rc.canBuildRobot(toBuild, dir)) {
-                int rubble = rc.senseRubble(myLocation.add(dir));
-                if (rubble < optimalRubble) {
+                MapLocation buildLocation = myLocation.add(dir);
+                int score = rc.senseRubble(buildLocation) + buildLocation.distanceSquaredTo(optimalResourceBuildLocation);
+                if (score < optimalScore) {
                     optimalDir = dir;
-                    optimalRubble = rubble;
+                    optimalScore = score;
                 }
             }
         }
