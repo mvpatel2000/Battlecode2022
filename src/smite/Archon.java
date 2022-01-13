@@ -22,14 +22,13 @@ public class Archon extends Robot {
         //     //rc.resign\();
         // }
         
-        if (currentRound <= 3) { // temporary fix to round 1 TLE
+        if (currentRound == 1) {
             computeArchonNum();
+            if (myArchonNum == 0) {
+                commsHandler.initPriorityClusters();
+            }
         }
 
-        // Prepare comms by wiping shortlist
-        if (currentRound == 2) {
-            commsHandler.clearShortlist();
-        }
         setPriorityClusters();
 
         build();

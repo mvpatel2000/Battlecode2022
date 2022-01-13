@@ -31,11 +31,13 @@ public class Robot {
     int numClusters;
     int[] clusterHeights;
     int[] clusterWidths;
+    int clusterWidthsLength;
     float xStep;
     float yStep;
     int[] whichXLoc;
     int[] whichYLoc;
-    MapLocation[] clusterCenters;
+    int[] clusterCentersX;
+    int[] clusterCentersY;
     int[] clusterResources;
     int[] clusterControls;
     int[] markedClustersBuffer;
@@ -469,7 +471,12 @@ public class Robot {
             if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 break;
             }
-            int distance = myLocation.distanceSquaredTo(clusterCenters[nearestCluster]);
+            int distance = myLocation.distanceSquaredTo(
+                new MapLocation(
+                    clusterCentersX[nearestCluster % clusterWidthsLength], 
+                    clusterCentersY[nearestCluster / clusterWidthsLength]
+                )
+            );
             if (distance < closestDistance) {
                 closestDistance = distance;
                 closestCluster = nearestCluster;
@@ -499,7 +506,12 @@ public class Robot {
             if (nearestClusterStatus == CommsHandler.ClaimStatus.CLAIMED) {
                 continue;
             }
-            int distance = myLocation.distanceSquaredTo(clusterCenters[nearestCluster]);
+            int distance = myLocation.distanceSquaredTo(
+                new MapLocation(
+                    clusterCentersX[nearestCluster % clusterWidthsLength], 
+                    clusterCentersY[nearestCluster / clusterWidthsLength]
+                )
+            );
             if (distance < closestDistance) {
                 closestDistance = distance;
                 closestCluster = nearestCluster;
@@ -539,7 +551,12 @@ public class Robot {
         int closestDistance = Integer.MAX_VALUE;
         for (int i = 0; i < numClusters; i++) {
             if (commsHandler.readClusterControlStatus(i) == status) {
-                int distance = myLocation.distanceSquaredTo(clusterCenters[i]);
+                int distance = myLocation.distanceSquaredTo(
+                    new MapLocation(
+                        clusterCentersX[i % clusterWidthsLength], 
+                        clusterCentersY[i / clusterWidthsLength]
+                    )
+                );
                 if (distance < closestDistance) {
                     closestDistance = distance;
                     closestCluster = i;
@@ -552,22 +569,28 @@ public class Robot {
     public void setupClusters() {
         clusterHeights = computeClusterSizes(mapHeight);
         clusterWidths = computeClusterSizes(mapWidth);
-        numClusters = clusterHeights.length * clusterWidths.length;
+        clusterWidthsLength = clusterWidths.length;
+        numClusters = clusterHeights.length * clusterWidthsLength;
         yStep = mapHeight / ((float) clusterHeights.length);
         xStep = mapWidth / ((float) clusterWidths.length);
     }
 
+    /**
+     * Precompute x, y coordinates of centers of all clusters
+     */
     public void precomputeClusterCenters() {
-        clusterCenters = new MapLocation[numClusters];
+        clusterCentersX = new int[clusterWidths.length];
+        clusterCentersY = new int[clusterHeights.length];
+        int xStart = 0;
+        for (int i = 0; i < clusterWidths.length; i++) {
+            int xCenter = xStart + (clusterWidths[i] / 2);
+            clusterCentersX[i] = xCenter;
+            xStart += clusterWidths[i];
+        }
         int yStart = 0;
         for (int j = 0; j < clusterHeights.length; j++) {
-            int xStart = 0;
-            for (int i = 0; i < clusterWidths.length; i++) {
-                int xCenter = xStart + (clusterWidths[i] / 2);
-                int yCenter = yStart + (clusterHeights[j] / 2);
-                clusterCenters[i + j * clusterWidths.length] = new MapLocation(xCenter, yCenter);
-                xStart += clusterWidths[i];
-            }
+            int yCenter = yStart + (clusterHeights[j] / 2);
+            clusterCentersY[j] = yCenter;
             yStart += clusterHeights[j];
         }
     }

@@ -42,22 +42,6 @@ public class CommsHandler {
         this.rc = rc;
     }
 
-    /**
-     * Initial setup of comms which wipes the clusters
-     * @throws GameActionException
-     */
-    public void clearShortlist() throws GameActionException {
-        for (int i = 0; i < COMBAT_CLUSTER_SLOTS; i++) {
-            writeCombatClusterIndex(i, UNDEFINED_CLUSTER_INDEX);
-        }
-        for (int i = 0; i < EXPLORE_CLUSTER_SLOTS; i++) {
-            writeExploreClusterIndex(i, UNDEFINED_CLUSTER_INDEX);
-        }
-        for (int i = 0; i < MINE_CLUSTER_SLOTS; i++) {
-            writeMineClusterIndex(i, UNDEFINED_CLUSTER_INDEX);
-        }
-    }
-
     public MapLocation getOurArchonLocation(int idx) throws GameActionException {
         return new MapLocation(readOurArchonXCoord(idx), readOurArchonYCoord(idx));
     }
@@ -65,6 +49,23 @@ public class CommsHandler {
     public void writeOurArchonLocation(int idx, MapLocation loc) throws GameActionException {
         writeOurArchonXCoord(idx, loc.x);
         writeOurArchonYCoord(idx, loc.y);
+    }
+    
+    public void initPriorityClusters() throws GameActionException {
+        rc.writeSharedArray(35, 1023);
+        rc.writeSharedArray(36, 65535);
+        rc.writeSharedArray(37, 65471);
+        rc.writeSharedArray(38, 49087);
+        rc.writeSharedArray(39, 49087);
+        rc.writeSharedArray(40, 49087);
+        rc.writeSharedArray(41, 49087);
+        rc.writeSharedArray(42, 49039);
+        rc.writeSharedArray(43, 58360);
+        rc.writeSharedArray(44, 65087);
+        rc.writeSharedArray(45, 36835);
+        rc.writeSharedArray(46, 63742);
+        rc.writeSharedArray(47, 16271);
+        rc.writeSharedArray(48, 58360);
     }
 
 
