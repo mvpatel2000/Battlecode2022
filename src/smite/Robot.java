@@ -46,6 +46,8 @@ public class Robot {
 
     CommsHandler commsHandler;
 
+    final int LEAD_RESOLUTION = 20; 
+
     /** Array containing all the possible movement directions. */
     final Direction[] directionsWithoutCenter = {
         Direction.NORTH,
@@ -307,11 +309,7 @@ public class Robot {
      * @param resourceCount
      */
     public int compressResourceCount(int resourceCount) {
-        // if (resourceCount == 0) {
-        //     return 0;
-        // }
-        // return Math.min((int)Math.log(resourceCount), 7);
-        return (resourceCount + 99) / 100;
+        return Math.min((resourceCount + LEAD_RESOLUTION - 1) / LEAD_RESOLUTION, 7);
     }
 
     /**

@@ -46,6 +46,8 @@ public class Robot {
 
     CommsHandler commsHandler;
 
+    final int LEAD_RESOLUTION = 20; 
+
     /** Array containing all the possible movement directions. */
     final Direction[] directionsWithoutCenter = {
         Direction.NORTH,
@@ -307,11 +309,22 @@ public class Robot {
      * @param resourceCount
      */
     public int compressResourceCount(int resourceCount) {
-        // if (resourceCount == 0) {
-        //     return 0;
-        // }
-        // return Math.min((int)Math.log(resourceCount), 7);
-        return Math.min((resourceCount + 49) / 50, 7);
+        return Math.min((resourceCount + LEAD_RESOLUTION - 1) / LEAD_RESOLUTION, 7);
+    }
+
+    /**
+     * Retreat back into Archon repair range if we're dying
+     * @return
+     * @throws GameActionException
+     */
+    public boolean baseRetreat() throws GameActionException {
+        if (isDying) {
+            if (myLocation.distanceSquaredTo(baseLocation) > 13) {
+                fuzzyMove(baseLocation);
+            }
+            return true;
+        }
+        return false;
     }
 
     /**

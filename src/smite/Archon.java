@@ -1,7 +1,5 @@
 package smite;
 
-import javax.management.loading.MLet;
-
 import battlecode.common.*;
 
 public class Archon extends Robot {
@@ -14,6 +12,18 @@ public class Archon extends Robot {
     int numSagesBuilt = 0;
     int numBuildersBuilt = 0;
 
+    // current total counts of our units on the map
+    int minerCount = 0;
+    int soldierCount = 0;
+
+    boolean archonZeroAlive = true;
+    boolean archonOneAlive = true;
+    boolean archonTwoAlive = true;
+    boolean archonThreeAlive = true;
+    int numOurArchonsAlive = 1;
+
+    boolean lastArchon = false;
+
     MapLocation optimalResourceBuildLocation;
 
     int resourcesOnMap;
@@ -21,8 +31,12 @@ public class Archon extends Robot {
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
         computeArchonNum();
+        numOurArchonsAlive = numOurArchons;
         if (myArchonNum == 0) {
             commsHandler.initPriorityClusters();
+        }
+        if (myArchonNum == numOurArchons - 1) {
+            lastArchon = true;
         }
 
         // Get best build direction closest to resources
@@ -46,6 +60,10 @@ public class Archon extends Robot {
         // if (currentRound > 25) {
         //     //rc.resign\();
         // }
+
+        archonStatusCheck();
+        updateUnitCounts();
+
         if (currentRound == 2) {
             setInitialExploreClusters();
         }
@@ -54,6 +72,94 @@ public class Archon extends Robot {
 
         build();
         repair();
+    }
+
+    public void archonStatusCheck() throws GameActionException {
+        boolean odd = currentRound % 2 == 1;
+        if (currentRound > 1) {
+            switch(myArchonNum) {
+                case 0:
+                    if (archonOneAlive) {
+                        archonOneAlive = commsHandler.readOurArchonStatus(1) == (odd ? CommsHandler.ArchonStatus.STANDBY_EVEN : CommsHandler.ArchonStatus.STANDBY_ODD);
+                    }
+                    if (archonTwoAlive) {
+                        archonTwoAlive = commsHandler.readOurArchonStatus(2) == (odd ? CommsHandler.ArchonStatus.STANDBY_EVEN : CommsHandler.ArchonStatus.STANDBY_ODD);
+                    }
+                    if (archonThreeAlive) {
+                        archonThreeAlive = commsHandler.readOurArchonStatus(3) == (odd ? CommsHandler.ArchonStatus.STANDBY_EVEN : CommsHandler.ArchonStatus.STANDBY_ODD);
+                    }
+                    break;
+                case 1:
+                    if (archonZeroAlive) {
+                        archonZeroAlive = commsHandler.readOurArchonStatus(0) == (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN);
+                    }
+                    if (archonTwoAlive) {
+                        archonTwoAlive = commsHandler.readOurArchonStatus(2) == (odd ? CommsHandler.ArchonStatus.STANDBY_EVEN : CommsHandler.ArchonStatus.STANDBY_ODD);
+                    }
+                    if (archonThreeAlive) {
+                        archonThreeAlive = commsHandler.readOurArchonStatus(3) == (odd ? CommsHandler.ArchonStatus.STANDBY_EVEN : CommsHandler.ArchonStatus.STANDBY_ODD);
+                    }
+                    break;
+                case 2:
+                    if (archonZeroAlive) {
+                        archonZeroAlive = commsHandler.readOurArchonStatus(0) == (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN);
+                    }
+                    if (archonOneAlive) {
+                        archonOneAlive = commsHandler.readOurArchonStatus(1) == (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN);
+                    }
+                    if (archonThreeAlive) {
+                        archonThreeAlive = commsHandler.readOurArchonStatus(3) == (odd ? CommsHandler.ArchonStatus.STANDBY_EVEN : CommsHandler.ArchonStatus.STANDBY_ODD);
+                    }
+                    break;
+                case 3:
+                    if (archonZeroAlive) {
+                        archonZeroAlive = commsHandler.readOurArchonStatus(0) == (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN);
+                    }
+                    if (archonOneAlive) {
+                        archonOneAlive = commsHandler.readOurArchonStatus(1) == (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN);
+                    }
+                    if (archonTwoAlive) {
+                        archonTwoAlive = commsHandler.readOurArchonStatus(2) == (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN);
+                    }
+                    break;
+                default:
+                    break;
+            }
+            lastArchon = false;
+            if (myArchonNum == 3) lastArchon = true;
+            else if (myArchonNum == 2 && !archonThreeAlive) lastArchon = true;
+            else if (myArchonNum == 1 && !archonTwoAlive && !archonThreeAlive) lastArchon = true;
+            else if (myArchonNum == 0 && !archonOneAlive && !archonTwoAlive && !archonThreeAlive) lastArchon = true;
+        }
+
+        numOurArchonsAlive = 0;
+        if (archonZeroAlive) numOurArchonsAlive++;
+        if (archonOneAlive) numOurArchonsAlive++;
+        if (archonTwoAlive) numOurArchonsAlive++;
+        if (archonThreeAlive) numOurArchonsAlive++;
+
+        // //System.out.println\("Archon survival: " + archonZeroAlive + " " + archonOneAlive + " " + archonTwoAlive + " " + archonThreeAlive);
+
+        // if (lastArchon) {
+        //     //System.out.println\("I am archon " + myArchonNum + " and I am the last archon!");
+        // }
+
+        int newStatus = odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN;
+        // //System.out.println\("Writing status " + newStatus + " on archon " + myArchonNum);
+        commsHandler.writeOurArchonStatus(myArchonNum, newStatus);
+        commsHandler.writeOurArchonLocation(myArchonNum, myLocation);
+    }
+
+    public void updateUnitCounts() throws GameActionException {
+        minerCount = commsHandler.readMinerCount();
+        soldierCount = commsHandler.readSoldierCount();
+
+        // //System.out.println\("We currently have " + minerCount + " miners and " + soldierCount + " soldiers.");
+
+        if (lastArchon) {
+            commsHandler.writeMinerCount(0);
+            commsHandler.writeSoldierCount(0);
+        }
     }
 
     /**
@@ -159,7 +265,7 @@ public class Archon extends Robot {
         for (int i = startIdx; i < endIdx; i++) {
             int controlStatus = commsHandler.readClusterControlStatus(i);
             int resourceCount = commsHandler.readClusterResourceCount(i);
-            resourcesOnMap += resourceCount * 100;
+            resourcesOnMap += resourceCount * LEAD_RESOLUTION;
             // Combat cluster
             if (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS 
                 && controlStatus == CommsHandler.ControlStatus.THEIRS) {
@@ -180,7 +286,7 @@ public class Archon extends Robot {
             }
             // Mine cluster
             if (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS && resourceCount > 0) {
-                commsHandler.writeMineClusterAll(mineClusterIndex, i + (resourceCount << 7));
+                commsHandler.writeMineClusterAll(mineClusterIndex, i + ((resourceCount/4) << 7));
                 mineClusterIndex++;
 
                 // Preserve mining clusters which still have resources
@@ -215,6 +321,8 @@ public class Archon extends Robot {
             }
         }
 
+        // //System.out.println\("Estimated resources on the map: " + resourcesOnMap);
+
         // //rc.setIndicatorString(combatClusterIndex + " " + mineClusterIndex + " " + exploreClusterIndex);
     }
 
@@ -231,10 +339,11 @@ public class Archon extends Robot {
         }
         
         RobotType toBuild = RobotType.SOLDIER;
-        int initialMiners = ((mapHeight * mapWidth / 200) + 2) / numOurArchons; // 20x20: 4 total; 60x60: 20 total
-        if (numMinersBuilt < initialMiners) {
+        int initialMiners = (mapHeight * mapWidth / 200) + 2; // 20x20: 4 total; 60x60: 20 total
+
+        if (minerCount < initialMiners) {
             toBuild = RobotType.MINER;
-        } else if (numMinersBuilt < rc.getRobotCount() / (5 * numOurArchons)) { // account for lost archons?
+        } else if (minerCount < rc.getRobotCount() / (Math.max(2.5, (4.5 - resourcesOnMap/600)))) {
             toBuild = RobotType.MINER;
         }
 
@@ -321,15 +430,13 @@ public class Archon extends Robot {
             return;
         }
         myArchonNum = 0;
-        if (commsHandler.readOurArchonStatus(0) == 1) {
+        if (commsHandler.readOurArchonStatus(0) == CommsHandler.ArchonStatus.STANDBY_ODD) {
             myArchonNum = 1;
-        } if (commsHandler.readOurArchonStatus(1) == 1) {
+        } if (commsHandler.readOurArchonStatus(1) == CommsHandler.ArchonStatus.STANDBY_ODD) {
             myArchonNum = 2;
-        } if (commsHandler.readOurArchonStatus(2) == 1) {
+        } if (commsHandler.readOurArchonStatus(2) == CommsHandler.ArchonStatus.STANDBY_ODD) {
             myArchonNum = 3;
         }
         //System.out.println\("I am archon number " + myArchonNum);
-        commsHandler.writeOurArchonStatus(myArchonNum, 1);
-        commsHandler.writeOurArchonLocation(myArchonNum, myLocation);
     }
 }

@@ -92,9 +92,7 @@ public class Builder extends Robot {
 
     public void move() throws GameActionException {
         // Flee back to archon to heal
-        if (isDying) {
-            destination = baseLocation;
-            fuzzyMove(destination);
+        if (baseRetreat()) {
             return;
         }
 

@@ -265,7 +265,7 @@ public class Archon extends Robot {
         for (int i = startIdx; i < endIdx; i++) {
             int controlStatus = commsHandler.readClusterControlStatus(i);
             int resourceCount = commsHandler.readClusterResourceCount(i);
-            resourcesOnMap += resourceCount * 50;
+            resourcesOnMap += resourceCount * LEAD_RESOLUTION;
             // Combat cluster
             if (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS 
                 && controlStatus == CommsHandler.ControlStatus.THEIRS) {
@@ -286,7 +286,7 @@ public class Archon extends Robot {
             }
             // Mine cluster
             if (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS && resourceCount > 0) {
-                commsHandler.writeMineClusterAll(mineClusterIndex, i + (resourceCount << 7));
+                commsHandler.writeMineClusterAll(mineClusterIndex, i + ((resourceCount/4) << 7));
                 mineClusterIndex++;
 
                 // Preserve mining clusters which still have resources
@@ -400,16 +400,19 @@ public class Archon extends Robot {
     }
 
     /**
-     * If we didn't build a unit, repair a damaged nearby one
+     * If we didn't build a unit, repair a damaged nearby one. If there's enemies, repair the weakest
+     * to keep them alive. If there aren't enemies, repair the strongest so we can send it back out 
      * @throws GameActionException
      */
     public void repair() throws GameActionException {
         if (rc.isActionReady()) {
+            boolean existEnemies = nearbyEnemies.length > 0;
             RobotInfo[] nearbyAllies = rc.senseNearbyRobots(RobotType.ARCHON.actionRadiusSquared, allyTeam);
             MapLocation optimalRepair = null;
             int remainingHealth = Integer.MAX_VALUE;
             for (RobotInfo ally : nearbyAllies) {
-                if (rc.canRepair(ally.location) && ally.health < remainingHealth) {
+                if (rc.canRepair(ally.location) && (existEnemies && ally.health < remainingHealth)
+                                                    || !existEnemies && ally.health > remainingHealth) {
                     optimalRepair = ally.location;
                     remainingHealth = ally.health;
                 }

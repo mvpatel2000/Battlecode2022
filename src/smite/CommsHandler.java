@@ -13,11 +13,14 @@ public class CommsHandler {
     final int COMBAT_CLUSTER_SLOTS = 5;
     final int EXPLORE_CLUSTER_SLOTS = 10;
     final int MINE_CLUSTER_SLOTS = 10;
+    final int MINER_COUNT_SLOTS = 1;
+    final int SOLDIER_COUNT_SLOTS = 1;
+    final int LAST_ARCHON_SLOTS = 1;
 
     public class ArchonStatus {
         public static final int DEAD = 0;
-        public static final int STANDBY = 1;
-        public static final int UNDER_ATTACK = 2;
+        public static final int STANDBY_ODD = 1;
+        public static final int STANDBY_EVEN = 2;
     }
     public class MapSymmetry {
         public static final int UNKNOWN = 0;
@@ -2262,5 +2265,55 @@ public class CommsHandler {
                 rc.writeSharedArray(48, (rc.readSharedArray(48) & 57351) | (value << 3));
                 break;
         }
+    }
+
+    public int readMinerCount() throws GameActionException {
+        return ((rc.readSharedArray(48) & 7) << 5) + ((rc.readSharedArray(49) & 63488) >>> 11);
+    }
+
+    public void writeMinerCount(int value) throws GameActionException {
+        rc.writeSharedArray(48, (rc.readSharedArray(48) & 65528) | ((value & 224) >>> 5));
+        rc.writeSharedArray(49, (rc.readSharedArray(49) & 2047) | ((value & 31) << 11));
+    }
+
+    public int readMinerCountAll() throws GameActionException {
+        return ((rc.readSharedArray(48) & 7) << 5) + ((rc.readSharedArray(49) & 63488) >>> 11);
+    }
+
+    public void writeMinerCountAll(int value) throws GameActionException {
+        rc.writeSharedArray(48, (rc.readSharedArray(48) & 65528) | ((value & 224) >>> 5));
+        rc.writeSharedArray(49, (rc.readSharedArray(49) & 2047) | ((value & 31) << 11));
+    }
+
+    public int readSoldierCount() throws GameActionException {
+        return (rc.readSharedArray(49) & 2040) >>> 3;
+    }
+
+    public void writeSoldierCount(int value) throws GameActionException {
+        rc.writeSharedArray(49, (rc.readSharedArray(49) & 63495) | (value << 3));
+    }
+
+    public int readSoldierCountAll() throws GameActionException {
+        return (rc.readSharedArray(49) & 2040) >>> 3;
+    }
+
+    public void writeSoldierCountAll(int value) throws GameActionException {
+        rc.writeSharedArray(49, (rc.readSharedArray(49) & 63495) | (value << 3));
+    }
+
+    public int readLastArchonNum() throws GameActionException {
+        return (rc.readSharedArray(49) & 6) >>> 1;
+    }
+
+    public void writeLastArchonNum(int value) throws GameActionException {
+        rc.writeSharedArray(49, (rc.readSharedArray(49) & 65529) | (value << 1));
+    }
+
+    public int readLastArchonAll() throws GameActionException {
+        return (rc.readSharedArray(49) & 6) >>> 1;
+    }
+
+    public void writeLastArchonAll(int value) throws GameActionException {
+        rc.writeSharedArray(49, (rc.readSharedArray(49) & 65529) | (value << 1));
     }
 }

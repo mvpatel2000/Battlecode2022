@@ -58,9 +58,8 @@ public class Soldier extends Robot {
      */
     public void move() throws GameActionException {
         // Flee back to archon to heal
-        if (isDying) {
-            destination = baseLocation;
-            fuzzyMove(destination);
+        if (baseRetreat()) {
+            return;
         }
         // Combat move. Kites enemy soldiers if harassing, otherwise pushes
         else if (nearbyEnemies.length > 0) {
@@ -75,7 +74,7 @@ public class Soldier extends Robot {
                     archonLocation = ally.location;
                 }
             }
-            boolean holdGround = (archonLocation != null) && (combatAllies - nearbyEnemies.length >= 2);
+            boolean holdGround = (archonLocation != null) || (combatAllies - nearbyEnemies.length >= 1);
 
             Direction optimalDirection = null;
             int optimalScore = Integer.MIN_VALUE;
@@ -85,21 +84,27 @@ public class Soldier extends Robot {
                     if (!rc.onTheMap(moveLocation)) {
                         continue;
                     }
+                    // Prioritize staying inside archon healing range (equal to 1 combat unit priority)
                     int score = 0;
+                    if (archonLocation != null 
+                        && myLocation.distanceSquaredTo(archonLocation) <= RobotType.ARCHON.actionRadiusSquared) {
+                        score += 1000000;
+                    }
                     for (RobotInfo enemy : nearbyEnemies) {
                         // TODO: Prioritize locking up archons?
                         // Avoid enemy combat units unless holding ground (1000000, highest priority)
-                        if (!holdGround 
-                            && (enemy.type == RobotType.WATCHTOWER && enemy.mode == RobotMode.TURRET 
+                        if ((enemy.type == RobotType.WATCHTOWER && enemy.mode == RobotMode.TURRET 
                                 || enemy.type == RobotType.SOLDIER
                                 || enemy.type == RobotType.SAGE)
                             && moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared) {
-                            score -= 1000000;
-                        }
-                        // Prioritize staying inside archon healing range (equal to 1 combat unit priority)
-                        if (archonLocation != null 
-                            && myLocation.distanceSquaredTo(archonLocation) <= RobotType.ARCHON.actionRadiusSquared) {
-                            score += 1000000;
+                            // Bonus to kill
+                            if (holdGround) {
+                                score += 200000;
+                            }
+                            // Encourage fleeing
+                            else {
+                                score -= 1000000;
+                            }
                         }
                         boolean canKillTarget = false;
                         // Move towards enemy units we want to kill
@@ -122,6 +127,7 @@ public class Soldier extends Robot {
                     if (dir == Direction.CENTER) {
                         score += 1;
                     }
+                    // System.out.println(myLocation + " " + dir + " " + score);
                     if (score > optimalScore) {
                         optimalDirection = dir;
                         optimalScore = score;
@@ -129,6 +135,7 @@ public class Soldier extends Robot {
                 }
             }
             if (optimalDirection != null && optimalDirection != Direction.CENTER) {
+                // System.out.println(myLocation + " Move: " + optimalDirection + " " + optimalScore);
                 rc.setIndicatorLine(myLocation, myLocation.add(optimalDirection), 0, 255, 0);
                 fuzzyMove(myLocation.add(optimalDirection));
             }
@@ -151,7 +158,7 @@ public class Soldier extends Robot {
             }
             
             if (destination != null) {
-                // rc.setIndicatorLine(myLocation, destination, 0, 255, 0);
+                rc.setIndicatorLine(myLocation, destination, 0, 255, 0);
                 fuzzyMove(destination);
             }
         }
