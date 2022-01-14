@@ -20,6 +20,7 @@ public class Archon extends Robot {
     boolean archonOneAlive = true;
     boolean archonTwoAlive = true;
     boolean archonThreeAlive = true;
+    int numOurArchonsAlive = 1;
 
     boolean lastArchon = false;
 
@@ -30,6 +31,7 @@ public class Archon extends Robot {
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
         computeArchonNum();
+        numOurArchonsAlive = numOurArchons;
         if (myArchonNum == 0) {
             commsHandler.initPriorityClusters();
         }
@@ -129,6 +131,12 @@ public class Archon extends Robot {
             else if (myArchonNum == 1 && !archonTwoAlive && !archonThreeAlive) lastArchon = true;
             else if (myArchonNum == 0 && !archonOneAlive && !archonTwoAlive && !archonThreeAlive) lastArchon = true;
         }
+
+        numOurArchonsAlive = 0;
+        if (archonZeroAlive) numOurArchonsAlive++;
+        if (archonOneAlive) numOurArchonsAlive++;
+        if (archonTwoAlive) numOurArchonsAlive++;
+        if (archonThreeAlive) numOurArchonsAlive++;
 
         // System.out.println("Archon survival: " + archonZeroAlive + " " + archonOneAlive + " " + archonTwoAlive + " " + archonThreeAlive);
 
@@ -313,6 +321,8 @@ public class Archon extends Robot {
             }
         }
 
+        // System.out.println("Estimated resources on the map: " + resourcesOnMap);
+
         // rc.setIndicatorString(combatClusterIndex + " " + mineClusterIndex + " " + exploreClusterIndex);
     }
 
@@ -329,10 +339,11 @@ public class Archon extends Robot {
         }
         
         RobotType toBuild = RobotType.SOLDIER;
-        int initialMiners = ((mapHeight * mapWidth / 200) + 2) / numOurArchons; // 20x20: 4 total; 60x60: 20 total
-        if (numMinersBuilt < initialMiners) {
+        int initialMiners = (mapHeight * mapWidth / 200) + 2; // 20x20: 4 total; 60x60: 20 total
+
+        if (minerCount < initialMiners) {
             toBuild = RobotType.MINER;
-        } else if (numMinersBuilt < rc.getRobotCount() / (Math.max(2, (4 - resourcesOnMap/300)) * numOurArchons)) { // account for lost archons?
+        } else if (minerCount < rc.getRobotCount() / (Math.max(2.5, (4.5 - resourcesOnMap/600)))) {
             toBuild = RobotType.MINER;
         }
 
