@@ -1,5 +1,7 @@
 package zeus;
 
+import javax.management.loading.MLet;
+
 import battlecode.common.*;
 
 public class Archon extends Robot {
@@ -44,6 +46,9 @@ public class Archon extends Robot {
         // if (currentRound > 25) {
         //     rc.resign();
         // }
+        if (currentRound == 2) {
+            setInitialExploreClusters();
+        }
 
         setPriorityClusters();
 
@@ -52,10 +57,62 @@ public class Archon extends Robot {
     }
 
     /**
+     * Sets initial explore clusters
+     * @throws GameActionException
+     */
+    public void setInitialExploreClusters() throws GameActionException {
+        int exploreClusterIndex = 0;
+        // Preserve explore clusters which still have not been claimed
+        while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS) {
+            int nearestClusterAll = commsHandler.readExploreClusterAll(exploreClusterIndex);
+            int nearestCluster = nearestClusterAll & 127; // 7 lowest order bits
+            int nearestClusterStatus = (nearestClusterAll & 128) >> 7; // 2^7
+            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX
+                || nearestClusterStatus == CommsHandler.ClaimStatus.CLAIMED) {
+                break;
+            }
+            exploreClusterIndex++;
+        }
+
+        int centerCluster = whichXLoc[mapWidth/2] + whichYLoc[mapHeight/2];
+        int xyCluster = whichXLoc[mapWidth-myLocation.x] + whichYLoc[mapHeight-myLocation.y];
+        int xCluster = whichXLoc[mapWidth-myLocation.x] + whichYLoc[myLocation.y];
+        int yCluster = whichXLoc[myLocation.x] + whichYLoc[mapHeight-myLocation.y];
+        int[] clusters = {centerCluster, xyCluster, xCluster, yCluster};
+
+        for (int i = 0; i < 4; i++) {
+            int cluster = clusters[i];
+            int controlStatus = commsHandler.readClusterControlStatus(cluster);
+            if (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS
+                && controlStatus == CommsHandler.ControlStatus.UNKNOWN) {
+                commsHandler.writeExploreClusterAll(exploreClusterIndex, cluster + (CommsHandler.ClaimStatus.UNCLAIMED << 7));
+                exploreClusterIndex++;
+
+                // Preserve explore clusters which still have not been claimed
+                while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS) {
+                    int nearestClusterAll = commsHandler.readExploreClusterAll(exploreClusterIndex);
+                    int nearestCluster = nearestClusterAll & 127; // 7 lowest order bits
+                    int nearestClusterStatus = (nearestClusterAll & 128) >> 7; // 2^7
+                    if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX
+                        || nearestClusterStatus == CommsHandler.ClaimStatus.CLAIMED) {
+                        break;
+                    }
+                    exploreClusterIndex++;
+                }
+            }
+        }
+    }
+
+    /**
      * Sets the priority clusters list
      * @throws GameActionException
      */
     public void setPriorityClusters() throws GameActionException {
+        // Do not set for first turn as archons haven't all filled in data
+        if (turnCount <= 1) {
+            return;
+        }
+
         resourcesOnMap = 0;
         int combatClusterIndex = 0;
         int mineClusterIndex = 0;

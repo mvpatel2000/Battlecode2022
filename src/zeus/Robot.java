@@ -90,6 +90,9 @@ public class Robot {
         mapWidth = rc.getMapWidth();
         setupClusters();
         precomputeClusterCenters();
+        clusterResources = new int[numClusters];
+        clusterControls = new int[numClusters];
+        markedClustersBuffer = new int[numClusters];
         destination = null;
         exploreMode = false;
         priorDestinations = new ArrayList<MapLocation>();
@@ -126,14 +129,8 @@ public class Robot {
         // Before unit runs
         turnCount++;
         currentRound = rc.getRoundNum();
-        // Move certain initialization work to turn 2
-        if (turnCount == 2) {
-            clusterResources = new int[numClusters];
-            clusterControls = new int[numClusters];
-            markedClustersBuffer = new int[numClusters];
-        }
-        setClusterStates();
         nearbyEnemies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, enemyTeam);
+        setClusterStates();
         // Flee to archon if dying
         int myHealth = rc.getHealth();
         if (myHealth == rc.getType().getMaxHealth(rc.getLevel())) {
@@ -168,16 +165,12 @@ public class Robot {
     public void setClusterStates() throws GameActionException {
         // int bytecodeUsed = Clock.getBytecodeNum();
 
-        // Not initialized until turn 2
-        if (turnCount == 1) {
-            return;
-        }
         // Turrets only run on turns 2 and 3
-        if (rc.getMode() == RobotMode.TURRET && turnCount > 3) {
+        if (rc.getMode() == RobotMode.TURRET && turnCount > 2) {
             return;
         }
         
-        if (turnCount % 2 == 0) {
+        if (turnCount % 2 == 1) {
             setClusterControlStates();
         }
         else {
