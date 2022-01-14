@@ -320,7 +320,7 @@ public class Robot {
     public boolean baseRetreat() throws GameActionException {
         if (isDying) {
             if (myLocation.distanceSquaredTo(baseLocation) > 13) {
-                fuzzyMove(baseLocation);
+                pathTo(baseLocation);
             }
             return true;
         }
@@ -334,6 +334,13 @@ public class Robot {
         rc.move(dir);
         myLocation = myLocation.add(dir);
         nearbyEnemies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, enemyTeam);
+    }
+
+    /**
+     * Can be overrided by units with better pathing options
+     */
+    public void pathTo(MapLocation destination) throws GameActionException {
+        fuzzyMove(destination);
     }
 
     /**
