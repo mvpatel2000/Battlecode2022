@@ -115,8 +115,8 @@ public class Miner extends Robot {
         }
         // Path
         else if (destination != null) {
+            //rc.setIndicatorLine(myLocation, destination, 255, 0, 0);
             fuzzyMove(destination);
-            // //rc.setIndicatorLine(myLocation, destination, 255, 0, 0);
         }
     }
 
@@ -126,18 +126,17 @@ public class Miner extends Robot {
      * @throws GameActionException
      */
     public void updateDestination() throws GameActionException {
-        int requiredLead = currentRound > 20 ? 2 : 1;
 
         // Don't scan if destination still has lead or gold
         if (destination != null && rc.canSenseLocation(destination)
-             && (rc.senseLead(destination) > requiredLead || rc.senseGold(destination) > 0)) {
+             && (rc.senseLead(destination) > 1 || rc.senseGold(destination) > 0)) {
             return;
         }      
         
         // Set nearby resource tiles as a destination
         MapLocation nearestResource = null;
         int optimalDistance = Integer.MAX_VALUE;
-        for (MapLocation tile : rc.senseNearbyLocationsWithLead(RobotType.MINER.visionRadiusSquared, requiredLead)) {
+        for (MapLocation tile : rc.senseNearbyLocationsWithLead(RobotType.MINER.visionRadiusSquared, 2)) {
             int dist = myLocation.distanceSquaredTo(tile);
             if (dist < optimalDistance) {
                 nearestResource = tile;

@@ -14,6 +14,8 @@ public class Archon extends Robot {
 
     MapLocation optimalResourceBuildLocation;
 
+    int resourcesOnMap;
+
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
         computeArchonNum();
@@ -54,6 +56,7 @@ public class Archon extends Robot {
      * @throws GameActionException
      */
     public void setPriorityClusters() throws GameActionException {
+        resourcesOnMap = 0;
         int combatClusterIndex = 0;
         int mineClusterIndex = 0;
         int exploreClusterIndex = 0;
@@ -93,28 +96,13 @@ public class Archon extends Robot {
         }
 
         // Alternate sweeping each half of the clusters every turn
-        int mode = (myArchonNum + currentRound) % 3; 
         int startIdx = 0;
-        int endIdx = 0;
-        switch (mode) {
-            case 0:
-                startIdx = 0;
-                endIdx = numClusters / 3;
-                break;
-            case 1:
-                startIdx = numClusters / 3;
-                endIdx = numClusters * 2 / 3;
-                break;
-            case 2:
-                startIdx = numClusters * 2 / 3;
-                endIdx = numClusters;
-                break;
-            default:
-                //System.out.println\("[Error] Unexpected case in setPriorityQueue!");
-        }
+        int endIdx = numClusters;
 
         for (int i = startIdx; i < endIdx; i++) {
             int controlStatus = commsHandler.readClusterControlStatus(i);
+            int resourceCount = commsHandler.readClusterResourceCount(i);
+            resourcesOnMap += resourceCount * 100;
             // Combat cluster
             if (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS 
                 && controlStatus == CommsHandler.ControlStatus.THEIRS) {
@@ -134,23 +122,20 @@ public class Archon extends Robot {
                 }
             }
             // Mine cluster
-            if (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
-                int resourceCount = commsHandler.readClusterResourceCount(i);
-                if (resourceCount > 0) {
-                    commsHandler.writeMineClusterAll(mineClusterIndex, i + (resourceCount << 7));
-                    mineClusterIndex++;
+            if (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS && resourceCount > 0) {
+                commsHandler.writeMineClusterAll(mineClusterIndex, i + (resourceCount << 7));
+                mineClusterIndex++;
 
-                    // Preserve mining clusters which still have resources
-                    while (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
-                        int cluster = commsHandler.readMineClusterIndex(mineClusterIndex);
-                        if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                            break;
-                        }
-                        if (commsHandler.readClusterResourceCount(cluster) == 0) {
-                            break;
-                        }
-                        mineClusterIndex++;
+                // Preserve mining clusters which still have resources
+                while (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
+                    int cluster = commsHandler.readMineClusterIndex(mineClusterIndex);
+                    if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                        break;
                     }
+                    if (commsHandler.readClusterResourceCount(cluster) == 0) {
+                        break;
+                    }
+                    mineClusterIndex++;
                 }
             }
             // Explore cluster
