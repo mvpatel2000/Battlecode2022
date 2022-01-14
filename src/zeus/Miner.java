@@ -119,8 +119,8 @@ public class Miner extends Robot {
         }
         // Path
         else if (destination != null) {
-            // rc.setIndicatorLine(myLocation, destination, 255, 0, 0);
-            fuzzyMove(destination);
+            rc.setIndicatorLine(myLocation, destination, 150 + 100 - rc.getTeam().ordinal() * 100, 150, 150 + rc.getTeam().ordinal() * 100);
+            pathTo(destination);
         }
     }
 

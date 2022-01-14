@@ -84,7 +84,7 @@ public class Soldier extends Robot {
             
             if (destination != null) {
                 rc.setIndicatorLine(myLocation, destination, 0, 255, 0);
-                fuzzyMove(destination);
+                pathTo(destination);
             }
         }
     }
