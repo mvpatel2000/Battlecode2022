@@ -57,7 +57,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 25) {
+        // if (currentRound > 15) {
         //     rc.resign();
         // }
 

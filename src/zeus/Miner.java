@@ -6,6 +6,7 @@ public class Miner extends Robot {
 
     int fleeingCounter;
     MapLocation lastEnemyLocation;
+    MinerPathing pather;
 
     final static int[][] INNER_SPIRAL_ORDER = {{0,0},{0,1},{1,0},{0,-1},{-1,0},{1,1},{1,-1},{-1,-1},{-1,1},{0,2},{2,0},{0,-2},{-2,0},{1,2},{2,1},{2,-1},{1,-2},{-1,-2},{-2,-1},{-2,1},{-1,2},{2,2},{2,-2},{-2,-2},{-2,2},{0,3},{3,0},{0,-3},{-3,0},{1,3},{3,1},{3,-1},{1,-3},{-1,-3},{-3,-1},{-3,1},{-1,3},{2,3},{3,2},{3,-2},{2,-3},{-2,-3},{-3,-2},{-3,2},{-2,3}};
     final static int[][] OUTER_SPIRAL_ORDER = {{0,4},{4,0},{0,-4},{-4,0},{1,4},{4,1},{4,-1},{1,-4},{-1,-4},{-4,-1},{-4,1},{-1,4},{3,3},{3,-3},{-3,-3},{-3,3},{2,4},{4,2},{4,-2},{2,-4},{-2,-4},{-4,-2},{-4,2},{-2,4}};
@@ -14,6 +15,7 @@ public class Miner extends Robot {
         super(rc);
         fleeingCounter = 0;
         lastEnemyLocation = null;
+        pather = new MinerPathing(rc);
     }
 
     @Override
@@ -28,6 +30,24 @@ public class Miner extends Robot {
         mineNearbySquares();
 
         // disintegrate();
+    }
+
+    @Override
+    public void pathTo(MapLocation target) throws GameActionException {
+        if (myLocation.distanceSquaredTo(target) <= 2) {
+            if (!rc.isLocationOccupied(target) && rc.senseRubble(target) < 30) {
+                if (rc.canMove(myLocation.directionTo(target))) {
+                    move(myLocation.directionTo(target));
+                }
+            }
+            return;
+        }
+        Direction dir = pather.bestDir(target);
+        if (dir == null) {
+            fuzzyMove(target);
+        } else {
+            if (rc.canMove(dir)) move(dir);
+        }
     }
 
     public void announceAlive() throws GameActionException {
@@ -91,6 +111,7 @@ public class Miner extends Robot {
 
     public void move() throws GameActionException {
         updateDestination();
+        rc.setIndicatorString("Destination: " + destination);
         
         // Find nearest combat enemy to kite
         MapLocation nearestCombatEnemy = null;
@@ -138,6 +159,7 @@ public class Miner extends Robot {
         // Don't scan if destination still has lead or gold
         if (destination != null && rc.canSenseLocation(destination)
              && (rc.senseLead(destination) > 1 || rc.senseGold(destination) > 0)) {
+            // rc.setIndicatorString("Destination still has lead or gold: " + destination);
             return;
         }      
         
@@ -161,6 +183,7 @@ public class Miner extends Robot {
         if (nearestResource != null) {
             resetControlStatus(destination);
             destination = nearestResource;
+            // rc.setIndicatorString("New destination at nearest resource: " + destination);
             return;
         }
 
@@ -171,6 +194,7 @@ public class Miner extends Robot {
             resetControlStatus(destination);
             destination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                             clusterCentersY[nearestCluster / clusterWidthsLength]);
+            // rc.setIndicatorString("New destination at nearest resource cluster: " + destination);
             return;
         }
 
@@ -180,6 +204,7 @@ public class Miner extends Robot {
             if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 destination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                                 clusterCentersY[nearestCluster / clusterWidthsLength]);
+                // rc.setIndicatorString("New destination (explore mode): " + destination);
                 return;
             }
         }
