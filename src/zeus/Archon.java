@@ -1,7 +1,5 @@
 package zeus;
 
-import javax.management.loading.MLet;
-
 import battlecode.common.*;
 
 public class Archon extends Robot {
