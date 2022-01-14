@@ -10,8 +10,8 @@ public class CommsHandler {
 
     public class ArchonStatus {
         public static final int DEAD = 0;
-        public static final int STANDBY = 1;
-        public static final int UNDER_ATTACK = 2;
+        public static final int STANDBY_ODD = 1;
+        public static final int STANDBY_EVEN = 2;
     }
     public class MapSymmetry {
         public static final int UNKNOWN = 0;

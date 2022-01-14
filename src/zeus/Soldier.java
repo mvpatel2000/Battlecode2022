@@ -10,6 +10,8 @@ public class Soldier extends Robot {
 
     @Override
     public void runUnit() throws GameActionException { 
+        announceAlive();
+
         attack();
 
         move();
@@ -18,6 +20,10 @@ public class Soldier extends Robot {
         attack();
 
         // disintegrate();
+    }
+
+    public void announceAlive() throws GameActionException {
+        commsHandler.writeSoldierCount(commsHandler.readSoldierCount() + 1);
     }
 
     /**

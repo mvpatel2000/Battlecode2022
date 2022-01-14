@@ -1,7 +1,5 @@
 package zeus;
 
-import java.util.Map;
-
 import battlecode.common.*;
 
 public class Miner extends Robot {
@@ -20,6 +18,8 @@ public class Miner extends Robot {
 
     @Override
     public void runUnit() throws GameActionException { 
+        announceAlive();
+        
         mineNearbySquares();
 
         move();
@@ -28,6 +28,10 @@ public class Miner extends Robot {
         mineNearbySquares();
 
         // disintegrate();
+    }
+
+    public void announceAlive() throws GameActionException {
+        commsHandler.writeMinerCount(commsHandler.readMinerCount() + 1);
     }
 
     /**

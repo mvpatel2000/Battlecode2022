@@ -311,7 +311,7 @@ public class Robot {
         //     return 0;
         // }
         // return Math.min((int)Math.log(resourceCount), 7);
-        return (resourceCount + 99) / 100;
+        return Math.min((resourceCount + 49) / 50, 7);
     }
 
     /**

@@ -10,11 +10,6 @@ SCHEMA = {
             'y_coord': 6,
         }
     },
-    # 'enemy_archon': {
-    #     'slots': 4,
-    #     'bits': {
-    #     }
-    # },
     'map': {
         'slots': 1,
         'bits': {
@@ -28,11 +23,6 @@ SCHEMA = {
             'resource_count': 3,
         }
     },
-    # 'archon_reserve': {
-    #     'slots': 4,
-    #     'bits': {
-    #     }
-    # },
     'combat_cluster': {
         'slots': 5,
         'bits': {
@@ -53,6 +43,24 @@ SCHEMA = {
             'index': 7,
         }
     },
+    'miner_count': {
+        'slots': 1,
+        'bits': {
+            '': 8,
+        }
+    },
+    'soldier_count': {
+        'slots': 1,
+        'bits': {
+            '': 8,
+        }
+    },
+    'last_archon': {
+        'slots': 1,
+        'bits': {
+            'num': 2,
+        }
+    }
 }
 
 def gen_constants():
