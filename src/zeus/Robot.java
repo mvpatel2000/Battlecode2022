@@ -42,6 +42,8 @@ public class Robot {
     int[] clusterControls;
     int[] markedClustersBuffer;
 
+    boolean isDying;
+
     CommsHandler commsHandler;
 
     /** Array containing all the possible movement directions. */
@@ -93,6 +95,7 @@ public class Robot {
         priorDestinations = new ArrayList<MapLocation>();
         commsHandler = new CommsHandler(rc);
         numOurArchons = rc.getArchonCount();
+        isDying = false;
 
         // Precompute math for whichCluster
         whichXLoc = new int[mapWidth];
@@ -131,6 +134,14 @@ public class Robot {
         }
         setClusterStates();
         nearbyEnemies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, enemyTeam);
+        // Flee to archon if dying
+        int myHealth = rc.getHealth();
+        if (myHealth == rc.getType().getMaxHealth(rc.getLevel())) {
+            isDying = false;
+        }
+        else if (myHealth <= 8) {
+            isDying = true;
+        }
 
         // Does turn
         runUnit();

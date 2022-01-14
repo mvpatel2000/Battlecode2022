@@ -115,7 +115,7 @@ public class Miner extends Robot {
         }
         // Path
         else if (destination != null) {
-            rc.setIndicatorLine(myLocation, destination, 255, 0, 0);
+            // rc.setIndicatorLine(myLocation, destination, 255, 0, 0);
             fuzzyMove(destination);
         }
     }
@@ -126,6 +126,11 @@ public class Miner extends Robot {
      * @throws GameActionException
      */
     public void updateDestination() throws GameActionException {
+        // Flee back to archon to heal
+        if (isDying) {
+            destination = baseLocation;
+            return;
+        }
 
         // Don't scan if destination still has lead or gold
         if (destination != null && rc.canSenseLocation(destination)
