@@ -178,7 +178,7 @@ public class Archon extends Robot {
         int initialMiners = ((mapHeight * mapWidth / 200) + 2) / numOurArchons; // 20x20: 4 total; 60x60: 20 total
         if (numMinersBuilt < initialMiners) {
             toBuild = RobotType.MINER;
-        } else if (numMinersBuilt < rc.getRobotCount() / (5 * numOurArchons)) { // account for lost archons?
+        } else if (numMinersBuilt < rc.getRobotCount() / (4 * numOurArchons)) { // account for lost archons?
             toBuild = RobotType.MINER;
         }
 
