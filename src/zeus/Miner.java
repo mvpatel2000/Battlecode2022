@@ -107,7 +107,7 @@ public class Miner extends Robot {
         }
         if (nearestCombatEnemy != null) { 
             lastEnemyLocation = nearestCombatEnemy;
-            fleeingCounter = 5;
+            fleeingCounter = 2;
         }
 
         // Kite enemy unit

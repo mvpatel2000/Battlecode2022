@@ -58,7 +58,19 @@ public class Soldier extends Robot {
         }
         // Combat move. Kites enemy soldiers if harassing, otherwise pushes
         else if (nearbyEnemies.length > 0) {
-            boolean holdGround = false;
+            int combatAllies = 0;
+            MapLocation archonLocation = null;
+            RobotInfo[] allies = rc.senseNearbyRobots(RobotType.SOLDIER.visionRadiusSquared, allyTeam);
+            for (RobotInfo ally : allies) {
+                if (ally.type == RobotType.WATCHTOWER || ally.type == RobotType.SOLDIER) {
+                    combatAllies++;
+                }
+                else if (ally.type == RobotType.ARCHON) {
+                    archonLocation = ally.location;
+                }
+            }
+            boolean holdGround = (archonLocation != null) && (combatAllies - nearbyEnemies.length >= 2);
+
             Direction optimalDirection = null;
             int optimalScore = Integer.MIN_VALUE;
             for (Direction dir : directionsWithCenter) {
@@ -77,6 +89,11 @@ public class Soldier extends Robot {
                                 || enemy.type == RobotType.SAGE)
                             && moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared) {
                             score -= 1000000;
+                        }
+                        // Prioritize staying inside archon healing range (equal to 1 combat unit priority)
+                        if (archonLocation != null 
+                            && myLocation.distanceSquaredTo(archonLocation) <= RobotType.ARCHON.actionRadiusSquared) {
+                            score += 1000000;
                         }
                         boolean canKillTarget = false;
                         // Move towards enemy units we want to kill
