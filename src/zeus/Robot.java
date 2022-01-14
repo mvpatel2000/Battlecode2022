@@ -224,7 +224,7 @@ public class Robot {
                     markedClustersBuffer[markedClustersCount] = clusterIdx;
                     markedClustersCount++;
                 }
-                clusterControls[clusterIdx] = 8 + clusterControls[clusterIdx] & 3;
+                clusterControls[clusterIdx] = 8 + (clusterControls[clusterIdx] & 3);
             }
         }
 
