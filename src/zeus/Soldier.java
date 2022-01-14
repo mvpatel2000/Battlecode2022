@@ -52,6 +52,11 @@ public class Soldier extends Robot {
         }
     }
 
+    // @Override
+    // public void pathTo(MapLocation destination) throws GameActionException {
+        
+    // }
+
     /**
      * Chases nearest enemy or moves on exploration path
      * @throws GameActionException
@@ -83,7 +88,7 @@ public class Soldier extends Robot {
             }
             
             if (destination != null) {
-                rc.setIndicatorLine(myLocation, destination, 0, 255, 0);
+                rc.setIndicatorLine(myLocation, destination, 100 - rc.getTeam().ordinal() * 100, 50, rc.getTeam().ordinal() * 100);
                 pathTo(destination);
             }
         }
