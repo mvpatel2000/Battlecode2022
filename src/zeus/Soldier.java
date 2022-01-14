@@ -58,7 +58,19 @@ public class Soldier extends Robot {
         }
         // Combat move. Kites enemy soldiers if harassing, otherwise pushes
         else if (nearbyEnemies.length > 0) {
-            boolean holdGround = false;
+            boolean nearArchon = false;
+            int combatAllies = 0;
+            RobotInfo[] allies = rc.senseNearbyRobots(RobotType.SOLDIER.visionRadiusSquared, allyTeam);
+            for (RobotInfo ally : allies) {
+                if (ally.type == RobotType.WATCHTOWER || ally.type == RobotType.SOLDIER) {
+                    combatAllies++;
+                }
+                else if (ally.type == RobotType.ARCHON) {
+                    nearArchon = true;
+                }
+            }
+            boolean holdGround = nearArchon && (combatAllies - nearbyEnemies.length >= 2);
+
             Direction optimalDirection = null;
             int optimalScore = Integer.MIN_VALUE;
             for (Direction dir : directionsWithCenter) {
