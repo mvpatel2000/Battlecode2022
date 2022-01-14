@@ -224,7 +224,7 @@ public class Robot {
                     markedClustersBuffer[markedClustersCount] = clusterIdx;
                     markedClustersCount++;
                 }
-                clusterControls[clusterIdx] = 8 + clusterControls[clusterIdx] & 3;
+                clusterControls[clusterIdx] = 8 + (clusterControls[clusterIdx] & 3);
             }
         }
 
@@ -310,6 +310,21 @@ public class Robot {
      */
     public int compressResourceCount(int resourceCount) {
         return Math.min((resourceCount + LEAD_RESOLUTION - 1) / LEAD_RESOLUTION, 7);
+    }
+
+    /**
+     * Retreat back into Archon repair range if we're dying
+     * @return
+     * @throws GameActionException
+     */
+    public boolean baseRetreat() throws GameActionException {
+        if (isDying) {
+            if (myLocation.distanceSquaredTo(baseLocation) > 13) {
+                fuzzyMove(baseLocation);
+            }
+            return true;
+        }
+        return false;
     }
 
     /**

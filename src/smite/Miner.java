@@ -131,8 +131,7 @@ public class Miner extends Robot {
      */
     public void updateDestination() throws GameActionException {
         // Flee back to archon to heal
-        if (isDying) {
-            destination = baseLocation;
+        if (baseRetreat()) {
             return;
         }
 
