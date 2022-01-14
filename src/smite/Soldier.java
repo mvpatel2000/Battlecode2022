@@ -4,8 +4,11 @@ import battlecode.common.*;
 
 public class Soldier extends Robot {
 
+    SoldierPathing pather;
+
     public Soldier(RobotController rc) throws GameActionException {
         super(rc);
+        pather = new SoldierPathing(rc);
     }
 
     @Override
@@ -52,10 +55,23 @@ public class Soldier extends Robot {
         }
     }
 
-    // @Override
-    // public void pathTo(MapLocation destination) throws GameActionException {
-        
-    // }
+    @Override
+    public void pathTo(MapLocation target) throws GameActionException {
+        if (myLocation.distanceSquaredTo(target) <= 2) {
+            if (!rc.isLocationOccupied(target) && rc.senseRubble(target) < 30) {
+                if (rc.canMove(myLocation.directionTo(target))) {
+                    move(myLocation.directionTo(target));
+                }
+            }
+            return;
+        }
+        Direction dir = pather.bestDir(target);
+        if (dir == null) { // should only happen if the area is majorly congested or something
+            fuzzyMove(target);
+        } else {
+            if (rc.canMove(dir)) move(dir);
+        }
+    }
 
     /**
      * Chases nearest enemy or moves on exploration path
@@ -149,6 +165,7 @@ public class Soldier extends Robot {
                     // TODO: Points for being able to kill (finish off) someone?
                     // TODO: Don't flee into high rubble terrain?
                     // TODO: encourage aggressiveness if outnumbering?
+                    // TODO: pursue enemy if low hp
                 }
                 // Add damage normalized to per turn by rubble
                 if (canAttack) {

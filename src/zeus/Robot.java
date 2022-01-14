@@ -23,9 +23,9 @@ public class Robot {
 
     // Pathing
     MapLocation baseLocation;
-    MapLocation destination;
     boolean exploreMode;
     ArrayList<MapLocation> priorDestinations;
+    Pathing pathing;
 
     // Clusters are 6x6, 5x6, 6x5, or 5x5
     int numClusters;
@@ -95,12 +95,13 @@ public class Robot {
         clusterResources = new int[numClusters];
         clusterControls = new int[numClusters];
         markedClustersBuffer = new int[numClusters];
-        destination = null;
         exploreMode = false;
         priorDestinations = new ArrayList<MapLocation>();
         commsHandler = new CommsHandler(rc);
         numOurArchons = rc.getArchonCount();
         isDying = false;
+        pathing = new Pathing(this);
+        pathing.destination = null;
 
         // Precompute math for whichCluster
         whichXLoc = new int[mapWidth];
@@ -321,68 +322,11 @@ public class Robot {
         if (isDying) {
             if (myLocation.distanceSquaredTo(baseLocation) > 13) {
                 rc.setIndicatorString("Retreating to base!");
-                pathTo(baseLocation);
+                pathing.pathTo(baseLocation);
             }
             return true;
         }
         return false;
-    }
-
-    /**
-     * Use this function instead of rc.move(). Still need to verify canMove before calling this.
-     */
-    public void move(Direction dir) throws GameActionException {
-        rc.move(dir);
-        myLocation = myLocation.add(dir);
-        nearbyEnemies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, enemyTeam);
-    }
-
-    /**
-     * Can be overrided by units with better pathing options
-     */
-    public void pathTo(MapLocation destination) throws GameActionException {
-        fuzzyMove(destination);
-    }
-
-    /**
-     * Moves towards destination, in the optimal direction or diagonal offsets based on which is
-     * cheaper to move through. Allows orthogonal moves to unlodge.
-     */
-    public void fuzzyMove(MapLocation destination) throws GameActionException {
-        if (!rc.isMovementReady()) {
-            return;
-        }
-        // Don't move if adjacent to destination and something is blocking it
-        if (myLocation.distanceSquaredTo(destination) <= 2 && !rc.canMove(myLocation.directionTo(destination))) {
-            return;
-        }
-        // TODO: This is not optimal! Sometimes taking a slower move is better if its diagonal.
-        MapLocation myLocation = rc.getLocation();
-        Direction toDest = myLocation.directionTo(destination);
-        Direction[] dirs = {toDest, toDest.rotateLeft(), toDest.rotateRight(), toDest.rotateLeft().rotateLeft(), toDest.rotateRight().rotateRight()};
-        double cost = Integer.MAX_VALUE;
-        Direction optimalDir = null;
-        for (int i = 0; i < dirs.length; i++) {
-            // Prefer forward moving steps over horizontal shifts
-            if (i > 2 && cost > 0) {
-                break;
-            }
-            Direction dir = dirs[i];
-            if (rc.canMove(dir)) {
-                double newCost = rc.senseRubble(myLocation.add(dir));
-                // add epsilon boost to forward direction
-                if (dir == toDest) {
-                    newCost -= 0.001;
-                }
-                if (newCost < cost) {
-                    cost = newCost;
-                    optimalDir = dir;
-                }
-            }
-        }
-        if (optimalDir != null) {
-            move(optimalDir);
-        }
     }
 
     /**
@@ -392,45 +336,46 @@ public class Robot {
      */
     public void updateDestinationForExploration() throws GameActionException {
         MapLocation nearDestination = myLocation;
-        if (destination != null) {
+        if (pathing.destination != null) {
             for (int i = 0; i < 3; i++) {
-                nearDestination = nearDestination.add(nearDestination.directionTo(destination));
+                nearDestination = nearDestination.add(nearDestination.directionTo(pathing.destination));
             }
         }
         // Reroute if 1) nearDestination not on map or 2) can sense destination and it's not on the map
         // or it's not occupied (so no Archon)
-        if (destination == null || !rc.onTheMap(nearDestination) ||
-            (rc.canSenseLocation(destination)
-            && (!rc.onTheMap(destination)
-                || !rc.isLocationOccupied(destination)
-                || rc.senseRobotAtLocation(destination).team == allyTeam))) {
+        if (pathing.destination == null || !rc.onTheMap(nearDestination) ||
+            (rc.canSenseLocation(pathing.destination)
+            && (!rc.onTheMap(pathing.destination)
+                || !rc.isLocationOccupied(pathing.destination)
+                || rc.senseRobotAtLocation(pathing.destination).team == allyTeam))) {
             // Rerouting
-            if (destination != null) {
-                priorDestinations.add(destination);
+            if (pathing.destination != null) {
+                priorDestinations.add(pathing.destination);
             }
             boolean valid = true;
             int dxexplore = (int)(Math.random()*80);
             int dyexplore = 120 - dxexplore;
             dxexplore = Math.random() < .5 ? dxexplore : -dxexplore;
             dyexplore = Math.random() < .5 ? dyexplore : -dyexplore;
-            destination = new MapLocation(baseLocation.x + dxexplore, baseLocation.y + dyexplore);
+            MapLocation newDestination = new MapLocation(baseLocation.x + dxexplore, baseLocation.y + dyexplore);
             for (int i = 0; i < priorDestinations.size(); i++) {
-                if (destination.distanceSquaredTo(priorDestinations.get(i)) < 40) {
+                if (newDestination.distanceSquaredTo(priorDestinations.get(i)) < 40) {
                     valid = false;
                     break;
                 }
             }
             while (!valid) {
                 valid = true;
-                destination = new MapLocation(baseLocation.x + (int)(Math.random()*80 - 40),
+                newDestination = new MapLocation(baseLocation.x + (int)(Math.random()*80 - 40),
                                                 baseLocation.y + (int)(Math.random()*80 - 40));
                 for (int i = 0; i < priorDestinations.size(); i++) {
-                    if (destination.distanceSquaredTo(priorDestinations.get(i)) < 40) {
+                    if (newDestination.distanceSquaredTo(priorDestinations.get(i)) < 40) {
                         valid = false;
                         break;
                     }
                 }
             }
+            pathing.updateDestination(newDestination);
         }
     }
 
@@ -554,13 +499,12 @@ public class Robot {
 
     /**
      * If unit redirects from an exploration, remark the cluster as unknown
-     * @param destination
+     * @param loc MapLocation
      * @throws GameActionException
      */
-    public void resetControlStatus(MapLocation destination) throws GameActionException {
+    public void resetControlStatus(MapLocation loc) throws GameActionException {
         if (exploreMode) {
-            // int cluster = whichCluster(destination);
-            int cluster = whichXLoc[destination.x] + whichYLoc[destination.y];
+            int cluster = whichXLoc[loc.x] + whichYLoc[loc.y];
             commsHandler.writeClusterControlStatus(cluster, CommsHandler.ControlStatus.UNKNOWN);
         };
     }

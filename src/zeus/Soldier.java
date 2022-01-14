@@ -4,11 +4,8 @@ import battlecode.common.*;
 
 public class Soldier extends Robot {
 
-    SoldierPathing pather;
-
     public Soldier(RobotController rc) throws GameActionException {
         super(rc);
-        pather = new SoldierPathing(rc);
     }
 
     @Override
@@ -55,24 +52,6 @@ public class Soldier extends Robot {
         }
     }
 
-    @Override
-    public void pathTo(MapLocation target) throws GameActionException {
-        if (myLocation.distanceSquaredTo(target) <= 2) {
-            if (!rc.isLocationOccupied(target) && rc.senseRubble(target) < 30) {
-                if (rc.canMove(myLocation.directionTo(target))) {
-                    move(myLocation.directionTo(target));
-                }
-            }
-            return;
-        }
-        Direction dir = pather.bestDir(target);
-        if (dir == null) { // should only happen if the area is majorly congested or something
-            fuzzyMove(target);
-        } else {
-            if (rc.canMove(dir)) move(dir);
-        }
-    }
-
     /**
      * Chases nearest enemy or moves on exploration path
      * @throws GameActionException
@@ -87,26 +66,25 @@ public class Soldier extends Robot {
             combatMove();
         }
         else {
+            MapLocation newDestination = pathing.destination;
             // Navigate to nearest found enemy
             int nearestCluster = getNearestCombatCluster();
             if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                resetControlStatus(destination);
-                destination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
+                resetControlStatus(pathing.destination);
+                newDestination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                                 clusterCentersY[nearestCluster / clusterWidthsLength]);
             }
             // Explore map. Get new cluster if not in explore mode or close to destination
-            else if (!exploreMode || myLocation.distanceSquaredTo(destination) <= 8) {
+            else if (!exploreMode || myLocation.distanceSquaredTo(pathing.destination) <= 8) {
                 nearestCluster = getNearestExploreCluster();
                 if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                    destination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
+                    newDestination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                                     clusterCentersY[nearestCluster / clusterWidthsLength]);
                 }
             }
             
-            if (destination != null) {
-                rc.setIndicatorLine(myLocation, destination, 100 - rc.getTeam().ordinal() * 100, 50, rc.getTeam().ordinal() * 100);
-                pathTo(destination);
-            }
+            pathing.updateDestination(newDestination);
+            pathing.pathToDestination();
         }
     }
 
@@ -185,7 +163,7 @@ public class Soldier extends Robot {
         if (optimalDirection != null && optimalDirection != Direction.CENTER) {
             // System.out.println(myLocation + " Move: " + optimalDirection + " " + optimalScore);
             rc.setIndicatorLine(myLocation, myLocation.add(optimalDirection), 0, 255, 0);
-            fuzzyMove(myLocation.add(optimalDirection));
+            pathing.fuzzyMove(myLocation.add(optimalDirection));
         }
     }
 }
