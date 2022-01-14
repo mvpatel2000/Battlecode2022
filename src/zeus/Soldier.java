@@ -157,8 +157,10 @@ public class Soldier extends Robot {
                         score += 200000;
                     }
                 }
-                // Move to low rubble tile in combat to be able to fight faster (1000 - 100000, third highest priority)
-                score -= rc.senseRubble(moveLocation) * 1000;
+                // // Move to low rubble tile in combat to be able to fight faster (1000 - 100000, third highest priority)
+                // score -= rc.senseRubble(moveLocation) * 1000;
+                // Multiplicative score factor, make sure everything is positive
+                score = (int)((score + 10000000) * (1+1/((float)rc.senseRubble(moveLocation))));
                 // Tiebreak in favor of not moving
                 if (dir == Direction.CENTER) {
                     score += 1;
