@@ -411,8 +411,9 @@ public class Archon extends Robot {
             MapLocation optimalRepair = null;
             int remainingHealth = existEnemies ? Integer.MAX_VALUE : Integer.MIN_VALUE;
             for (RobotInfo ally : nearbyAllies) {
-                if (rc.canRepair(ally.location) && (existEnemies && ally.health < remainingHealth)
-                                                    || !existEnemies && ally.health > remainingHealth) {
+                if (rc.canRepair(ally.location) 
+                    && (existEnemies && ally.health < remainingHealth)
+                    || !existEnemies && ally.health > remainingHealth && ally.health < ally.type.getMaxHealth(ally.level)) {
                     optimalRepair = ally.location;
                     remainingHealth = ally.health;
                 }
