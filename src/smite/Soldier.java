@@ -72,7 +72,6 @@ public class Soldier extends Robot {
                 resetControlStatus(destination);
                 destination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                                 clusterCentersY[nearestCluster / clusterWidthsLength]);
-                //System.out.println\("Read combat cluster: " + nearestCluster + " " + destination);
             }
             // Explore map. Get new cluster if not in explore mode or close to destination
             else if (!exploreMode || myLocation.distanceSquaredTo(destination) <= 8) {
