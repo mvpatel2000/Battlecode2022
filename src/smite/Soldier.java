@@ -51,22 +51,14 @@ public class Soldier extends Robot {
      * @throws GameActionException
      */
     public void move() throws GameActionException {
+        // Flee back to archon to heal
+        if (isDying) {
+            destination = baseLocation;
+            fuzzyMove(destination);
+        }
         // Combat move. Kites enemy soldiers if harassing, otherwise pushes
-        if (nearbyEnemies.length > 0) {
-            // TODO: Does it ever make sense to not kite?
+        else if (nearbyEnemies.length > 0) {
             boolean holdGround = false;
-            // int combatAllies = 0;
-            // RobotInfo[] allies = rc.senseNearbyRobots(RobotType.SOLDIER.visionRadiusSquared, allyTeam);
-            // for (RobotInfo ally : allies) {
-            //     if (ally.type == RobotType.WATCHTOWER || ally.type == RobotType.SOLDIER) {
-            //         combatAllies++;
-            //     }
-            //     else if (ally.type == RobotType.ARCHON) {
-            //         holdGround = true;
-            //     }
-            // }
-            // holdGround |= combatAllies >= 3;
-
             Direction optimalDirection = null;
             int optimalScore = Integer.MIN_VALUE;
             for (Direction dir : directionsWithCenter) {
