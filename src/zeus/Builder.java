@@ -91,6 +91,13 @@ public class Builder extends Robot {
     }
 
     public void move() throws GameActionException {
+        // Flee back to archon to heal
+        if (isDying) {
+            destination = baseLocation;
+            fuzzyMove(destination);
+            return;
+        }
+
         // Don't move if you're finishing building a watchtower
         RobotInfo[] allies = rc.senseNearbyRobots(RobotType.BUILDER.actionRadiusSquared, allyTeam);
         for (RobotInfo ally : allies) {

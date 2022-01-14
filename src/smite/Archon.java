@@ -1,5 +1,7 @@
 package smite;
 
+import javax.management.loading.MLet;
+
 import battlecode.common.*;
 
 public class Archon extends Robot {
@@ -12,8 +14,31 @@ public class Archon extends Robot {
     int numSagesBuilt = 0;
     int numBuildersBuilt = 0;
 
+    MapLocation optimalResourceBuildLocation;
+
+    int resourcesOnMap;
+
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
+        computeArchonNum();
+        if (myArchonNum == 0) {
+            commsHandler.initPriorityClusters();
+        }
+
+        // Get best build direction closest to resources
+        Direction toResources = Direction.CENTER;
+        int nearestDistance = Integer.MAX_VALUE;
+        MapLocation[] resourceLocations = rc.senseNearbyLocationsWithLead(RobotType.ARCHON.visionRadiusSquared);
+        int length = Math.min(resourceLocations.length, 10);
+        for (int i = 0; i < length; i++) {
+            MapLocation tile = resourceLocations[i];
+            int distance = myLocation.distanceSquaredTo(tile);
+            if (distance <= nearestDistance) {
+                nearestDistance = distance;
+                toResources = myLocation.directionTo(tile);
+            }
+        }
+        optimalResourceBuildLocation = myLocation.add(toResources);
     }
 
     @Override
@@ -21,12 +46,8 @@ public class Archon extends Robot {
         // if (currentRound > 25) {
         //     //rc.resign\();
         // }
-        
-        if (currentRound == 1) {
-            computeArchonNum();
-            if (myArchonNum == 0) {
-                commsHandler.initPriorityClusters();
-            }
+        if (currentRound == 2) {
+            setInitialExploreClusters();
         }
 
         setPriorityClusters();
@@ -36,10 +57,63 @@ public class Archon extends Robot {
     }
 
     /**
+     * Sets initial explore clusters
+     * @throws GameActionException
+     */
+    public void setInitialExploreClusters() throws GameActionException {
+        int exploreClusterIndex = 0;
+        // Preserve explore clusters which still have not been claimed
+        while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS) {
+            int nearestClusterAll = commsHandler.readExploreClusterAll(exploreClusterIndex);
+            int nearestCluster = nearestClusterAll & 127; // 7 lowest order bits
+            int nearestClusterStatus = (nearestClusterAll & 128) >> 7; // 2^7
+            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX
+                || nearestClusterStatus == CommsHandler.ClaimStatus.CLAIMED) {
+                break;
+            }
+            exploreClusterIndex++;
+        }
+
+        int centerCluster = whichXLoc[mapWidth/2] + whichYLoc[mapHeight/2];
+        int xyCluster = whichXLoc[mapWidth-myLocation.x] + whichYLoc[mapHeight-myLocation.y];
+        int xCluster = whichXLoc[mapWidth-myLocation.x] + whichYLoc[myLocation.y];
+        int yCluster = whichXLoc[myLocation.x] + whichYLoc[mapHeight-myLocation.y];
+        int[] clusters = {centerCluster, xyCluster, xCluster, yCluster};
+
+        for (int i = 0; i < 4; i++) {
+            int cluster = clusters[i];
+            int controlStatus = commsHandler.readClusterControlStatus(cluster);
+            if (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS
+                && controlStatus == CommsHandler.ControlStatus.UNKNOWN) {
+                commsHandler.writeExploreClusterAll(exploreClusterIndex, cluster + (CommsHandler.ClaimStatus.UNCLAIMED << 7));
+                exploreClusterIndex++;
+
+                // Preserve explore clusters which still have not been claimed
+                while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS) {
+                    int nearestClusterAll = commsHandler.readExploreClusterAll(exploreClusterIndex);
+                    int nearestCluster = nearestClusterAll & 127; // 7 lowest order bits
+                    int nearestClusterStatus = (nearestClusterAll & 128) >> 7; // 2^7
+                    if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX
+                        || nearestClusterStatus == CommsHandler.ClaimStatus.CLAIMED) {
+                        break;
+                    }
+                    exploreClusterIndex++;
+                }
+            }
+        }
+    }
+
+    /**
      * Sets the priority clusters list
      * @throws GameActionException
      */
     public void setPriorityClusters() throws GameActionException {
+        // Do not set for first turn as archons haven't all filled in data
+        if (turnCount <= 1) {
+            return;
+        }
+
+        resourcesOnMap = 0;
         int combatClusterIndex = 0;
         int mineClusterIndex = 0;
         int exploreClusterIndex = 0;
@@ -79,28 +153,13 @@ public class Archon extends Robot {
         }
 
         // Alternate sweeping each half of the clusters every turn
-        int mode = (myArchonNum + currentRound) % 3; 
         int startIdx = 0;
-        int endIdx = 0;
-        switch (mode) {
-            case 0:
-                startIdx = 0;
-                endIdx = numClusters / 3;
-                break;
-            case 1:
-                startIdx = numClusters / 3;
-                endIdx = numClusters * 2 / 3;
-                break;
-            case 2:
-                startIdx = numClusters * 2 / 3;
-                endIdx = numClusters;
-                break;
-            default:
-                //System.out.println\("[Error] Unexpected case in setPriorityQueue!");
-        }
+        int endIdx = numClusters;
 
         for (int i = startIdx; i < endIdx; i++) {
             int controlStatus = commsHandler.readClusterControlStatus(i);
+            int resourceCount = commsHandler.readClusterResourceCount(i);
+            resourcesOnMap += resourceCount * 100;
             // Combat cluster
             if (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS 
                 && controlStatus == CommsHandler.ControlStatus.THEIRS) {
@@ -120,23 +179,20 @@ public class Archon extends Robot {
                 }
             }
             // Mine cluster
-            if (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
-                int resourceCount = commsHandler.readClusterResourceCount(i);
-                if (resourceCount > 0) {
-                    commsHandler.writeMineClusterAll(mineClusterIndex, i + (resourceCount << 7));
-                    mineClusterIndex++;
+            if (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS && resourceCount > 0) {
+                commsHandler.writeMineClusterAll(mineClusterIndex, i + (resourceCount << 7));
+                mineClusterIndex++;
 
-                    // Preserve mining clusters which still have resources
-                    while (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
-                        int cluster = commsHandler.readMineClusterIndex(mineClusterIndex);
-                        if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                            break;
-                        }
-                        if (commsHandler.readClusterResourceCount(cluster) == 0) {
-                            break;
-                        }
-                        mineClusterIndex++;
+                // Preserve mining clusters which still have resources
+                while (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
+                    int cluster = commsHandler.readMineClusterIndex(mineClusterIndex);
+                    if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                        break;
                     }
+                    if (commsHandler.readClusterResourceCount(cluster) == 0) {
+                        break;
+                    }
+                    mineClusterIndex++;
                 }
             }
             // Explore cluster
@@ -196,14 +252,16 @@ public class Archon extends Robot {
             }
         }
 
+        // Prioritize building towards resources on low rubble
         Direction optimalDir = null;
-        int optimalRubble = Integer.MAX_VALUE;
+        int optimalScore = Integer.MAX_VALUE;
         for (Direction dir : directionsWithoutCenter) {
             if (rc.canBuildRobot(toBuild, dir)) {
-                int rubble = rc.senseRubble(myLocation.add(dir));
-                if (rubble < optimalRubble) {
+                MapLocation buildLocation = myLocation.add(dir);
+                int score = rc.senseRubble(buildLocation) + buildLocation.distanceSquaredTo(optimalResourceBuildLocation);
+                if (score < optimalScore) {
                     optimalDir = dir;
-                    optimalRubble = rubble;
+                    optimalScore = score;
                 }
             }
         }
