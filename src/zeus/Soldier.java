@@ -149,6 +149,7 @@ public class Soldier extends Robot {
                     // TODO: Points for being able to kill (finish off) someone?
                     // TODO: Don't flee into high rubble terrain?
                     // TODO: encourage aggressiveness if outnumbering?
+                    // TODO: pursue enemy if low hp
                 }
                 // Add damage normalized to per turn by rubble
                 if (canAttack) {

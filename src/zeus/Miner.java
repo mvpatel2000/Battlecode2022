@@ -112,7 +112,8 @@ public class Miner extends Robot {
 
         // Kite enemy unit
         if (fleeingCounter > 0) {
-            MapLocation fleeDirection = myLocation.add(myLocation.directionTo(lastEnemyLocation).opposite());
+            Direction away = myLocation.directionTo(lastEnemyLocation).opposite();
+            MapLocation fleeDirection = myLocation.add(away).add(away).add(away).add(away).add(away);
             fuzzyMove(fleeDirection);
             // rc.setIndicatorLine(myLocation, fleeDirection, 255, 0, 0);
             fleeingCounter--;
