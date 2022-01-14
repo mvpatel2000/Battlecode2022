@@ -156,7 +156,7 @@ public class Soldier extends Robot {
                 }
                 // Tiebreak in favor of not moving
                 if (dir == Direction.CENTER) {
-                    score += 1;
+                    score += 0.01;
                 }
                 // System.out.println(myLocation + " " + dir + " " + score);
                 if (score > optimalScore) {
