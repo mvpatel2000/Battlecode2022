@@ -130,12 +130,18 @@ public class Soldier extends Robot {
                 boolean canAttack = false;
                 for (RobotInfo enemy : nearbyEnemies) {
                     // Penalize by their damage per turn times how long I will be there
-                    if ((enemy.type == RobotType.WATCHTOWER && enemy.mode == RobotMode.TURRET 
+                    if (enemy.type == RobotType.WATCHTOWER && enemy.mode == RobotMode.TURRET 
                             || enemy.type == RobotType.SOLDIER
-                            || enemy.type == RobotType.SAGE)
-                        && moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared) {
+                            || enemy.type == RobotType.SAGE) {
                         double enemyRubbleFactor = 10 / (10.0 + rc.senseRubble(enemy.location));
-                        score -= enemy.type.getDamage(enemy.level) * enemyRubbleFactor / myRubbleFactor;
+                        // They can hit me, full points off
+                        if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared) {
+                            score -= enemy.type.getDamage(enemy.level) * enemyRubbleFactor / myRubbleFactor;
+                        }
+                        // They can see me / step in and attack me, half points off
+                        else if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.visionRadiusSquared) {
+                            score -= 0.5 * enemy.type.getDamage(enemy.level) * enemyRubbleFactor / myRubbleFactor;
+                        }
                     }
                     // See if you can attack anyone
                     if (moveLocation.distanceSquaredTo(enemy.location) <= RobotType.SOLDIER.actionRadiusSquared) {
