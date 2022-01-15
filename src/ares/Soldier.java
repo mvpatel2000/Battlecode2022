@@ -52,16 +52,14 @@ public class Soldier extends Robot {
         }
     }
 
-    // @Override
-    // public void pathTo(MapLocation destination) throws GameActionException {
-        
-    // }
-
     /**
      * Chases nearest enemy or moves on exploration path
      * @throws GameActionException
      */
     public void move() throws GameActionException {
+        // if (!rc.isMovementReady()) {
+        //     return;
+        // }
         // Flee back to archon to heal
         if (baseRetreat()) {
             return;
@@ -71,26 +69,25 @@ public class Soldier extends Robot {
             combatMove();
         }
         else {
+            MapLocation newDestination = pathing.destination;
             // Navigate to nearest found enemy
             int nearestCluster = getNearestCombatCluster();
             if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                resetControlStatus(destination);
-                destination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
+                resetControlStatus(pathing.destination);
+                newDestination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                                 clusterCentersY[nearestCluster / clusterWidthsLength]);
             }
             // Explore map. Get new cluster if not in explore mode or close to destination
-            else if (!exploreMode || myLocation.distanceSquaredTo(destination) <= 8) {
+            else if (!exploreMode || myLocation.distanceSquaredTo(pathing.destination) <= 8) {
                 nearestCluster = getNearestExploreCluster();
                 if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                    destination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
+                    newDestination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                                     clusterCentersY[nearestCluster / clusterWidthsLength]);
                 }
             }
             
-            if (destination != null) {
-                rc.setIndicatorLine(myLocation, destination, 100 - rc.getTeam().ordinal() * 100, 50, rc.getTeam().ordinal() * 100);
-                pathTo(destination);
-            }
+            pathing.updateDestination(newDestination);
+            pathing.pathToDestination();
         }
     }
 
@@ -101,6 +98,7 @@ public class Soldier extends Robot {
     public void combatMove() throws GameActionException {
         int combatAllies = 0;
         MapLocation archonLocation = null;
+        double repairPerTurn = 0;
         RobotInfo[] allies = rc.senseNearbyRobots(RobotType.SOLDIER.visionRadiusSquared, allyTeam);
         for (RobotInfo ally : allies) {
             if (ally.type == RobotType.WATCHTOWER || ally.type == RobotType.SOLDIER) {
@@ -108,64 +106,61 @@ public class Soldier extends Robot {
             }
             else if (ally.type == RobotType.ARCHON) {
                 archonLocation = ally.location;
+                // Repair normalized to per turn by rubble
+                repairPerTurn = (ally.level + 1) * 10 / (10.0 + rc.senseRubble(archonLocation));
             }
         }
-        boolean holdGround = (archonLocation != null) || (combatAllies - nearbyEnemies.length >= 1);
+        boolean holdGround = rc.getHealth() > 30 && ((archonLocation != null) || (combatAllies - nearbyEnemies.length >= 2));
 
         Direction optimalDirection = null;
-        int optimalScore = Integer.MIN_VALUE;
+        double optimalScore = -999.0;
         for (Direction dir : directionsWithCenter) {
-            if (rc.canMove(dir)) {
+            if (rc.canMove(dir) || dir == Direction.CENTER) {
                 MapLocation moveLocation = myLocation.add(dir);
                 if (!rc.onTheMap(moveLocation)) {
                     continue;
                 }
-                // Prioritize staying inside archon healing range (equal to 1 combat unit priority)
+                double myRubbleFactor = 10 / (10.0 + rc.senseRubble(moveLocation));
+                // Include archon repair benefit
                 int score = 0;
                 if (archonLocation != null 
                     && myLocation.distanceSquaredTo(archonLocation) <= RobotType.ARCHON.actionRadiusSquared) {
-                    score += 1000000;
+                    score += repairPerTurn;
                 }
+                boolean canAttack = false;
                 for (RobotInfo enemy : nearbyEnemies) {
-                    // TODO: Prioritize locking up archons?
-                    // Avoid enemy combat units unless holding ground (1000000, highest priority)
-                    if ((enemy.type == RobotType.WATCHTOWER && enemy.mode == RobotMode.TURRET 
+                    // Penalize by their damage per turn times how long I will be there
+                    if (!holdGround &&
+                            (enemy.type == RobotType.WATCHTOWER && enemy.mode == RobotMode.TURRET 
                             || enemy.type == RobotType.SOLDIER
-                            || enemy.type == RobotType.SAGE)
-                        && moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared) {
-                        // Bonus to kill
-                        if (holdGround) {
-                            score += 200000;
+                            || enemy.type == RobotType.SAGE)) {
+                        double enemyRubbleFactor = 10 / (10.0 + rc.senseRubble(enemy.location));
+                        // They can hit me, full points off
+                        if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared) {
+                            score -= enemy.type.getDamage(enemy.level) * enemyRubbleFactor;
                         }
-                        // Encourage fleeing
-                        else {
-                            score -= 1000000;
-                        }
-                    }
-                    boolean canKillTarget = false;
-                    // Move towards enemy units we want to kill
-                    if (enemy.type == RobotType.MINER || enemy.type == RobotType.BUILDER 
-                        || enemy.type == RobotType.LABORATORY || enemy.type == RobotType.ARCHON) {
-                        // move towards sighted enemy units (fourth highest priority)
-                        score -= moveLocation.distanceSquaredTo(enemy.location);
-                        if (moveLocation.distanceSquaredTo(enemy.location) <= RobotType.SOLDIER.actionRadiusSquared) {
-                            canKillTarget = true;
+                        // They can see me. If they step in, I can start shooting but they can too, so normalize by rubble
+                        else if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.visionRadiusSquared) {
+                            score -= Math.max(0, (enemy.type.getDamage(enemy.level) * enemyRubbleFactor - RobotType.SOLDIER.damage * myRubbleFactor));
                         }
                     }
-                    // points for being able to kill them (200000, second highest priority)
-                    if (canKillTarget) {
-                        score += 200000;
+                    // See if you can attack anyone
+                    if (moveLocation.distanceSquaredTo(enemy.location) <= RobotType.SOLDIER.actionRadiusSquared) {
+                        canAttack = true;
                     }
+                    // TODO: Stop moving around archon?
+                    // TODO: Encourage moving towards targets?
+                    // TODO: Points for being able to kill (finish off) someone?
+                    // TODO: Don't flee into high rubble terrain?
+                    // TODO: encourage aggressiveness if outnumbering?
+                    // TODO: pursue enemy if low hp
                 }
-                // // Move to low rubble tile in combat to be able to fight faster (1000 - 100000, third highest priority)
-                // score -= rc.senseRubble(moveLocation) * 1000;
-                // Multiplicative score factor, make sure everything is positive
-                score = (int)((score + 10000000) * (1+1/((float)rc.senseRubble(moveLocation))));
-                // Tiebreak in favor of not moving
-                if (dir == Direction.CENTER) {
-                    score += 1;
+                // Add damage normalized to per turn by rubble
+                if (canAttack) {
+                    score += RobotType.SOLDIER.damage * myRubbleFactor;
                 }
-                // System.out.println(myLocation + " " + dir + " " + score);
+                // Add rubble movement factor, often serves as a tiebreak for flee
+                score += myRubbleFactor;
                 if (score > optimalScore) {
                     optimalDirection = dir;
                     optimalScore = score;
@@ -173,9 +168,8 @@ public class Soldier extends Robot {
             }
         }
         if (optimalDirection != null && optimalDirection != Direction.CENTER) {
-            // System.out.println(myLocation + " Move: " + optimalDirection + " " + optimalScore);
             rc.setIndicatorLine(myLocation, myLocation.add(optimalDirection), 0, 255, 0);
-            fuzzyMove(myLocation.add(optimalDirection));
+            pathing.move(optimalDirection);
         }
     }
 }
