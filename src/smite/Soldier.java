@@ -110,10 +110,10 @@ public class Soldier extends Robot {
                 repairPerTurn = (ally.level + 1) * 10 / (10.0 + rc.senseRubble(archonLocation));
             }
         }
-        boolean holdGround = (archonLocation != null) || (combatAllies - nearbyEnemies.length >= 1);
+        boolean holdGround = rc.getHealth() > 30 && ((archonLocation != null) || (combatAllies - nearbyEnemies.length >= 2));
 
         Direction optimalDirection = null;
-        double optimalScore = Double.MIN_VALUE;
+        double optimalScore = -999.0;
         for (Direction dir : directionsWithCenter) {
             if (rc.canMove(dir) || dir == Direction.CENTER) {
                 MapLocation moveLocation = myLocation.add(dir);
@@ -130,9 +130,10 @@ public class Soldier extends Robot {
                 boolean canAttack = false;
                 for (RobotInfo enemy : nearbyEnemies) {
                     // Penalize by their damage per turn times how long I will be there
-                    if (enemy.type == RobotType.WATCHTOWER && enemy.mode == RobotMode.TURRET 
+                    if (!holdGround &&
+                            (enemy.type == RobotType.WATCHTOWER && enemy.mode == RobotMode.TURRET 
                             || enemy.type == RobotType.SOLDIER
-                            || enemy.type == RobotType.SAGE) {
+                            || enemy.type == RobotType.SAGE)) {
                         double enemyRubbleFactor = 10 / (10.0 + rc.senseRubble(enemy.location));
                         // They can hit me, full points off
                         if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared) {
