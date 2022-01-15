@@ -1,7 +1,6 @@
 from generate_order import compute_permutation
 
 def computePermutation(width, height):
-    # TODO (Nikhil)
     return compute_permutation(width, height)
 
 if __name__ == '__main__':
