@@ -24,7 +24,7 @@ SCHEMA = {
         }
     },
     'combat_cluster': {
-        'slots': 5,
+        'slots': 10,
         'bits': {
             'index': 7,
         }
