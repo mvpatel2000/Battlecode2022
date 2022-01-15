@@ -134,13 +134,22 @@ def solvegrid(i, j, grid):
     # Hard-code centers and corners
     center_x = i//2
     center_y = j//2
+    preassigned = 6
     grid[center_y][center_x] = 0
-    grid[0][0] = 1
-    grid[j-1][0] = 2
-    grid[0][i-1] = 3
-    grid[j-1][i-1] = 4
+    if (i%2 == 0 or j%2 == 0):
+        grid[j-center_y-1][i-center_x-1] = 1
+        grid[j-1][0] = 2
+        grid[0][i-1] = 3
+        grid[0][0] = 4
+        grid[j-1][i-1] = 5
+    else:
+        grid[j-1][0] = 1
+        grid[0][i-1] = 2
+        grid[0][0] = 3
+        grid[j-1][i-1] = 4
+        preassigned = 5
     # Randomly place remaining values.
-    remaining_vals = np.arange(5, i*j)
+    remaining_vals = np.arange(preassigned, i*j)
     np.random.shuffle(remaining_vals)
     idx = 0
     for x in range(i):

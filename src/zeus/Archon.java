@@ -34,6 +34,7 @@ public class Archon extends Robot {
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
         computeArchonNum();
+        initClusterPermutation();
         numOurArchonsAlive = numOurArchons;
         if (myArchonNum == 0) {
             commsHandler.initPriorityClusters();
@@ -232,11 +233,12 @@ public class Archon extends Robot {
             exploreClusterIndex++;
         }
 
-        // Alternate sweeping each half of the clusters every turn
+        // Set priority clusters
         int startIdx = 0;
         int endIdx = numClusters;
 
-        for (int i = startIdx; i < endIdx; i++) {
+        for (int prePermuteIdx = startIdx; prePermuteIdx < endIdx; prePermuteIdx++) {
+            int i = clusterPermutation[prePermuteIdx];
             int controlStatus = commsHandler.readClusterControlStatus(i);
             int resourceCount = commsHandler.readClusterResourceCount(i);
             resourcesOnMap += resourceCount * LEAD_RESOLUTION;

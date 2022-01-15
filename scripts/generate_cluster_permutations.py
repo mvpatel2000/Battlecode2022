@@ -5,20 +5,23 @@ def computePermutation(width, height):
 
 if __name__ == '__main__':
     out = f"""
-    switch (clusterWidths.length) {{"""
+        switch (clusterWidths.length) {{"""
     for i in range(4, 11):
         out += f"""
-        case {i}:
-            switch (clusterHeights.length) {{"""
+            case {i}:
+                switch (clusterHeights.length) {{"""
         for j in range(4, 11):
             out += f"""
-            case {j}:
-                clusterPermutation = {{{computePermutation(i, j)}}};"""
+                    case {j}:
+                        clusterPermutation = new int[] {{{', '.join(str(a) for a in computePermutation(i, j))}}};
+                        break;"""
         out += f"""
-            }}
-            break;"""
+                }}
+                break;"""
     out += f"""
-    }}"""
+        }}"""
+    with open('scripts/cluster_permutation_switch.txt', 'w') as f:
+        f.write(out)
 
 
 # 2   7 3
