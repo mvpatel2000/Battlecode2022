@@ -91,6 +91,9 @@ public class Builder extends Robot {
     }
 
     public void move() throws GameActionException {
+        // if (!rc.isMovementReady()) {
+        //     return;
+        // }
         // Flee back to archon to heal
         if (baseRetreat()) {
             return;
@@ -107,22 +110,19 @@ public class Builder extends Robot {
         // Navigate to nearest found enemy
         int nearestCluster = getNearestCombatCluster();
         if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
-            resetControlStatus(destination);
-            destination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
-                                            clusterCentersY[nearestCluster / clusterWidthsLength]);
+            resetControlStatus(pathing.destination);
+            pathing.updateDestination(new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
+                                            clusterCentersY[nearestCluster / clusterWidthsLength]));
         }
         // Explore map. Get new cluster if not in explore mode or close to destination
-        else if (!exploreMode || myLocation.distanceSquaredTo(destination) <= 8) {
+        else if (!exploreMode || myLocation.distanceSquaredTo(pathing.destination) <= 8) {
             nearestCluster = getNearestExploreCluster();
             if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                destination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
-                                                clusterCentersY[nearestCluster / clusterWidthsLength]);
+                pathing.updateDestination(new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
+                                                clusterCentersY[nearestCluster / clusterWidthsLength]));
             }
         }
 
-        // rc.setIndicatorLine(myLocation, destination, 0, 0, 255);
-        if (destination != null) {
-            fuzzyMove(destination);
-        }
+        pathing.pathToDestination();
     }
 }
