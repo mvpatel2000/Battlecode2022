@@ -138,10 +138,10 @@ public class Soldier extends Robot {
                         if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared) {
                             score -= enemy.type.getDamage(enemy.level) * enemyRubbleFactor / myRubbleFactor;
                         }
-                        // They can see me / step in and attack me, half points off
-                        else if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.visionRadiusSquared) {
-                            score -= 0.5 * enemy.type.getDamage(enemy.level) * enemyRubbleFactor / myRubbleFactor;
-                        }
+                        // // They can see me / step in and attack me, half points off
+                        // else if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.visionRadiusSquared) {
+                        //     score -= 0.5 * enemy.type.getDamage(enemy.level) * enemyRubbleFactor / myRubbleFactor;
+                        // }
                     }
                     // See if you can attack anyone
                     if (moveLocation.distanceSquaredTo(enemy.location) <= RobotType.SOLDIER.actionRadiusSquared) {
