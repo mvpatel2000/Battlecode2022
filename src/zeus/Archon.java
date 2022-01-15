@@ -60,9 +60,9 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        if (currentRound > 400) {
-            rc.resign();
-        }
+        // if (currentRound > 400) {
+        //     rc.resign();
+        // }
 
         archonStatusCheck();
         updateUnitCounts();
@@ -189,9 +189,9 @@ public class Archon extends Robot {
             if (resourceCount == 0) {
                 commsHandler.writeMineClusterIndex(i, commsHandler.UNDEFINED_CLUSTER_INDEX);
             }
-            // else {
-            //     commsHandler.writeMineClusterClaimStatus(i, resourceCount/4);
-            // }
+            else {
+                commsHandler.writeMineClusterClaimStatus(i, resourceCount/4);
+            }
         }
         // Clear explore slots
         for (int i = 0; i < commsHandler.EXPLORE_CLUSTER_SLOTS; i++) {

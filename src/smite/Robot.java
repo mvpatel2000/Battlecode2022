@@ -325,7 +325,7 @@ public class Robot {
      * @throws GameActionException
      */
     public boolean baseRetreat() throws GameActionException {
-        if (isDying) {
+        if (isDying && baseLocation != null) {
             if (myLocation.distanceSquaredTo(baseLocation) > 13) {
                 //rc.setIndicatorString("Retreating to base!");
                 pathing.pathTo(baseLocation);

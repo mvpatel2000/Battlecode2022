@@ -158,10 +158,6 @@ public class Soldier extends Robot {
                 if (canAttack) {
                     score += RobotType.SOLDIER.damage * myRubbleFactor;
                 }
-                // Tiebreak in favor of not moving
-                if (dir == Direction.CENTER) {
-                    score += 0.01;
-                }
                 if (score > optimalScore) {
                     optimalDirection = dir;
                     optimalScore = score;
