@@ -91,6 +91,9 @@ public class Miner extends Robot {
     }
 
     public void move() throws GameActionException {
+        // if (!rc.isMovementReady()) {
+        //     return;
+        // }
         updateDestination();
         
         // Find nearest combat enemy to kite

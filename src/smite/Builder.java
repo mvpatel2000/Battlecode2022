@@ -91,6 +91,9 @@ public class Builder extends Robot {
     }
 
     public void move() throws GameActionException {
+        // if (!rc.isMovementReady()) {
+        //     return;
+        // }
         // Flee back to archon to heal
         if (baseRetreat()) {
             return;

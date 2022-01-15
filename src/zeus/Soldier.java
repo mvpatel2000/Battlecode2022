@@ -57,6 +57,9 @@ public class Soldier extends Robot {
      * @throws GameActionException
      */
     public void move() throws GameActionException {
+        // if (!rc.isMovementReady()) {
+        //     return;
+        // }
         // Flee back to archon to heal
         if (baseRetreat()) {
             return;
@@ -153,7 +156,6 @@ public class Soldier extends Robot {
                 if (dir == Direction.CENTER) {
                     score += 0.01;
                 }
-                // System.out.println(myLocation + " " + dir + " " + score);
                 if (score > optimalScore) {
                     optimalDirection = dir;
                     optimalScore = score;
@@ -161,9 +163,8 @@ public class Soldier extends Robot {
             }
         }
         if (optimalDirection != null && optimalDirection != Direction.CENTER) {
-            // System.out.println(myLocation + " Move: " + optimalDirection + " " + optimalScore);
             rc.setIndicatorLine(myLocation, myLocation.add(optimalDirection), 0, 255, 0);
-            pathing.fuzzyMove(myLocation.add(optimalDirection));
+            pathing.move(optimalDirection);
         }
     }
 }
