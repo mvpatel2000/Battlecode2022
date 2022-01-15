@@ -1,5 +1,7 @@
 package zeus;
 
+import java.util.Map;
+
 import javax.print.attribute.standard.Destination;
 
 import battlecode.common.*;
@@ -8,6 +10,9 @@ public class Miner extends Robot {
 
     int fleeingCounter;
     MapLocation lastEnemyLocation;
+    int miningCluster;
+    int miningClusterIndex;
+    MapLocation miningDestination;
 
     final static int[][] INNER_SPIRAL_ORDER = {{0,0},{0,1},{1,0},{0,-1},{-1,0},{1,1},{1,-1},{-1,-1},{-1,1},{0,2},{2,0},{0,-2},{-2,0},{1,2},{2,1},{2,-1},{1,-2},{-1,-2},{-2,-1},{-2,1},{-1,2},{2,2},{2,-2},{-2,-2},{-2,2},{0,3},{3,0},{0,-3},{-3,0},{1,3},{3,1},{3,-1},{1,-3},{-1,-3},{-3,-1},{-3,1},{-1,3},{2,3},{3,2},{3,-2},{2,-3},{-2,-3},{-3,-2},{-3,2},{-2,3}};
     final static int[][] OUTER_SPIRAL_ORDER = {{0,4},{4,0},{0,-4},{-4,0},{1,4},{4,1},{4,-1},{1,-4},{-1,-4},{-4,-1},{-4,1},{-1,4},{3,3},{3,-3},{-3,-3},{-3,3},{2,4},{4,2},{4,-2},{2,-4},{-2,-4},{-4,-2},{-4,2},{-2,4}};
@@ -16,6 +21,9 @@ public class Miner extends Robot {
         super(rc);
         fleeingCounter = 0;
         lastEnemyLocation = null;
+        miningCluster = -1;
+        miningDestination = null;
+        miningClusterIndex = -1;
     }
 
     @Override
@@ -168,14 +176,21 @@ public class Miner extends Robot {
             return;
         }
 
+        // If mining cluster, add count before we reclaim
+        if (miningClusterIndex != -1 && commsHandler.readMineClusterIndex(miningClusterIndex) == miningCluster) {
+            commsHandler.writeMineClusterClaimStatus(miningClusterIndex, 1+commsHandler.readMineClusterClaimStatus(miningClusterIndex));
+        }
 
         // Navigate to nearest resources found
         int nearestCluster = getNearestMineCluster();
-        // rc.setIndicatorString("Mine: " + nearestCluster);
+        rc.setIndicatorString("Mine: " + nearestCluster);
         if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
             resetControlStatus(pathing.destination);
-            pathing.updateDestination(new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
-                                            clusterCentersY[nearestCluster / clusterWidthsLength]));
+            MapLocation newDestination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
+                                                            clusterCentersY[nearestCluster / clusterWidthsLength]);
+            miningCluster = nearestCluster;
+            miningDestination = newDestination;
+            pathing.updateDestination(newDestination);
             return;
         }
 
@@ -196,6 +211,7 @@ public class Miner extends Robot {
      * @throws GameActionException
      */
     public int getNearestMineCluster() throws GameActionException {
+        System.out.println("Finding " + myLocation);
         int closestCluster = commsHandler.UNDEFINED_CLUSTER_INDEX;
         int closestClusterIndex = commsHandler.UNDEFINED_CLUSTER_INDEX;
         int closestClusterStatus = 0;
@@ -203,12 +219,13 @@ public class Miner extends Robot {
         for (int i = 0; i < commsHandler.MINE_CLUSTER_SLOTS; i++) {
             int nearestClusterAll = commsHandler.readMineClusterAll(i);
             int nearestCluster = nearestClusterAll & 127; // 7 lowest order bits
+            int nearestClusterStatus = (nearestClusterAll & 896) >> 7; // 2^7 + 2^8 + 2^9
+            System.out.println(i + " " + nearestCluster + " " + nearestClusterStatus);
             // Continue if no mine written
             if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 continue;
             }
             // Skip clusters which are fully claimed
-            int nearestClusterStatus = (nearestClusterAll & 896) >> 7; // 2^7 + 2^8 + 2^9
             if (nearestClusterStatus == 0) {
                 continue;
             }
@@ -228,6 +245,7 @@ public class Miner extends Robot {
         // Claim cluster
         if (closestClusterIndex != commsHandler.UNDEFINED_CLUSTER_INDEX) {
             commsHandler.writeMineClusterClaimStatus(closestClusterIndex, closestClusterStatus-1);
+            miningClusterIndex = closestClusterIndex;
         }
         return closestCluster;
     }

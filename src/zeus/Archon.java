@@ -60,9 +60,9 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 1000) {
-        //     rc.resign();
-        // }
+        if (currentRound > 400) {
+            rc.resign();
+        }
 
         archonStatusCheck();
         updateUnitCounts();
@@ -162,9 +162,10 @@ public class Archon extends Robot {
         //     status += " " + commsHandler.readExploreClusterIndex(i);
         // }
         // System.out.println("Explore"+status);
-        // status = "";
+        // String status = "";
         // for (int i = 0; i < commsHandler.MINE_CLUSTER_SLOTS; i++) {
-        //     status += " " + commsHandler.readMineClusterIndex(i);
+        //     int cluster = commsHandler.readMineClusterIndex(i);
+        //     status += " " + cluster + "(" + commsHandler.readMineClusterClaimStatus(i) + "," + commsHandler.readClusterResourceCount(cluster) + ")";
         // }
         // System.out.println("Mine"+status);
 
@@ -184,9 +185,13 @@ public class Archon extends Robot {
             if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 continue;
             }
-            if (commsHandler.readClusterResourceCount(cluster) == 0) {
+            int resourceCount = commsHandler.readClusterResourceCount(cluster);
+            if (resourceCount == 0) {
                 commsHandler.writeMineClusterIndex(i, commsHandler.UNDEFINED_CLUSTER_INDEX);
             }
+            // else {
+            //     commsHandler.writeMineClusterClaimStatus(i, resourceCount/4);
+            // }
         }
         // Clear explore slots
         for (int i = 0; i < commsHandler.EXPLORE_CLUSTER_SLOTS; i++) {
