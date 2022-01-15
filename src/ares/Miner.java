@@ -1,9 +1,5 @@
 package ares;
 
-import java.util.Map;
-
-import javax.print.attribute.standard.Destination;
-
 import battlecode.common.*;
 
 public class Miner extends Robot {
