@@ -10,12 +10,6 @@ SCHEMA = {
             'y_coord': 6,
         }
     },
-    'map': {
-        'slots': 1,
-        'bits': {
-            'symmetry': 2,
-        }
-    },
     'cluster': {
         'slots': 100,
         'bits': {
@@ -59,6 +53,13 @@ SCHEMA = {
         'slots': 1,
         'bits': {
             'num': 2,
+        }
+    },
+    'reserved_resources': {
+        'slots': 1,
+        'bits': {
+            'lead': 10,
+            'gold': 6,
         }
     }
 }

@@ -73,6 +73,9 @@ public class Robot {
         Direction.CENTER
     };
 
+    final int LEAD_RESERVE_SCALE = 5;
+    final int GOLD_RESERVE_SCALE = 5;
+
     /**
      * A random number generator.
      * We will use this RNG to make some random moves. The Random class is provided by the java.util.Random
@@ -570,9 +573,7 @@ public class Robot {
     }
 
     public void initClusterPermutation() {
-        switch(clusterWidths.length) {
-            
-        }
+        // TODO: switch statement from generate_cluster_permutations.py
     }
 
     /**

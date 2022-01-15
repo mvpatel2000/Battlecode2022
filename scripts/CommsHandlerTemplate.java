@@ -29,6 +29,13 @@ public class CommsHandler {
         public static final int UNCLAIMED = 0;
         public static final int CLAIMED = 1;
     }
+    public class ReserveUnit {
+        public static final int NONE = 0;
+        public static final int MINER = 1;
+        public static final int SOLDIER = 2;
+        public static final int SAGE = 3;
+        public static final int BUILDER = 4;
+    }
 
     final int UNDEFINED_CLUSTER_INDEX = 127;
 
