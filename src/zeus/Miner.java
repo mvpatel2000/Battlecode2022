@@ -30,7 +30,6 @@ public class Miner extends Robot {
         // disintegrate();
     }
 
-
     public void announceAlive() throws GameActionException {
         commsHandler.writeMinerCount(commsHandler.readMinerCount() + 1);
     }
