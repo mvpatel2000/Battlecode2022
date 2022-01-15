@@ -37,13 +37,19 @@ SCHEMA = {
             'index': 7,
         }
     },
-    'miner_count': {
+    'map_symmetry': {
+        'slots': 1,
+        'bits': {
+            '': 2,
+        }
+    },
+    'miner_count': { # make sure this is in a single int
         'slots': 1,
         'bits': {
             '': 8,
         }
     },
-    'soldier_count': {
+    'soldier_count': { # mamke sure this is in a single int
         'slots': 1,
         'bits': {
             '': 8,
