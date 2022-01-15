@@ -41,6 +41,7 @@ public class Robot {
     int[] clusterResources;
     int[] clusterControls;
     int[] markedClustersBuffer;
+    int[] clusterPermutation;
 
     boolean isDying;
 
@@ -572,6 +573,12 @@ public class Robot {
             int yCenter = yStart + (clusterHeights[j] / 2);
             clusterCentersY[j] = yCenter;
             yStart += clusterHeights[j];
+        }
+    }
+
+    public void initClusterPermutation() {
+        switch(clusterWidths.length) {
+            
         }
     }
 
