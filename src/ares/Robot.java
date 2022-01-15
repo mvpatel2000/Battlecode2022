@@ -209,8 +209,8 @@ public class Robot {
                 MapLocation clusterCenter = new MapLocation(clusterCentersX[clusterIdx % clusterWidthsLength], 
                                                 clusterCentersY[clusterIdx / clusterWidthsLength]);
                 // Write new status to buffer if we haven't yet
-                if (rc.canSenseLocation(clusterCenter) && clusterControls[clusterIdx] < 4) {
-                    clusterControls[clusterIdx] += 4;
+                if (rc.canSenseLocation(clusterCenter) && clusterControls[clusterIdx] < 8) {
+                    clusterControls[clusterIdx] += 8;
                     markedClustersBuffer[markedClustersCount] = clusterIdx;
                     markedClustersCount++;
                 }
@@ -225,21 +225,21 @@ public class Robot {
             // int clusterIdx = whichCluster(enemy.location); Note: Inlined to save bytecode
             int clusterIdx = whichXLoc[enemy.location.x] + whichYLoc[enemy.location.y];
             // Write new status to buffer if we haven't marked as enemy controlled yet
-            if (clusterControls[clusterIdx] < 8) {
+            if (clusterControls[clusterIdx] < 16) {
                 // Only add to modified list if we haven't marked this cluster yet
-                if (clusterControls[clusterIdx] < 4) {
+                if (clusterControls[clusterIdx] < 8) {
                     markedClustersBuffer[markedClustersCount] = clusterIdx;
                     markedClustersCount++;
                 }
-                clusterControls[clusterIdx] = 8 + (clusterControls[clusterIdx] & 3);
+                clusterControls[clusterIdx] = 16 + (clusterControls[clusterIdx] & 7);
             }
         }
 
         // Flush control buffer and write to comms
         for (int i = 0; i < markedClustersCount; i++) {
             int clusterIdx = markedClustersBuffer[i];
-            int oldClusterStatus = clusterControls[clusterIdx] & 3;
-            int newClusterStatus = (clusterControls[clusterIdx] - oldClusterStatus) >>> 2;
+            int oldClusterStatus = clusterControls[clusterIdx] & 7;
+            int newClusterStatus = (clusterControls[clusterIdx] - oldClusterStatus) >>> 3;
             if (oldClusterStatus != newClusterStatus 
                     && newClusterStatus != commsHandler.readClusterControlStatus(clusterIdx)) {
                 commsHandler.writeClusterControlStatus(clusterIdx, newClusterStatus);

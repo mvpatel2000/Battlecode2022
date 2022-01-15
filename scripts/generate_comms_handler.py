@@ -13,7 +13,7 @@ SCHEMA = {
     'cluster': {
         'slots': 100,
         'bits': {
-            'control_status': 2,
+            'control_status': 3,
             'resource_count': 3,
         }
     },
@@ -37,10 +37,10 @@ SCHEMA = {
             'index': 7,
         }
     },
-    'map_symmetry': {
+    'filler_do_not_use': {
         'slots': 1,
         'bits': {
-            '': 2,
+            '': 6,
         }
     },
     'miner_count': { # make sure this is in a single int
