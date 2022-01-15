@@ -239,10 +239,6 @@ public class Robot {
             int newClusterStatus = (clusterControls[clusterIdx] - oldClusterStatus) >>> 2;
             if (oldClusterStatus != newClusterStatus 
                     && newClusterStatus != commsHandler.readClusterControlStatus(clusterIdx)) {
-                MapLocation temp = new MapLocation(clusterCentersX[clusterIdx % clusterWidthsLength], 
-                                                clusterCentersY[clusterIdx / clusterWidthsLength]);
-                if (clusterIdx == 39)
-                    System.out.println(myLocation + " " + clusterIdx + " " + oldClusterStatus + "->" + newClusterStatus + " at " + temp);
                 commsHandler.writeClusterControlStatus(clusterIdx, newClusterStatus);
             }
             clusterControls[clusterIdx] = newClusterStatus;
@@ -444,9 +440,9 @@ public class Robot {
         int closestDistance = Integer.MAX_VALUE;
         for (int i = 0; i < commsHandler.COMBAT_CLUSTER_SLOTS; i++) {
             int nearestCluster = commsHandler.readCombatClusterIndex(i);
-            // Break if no more combat clusters exist
+            // Skip if no more combat clusters written
             if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                break;
+                continue;
             }
             int distance = myLocation.distanceSquaredTo(
                 new MapLocation(
@@ -454,9 +450,6 @@ public class Robot {
                     clusterCentersY[nearestCluster / clusterWidthsLength]
                 )
             );
-            if (nearestCluster == 39) {
-                System.out.println("Hit: " + distance + " " + closestDistance);
-            }
             if (distance < closestDistance) {
                 closestDistance = distance;
                 closestCluster = nearestCluster;
@@ -477,9 +470,9 @@ public class Robot {
         for (int i = 0; i < commsHandler.EXPLORE_CLUSTER_SLOTS; i++) {
             int nearestClusterAll = commsHandler.readExploreClusterAll(i);
             int nearestCluster = nearestClusterAll & 127; // 7 lowest order bits
-            // Break if no more combat clusters exist
+            // Skip if no more combat clusters written
             if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                break;
+                continue;
             }
             // Skip clusters which are fully claimed
             int nearestClusterStatus = (nearestClusterAll & 128) >> 7; // 2^7

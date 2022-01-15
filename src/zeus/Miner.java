@@ -1,5 +1,7 @@
 package zeus;
 
+import javax.print.attribute.standard.Destination;
+
 import battlecode.common.*;
 
 public class Miner extends Robot {
@@ -170,6 +172,7 @@ public class Miner extends Robot {
 
         // Navigate to nearest resources found
         int nearestCluster = getNearestMineCluster();
+        // rc.setIndicatorString("Mine: " + nearestCluster);
         if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
             resetControlStatus(pathing.destination);
             pathing.updateDestination(new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
@@ -201,9 +204,9 @@ public class Miner extends Robot {
         for (int i = 0; i < commsHandler.MINE_CLUSTER_SLOTS; i++) {
             int nearestClusterAll = commsHandler.readMineClusterAll(i);
             int nearestCluster = nearestClusterAll & 127; // 7 lowest order bits
-            // Break if no more mine clusters exist
+            // Continue if no mine written
             if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                break;
+                continue;
             }
             // Skip clusters which are fully claimed
             int nearestClusterStatus = (nearestClusterAll & 896) >> 7; // 2^7 + 2^8 + 2^9
