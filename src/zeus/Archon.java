@@ -224,6 +224,12 @@ public class Archon extends Robot {
         int mineClusterIndex = 0;
         int exploreClusterIndex = 0;
 
+        String status = "";
+        for (int i = 0; i < commsHandler.COMBAT_CLUSTER_SLOTS; i++) {
+            status += " " + commsHandler.readCombatClusterAll(i);
+        }
+        System.out.println(commsHandler.readClusterControlStatus(39) + status);
+
         // Preserve combat clusters which still have enemies
         while (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS) {
             int cluster = commsHandler.readCombatClusterIndex(combatClusterIndex);

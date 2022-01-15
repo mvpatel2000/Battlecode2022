@@ -202,8 +202,10 @@ public class Robot {
             if (rc.canSenseLocation(shiftedLocation)) {
                 // int clusterIdx = whichCluster(shiftedLocation); Note: Inlined to save bytecode
                 int clusterIdx = whichXLoc[shiftedLocation.x] + whichYLoc[shiftedLocation.y];
+                MapLocation clusterCenter = new MapLocation(clusterCentersX[clusterIdx % clusterWidthsLength], 
+                                                clusterCentersY[clusterIdx / clusterWidthsLength]);
                 // Write new status to buffer if we haven't yet
-                if (clusterControls[clusterIdx] < 4) {
+                if (rc.canSenseLocation(clusterCenter) && clusterControls[clusterIdx] < 4) {
                     clusterControls[clusterIdx] += 4;
                     markedClustersBuffer[markedClustersCount] = clusterIdx;
                     markedClustersCount++;
@@ -236,6 +238,10 @@ public class Robot {
             int newClusterStatus = (clusterControls[clusterIdx] - oldClusterStatus) >>> 2;
             if (oldClusterStatus != newClusterStatus 
                     && newClusterStatus != commsHandler.readClusterControlStatus(clusterIdx)) {
+                MapLocation temp = new MapLocation(clusterCentersX[clusterIdx % clusterWidthsLength], 
+                                                clusterCentersY[clusterIdx / clusterWidthsLength]);
+                if (clusterIdx == 39)
+                    System.out.println(myLocation + " " + clusterIdx + " " + oldClusterStatus + "->" + newClusterStatus + " at " + temp);
                 commsHandler.writeClusterControlStatus(clusterIdx, newClusterStatus);
             }
             clusterControls[clusterIdx] = newClusterStatus;
@@ -447,6 +453,9 @@ public class Robot {
                     clusterCentersY[nearestCluster / clusterWidthsLength]
                 )
             );
+            if (nearestCluster == 39) {
+                System.out.println("Hit: " + distance + " " + closestDistance);
+            }
             if (distance < closestDistance) {
                 closestDistance = distance;
                 closestCluster = nearestCluster;
@@ -505,7 +514,9 @@ public class Robot {
     public void resetControlStatus(MapLocation loc) throws GameActionException {
         if (exploreMode) {
             int cluster = whichXLoc[loc.x] + whichYLoc[loc.y];
-            commsHandler.writeClusterControlStatus(cluster, CommsHandler.ControlStatus.UNKNOWN);
+            if (commsHandler.readClusterControlStatus(cluster) == CommsHandler.ControlStatus.EXPLORING) {
+                commsHandler.writeClusterControlStatus(cluster, CommsHandler.ControlStatus.UNKNOWN);
+            }
         };
     }
 
