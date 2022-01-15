@@ -107,7 +107,7 @@ public class Soldier extends Robot {
             else if (ally.type == RobotType.ARCHON) {
                 archonLocation = ally.location;
                 // Repair normalized to per turn by rubble
-                repairPerTurn = (ally.level + 1) * 10 / (10.0 + rc.senseRubble(archonLocation));
+                repairPerTurn = (2*ally.level) * 10 / (10.0 + rc.senseRubble(archonLocation));
             }
         }
         boolean holdGround = rc.getHealth() > 30 && ((archonLocation != null) || (combatAllies - nearbyEnemies.length >= 2));
