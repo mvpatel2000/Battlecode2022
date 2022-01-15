@@ -137,12 +137,12 @@ public class Soldier extends Robot {
                         double enemyRubbleFactor = 10 / (10.0 + rc.senseRubble(enemy.location));
                         // They can hit me, full points off
                         if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared) {
-                            score -= enemy.type.getDamage(enemy.level) * enemyRubbleFactor / myRubbleFactor;
+                            score -= enemy.type.getDamage(enemy.level) * enemyRubbleFactor;
                         }
-                        // // They can see me / step in and attack me, half points off
-                        // else if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.visionRadiusSquared) {
-                        //     score -= 0.5 * enemy.type.getDamage(enemy.level) * enemyRubbleFactor / myRubbleFactor;
-                        // }
+                        // They can see me. If they step in, I can start shooting but they can too, so normalize by rubble
+                        else if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.visionRadiusSquared) {
+                            score -= Math.max(0, (enemy.type.getDamage(enemy.level) * enemyRubbleFactor - RobotType.SOLDIER.damage * myRubbleFactor));
+                        }
                     }
                     // See if you can attack anyone
                     if (moveLocation.distanceSquaredTo(enemy.location) <= RobotType.SOLDIER.actionRadiusSquared) {
@@ -159,6 +159,8 @@ public class Soldier extends Robot {
                 if (canAttack) {
                     score += RobotType.SOLDIER.damage * myRubbleFactor;
                 }
+                // Add rubble movement factor, often serves as a tiebreak for flee
+                score += myRubbleFactor;
                 if (score > optimalScore) {
                     optimalDirection = dir;
                     optimalScore = score;

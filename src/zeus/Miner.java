@@ -10,6 +10,7 @@ public class Miner extends Robot {
 
     int fleeingCounter;
     MapLocation lastEnemyLocation;
+    int requiredLead;
 
     final static int[][] INNER_SPIRAL_ORDER = {{0,0},{0,1},{1,0},{0,-1},{-1,0},{1,1},{1,-1},{-1,-1},{-1,1},{0,2},{2,0},{0,-2},{-2,0},{1,2},{2,1},{2,-1},{1,-2},{-1,-2},{-2,-1},{-2,1},{-1,2},{2,2},{2,-2},{-2,-2},{-2,2},{0,3},{3,0},{0,-3},{-3,0},{1,3},{3,1},{3,-1},{1,-3},{-1,-3},{-3,-1},{-3,1},{-1,3},{2,3},{3,2},{3,-2},{2,-3},{-2,-3},{-3,-2},{-3,2},{-2,3}};
     final static int[][] OUTER_SPIRAL_ORDER = {{0,4},{4,0},{0,-4},{-4,0},{1,4},{4,1},{4,-1},{1,-4},{-1,-4},{-4,-1},{-4,1},{-1,4},{3,3},{3,-3},{-3,-3},{-3,3},{2,4},{4,2},{4,-2},{2,-4},{-2,-4},{-4,-2},{-4,2},{-2,4}};
@@ -18,11 +19,21 @@ public class Miner extends Robot {
         super(rc);
         fleeingCounter = 0;
         lastEnemyLocation = null;
+        requiredLead = 2;
     }
 
     @Override
     public void runUnit() throws GameActionException { 
         announceAlive();
+
+        requiredLead = 2;
+        int maxScan = Math.min(nearbyEnemies.length, 10);
+        for (int i = 0; i < maxScan; i++) {
+            RobotInfo enemy = nearbyEnemies[i];
+            if (enemy.type == RobotType.ARCHON) {
+                requiredLead = 1;
+            }
+        }
         
         mineNearbySquares();
 
@@ -79,10 +90,10 @@ public class Miner extends Robot {
                 return;
             }
         }
-        mineLocations = rc.senseNearbyLocationsWithLead(RobotType.MINER.actionRadiusSquared, 2);
+        mineLocations = rc.senseNearbyLocationsWithLead(RobotType.MINER.actionRadiusSquared, requiredLead);
         for (MapLocation mineLocation : mineLocations) {
             int leadCount = rc.senseLead(mineLocation);
-            while (rc.canMineLead(mineLocation) && leadCount > 1) {
+            while (rc.canMineLead(mineLocation) && leadCount >= requiredLead) {
                 rc.mineLead(mineLocation);
                 leadCount--;
             }
@@ -102,7 +113,9 @@ public class Miner extends Robot {
         // Find nearest combat enemy to kite
         MapLocation nearestCombatEnemy = null;
         int distanceToEnemy = Integer.MAX_VALUE;
-        for (RobotInfo enemy : nearbyEnemies) {
+        int maxScan = Math.min(nearbyEnemies.length, 10);
+        for (int i = 0; i < maxScan; i++) {
+            RobotInfo enemy = nearbyEnemies[i];
             if (enemy.getType() == RobotType.SOLDIER || enemy.getType() == RobotType.SAGE 
                     || enemy.getType() == RobotType.WATCHTOWER) {
                 int dist = myLocation.distanceSquaredTo(enemy.location);
@@ -145,7 +158,7 @@ public class Miner extends Robot {
 
         // Don't scan if destination still has lead or gold
         if (pathing.destination != null && rc.canSenseLocation(pathing.destination)
-             && (rc.senseLead(pathing.destination) > 1 || rc.senseGold(pathing.destination) > 0)) {
+             && (rc.senseLead(pathing.destination) > requiredLead || rc.senseGold(pathing.destination) > 0)) {
             // rc.setIndicatorString("Destination still has lead or gold: " + destination);
             return;
         }
@@ -153,7 +166,7 @@ public class Miner extends Robot {
         // Set nearby resource tiles as a destination
         MapLocation nearestResource = null;
         int optimalDistance = Integer.MAX_VALUE;
-        for (MapLocation tile : rc.senseNearbyLocationsWithLead(RobotType.MINER.visionRadiusSquared, 2)) {
+        for (MapLocation tile : rc.senseNearbyLocationsWithLead(RobotType.MINER.visionRadiusSquared, requiredLead)) {
             int dist = myLocation.distanceSquaredTo(tile);
             if (dist < optimalDistance) {
                 nearestResource = tile;
