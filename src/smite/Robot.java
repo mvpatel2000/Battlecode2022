@@ -41,6 +41,7 @@ public class Robot {
     int[] clusterResources;
     int[] clusterControls;
     int[] markedClustersBuffer;
+    int[] clusterPermutation;
 
     boolean isDying;
 
@@ -202,8 +203,10 @@ public class Robot {
             if (rc.canSenseLocation(shiftedLocation)) {
                 // int clusterIdx = whichCluster(shiftedLocation); Note: Inlined to save bytecode
                 int clusterIdx = whichXLoc[shiftedLocation.x] + whichYLoc[shiftedLocation.y];
+                MapLocation clusterCenter = new MapLocation(clusterCentersX[clusterIdx % clusterWidthsLength], 
+                                                clusterCentersY[clusterIdx / clusterWidthsLength]);
                 // Write new status to buffer if we haven't yet
-                if (clusterControls[clusterIdx] < 4) {
+                if (rc.canSenseLocation(clusterCenter) && clusterControls[clusterIdx] < 4) {
                     clusterControls[clusterIdx] += 4;
                     markedClustersBuffer[markedClustersCount] = clusterIdx;
                     markedClustersCount++;
@@ -437,9 +440,9 @@ public class Robot {
         int closestDistance = Integer.MAX_VALUE;
         for (int i = 0; i < commsHandler.COMBAT_CLUSTER_SLOTS; i++) {
             int nearestCluster = commsHandler.readCombatClusterIndex(i);
-            // Break if no more combat clusters exist
+            // Skip if no more combat clusters written
             if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                break;
+                continue;
             }
             int distance = myLocation.distanceSquaredTo(
                 new MapLocation(
@@ -467,9 +470,9 @@ public class Robot {
         for (int i = 0; i < commsHandler.EXPLORE_CLUSTER_SLOTS; i++) {
             int nearestClusterAll = commsHandler.readExploreClusterAll(i);
             int nearestCluster = nearestClusterAll & 127; // 7 lowest order bits
-            // Break if no more combat clusters exist
+            // Skip if no more combat clusters written
             if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                break;
+                continue;
             }
             // Skip clusters which are fully claimed
             int nearestClusterStatus = (nearestClusterAll & 128) >> 7; // 2^7
@@ -505,7 +508,9 @@ public class Robot {
     public void resetControlStatus(MapLocation loc) throws GameActionException {
         if (exploreMode) {
             int cluster = whichXLoc[loc.x] + whichYLoc[loc.y];
-            commsHandler.writeClusterControlStatus(cluster, CommsHandler.ControlStatus.UNKNOWN);
+            if (commsHandler.readClusterControlStatus(cluster) == CommsHandler.ControlStatus.EXPLORING) {
+                commsHandler.writeClusterControlStatus(cluster, CommsHandler.ControlStatus.UNKNOWN);
+            }
         };
     }
 
@@ -561,6 +566,12 @@ public class Robot {
             int yCenter = yStart + (clusterHeights[j] / 2);
             clusterCentersY[j] = yCenter;
             yStart += clusterHeights[j];
+        }
+    }
+
+    public void initClusterPermutation() {
+        switch(clusterWidths.length) {
+            
         }
     }
 

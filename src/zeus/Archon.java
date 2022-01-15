@@ -60,7 +60,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 5) {
+        // if (currentRound > 1000) {
         //     rc.resign();
         // }
 
@@ -151,13 +151,61 @@ public class Archon extends Robot {
         int mineClusterIndex = 0;
         int exploreClusterIndex = 0;
 
+        // String status = "";
+        // for (int i = 0; i < commsHandler.COMBAT_CLUSTER_SLOTS; i++) {
+        //     int cluster = commsHandler.readCombatClusterIndex(i);
+        //     status += " " + cluster + "(" + commsHandler.readClusterControlStatus(cluster) + ")";
+        // }
+        // System.out.println("Combat"+status);
+        // String status = "";
+        // for (int i = 0; i < commsHandler.EXPLORE_CLUSTER_SLOTS; i++) {
+        //     status += " " + commsHandler.readExploreClusterIndex(i);
+        // }
+        // System.out.println("Explore"+status);
+        // status = "";
+        // for (int i = 0; i < commsHandler.MINE_CLUSTER_SLOTS; i++) {
+        //     status += " " + commsHandler.readMineClusterIndex(i);
+        // }
+        // System.out.println("Mine"+status);
+
+        // Clear combat clusters
+        for (int i = 0; i < commsHandler.COMBAT_CLUSTER_SLOTS; i++) {
+            int cluster = commsHandler.readCombatClusterIndex(i);
+            if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                continue;
+            }
+            if (commsHandler.readClusterControlStatus(cluster) != CommsHandler.ControlStatus.THEIRS) {
+                commsHandler.writeCombatClusterIndex(i, commsHandler.UNDEFINED_CLUSTER_INDEX);
+            }
+        }
+        // Clear mine slots
+        for (int i = 0; i < commsHandler.MINE_CLUSTER_SLOTS; i++) {
+            int cluster = commsHandler.readMineClusterIndex(i);
+            if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                continue;
+            }
+            if (commsHandler.readClusterResourceCount(cluster) == 0) {
+                commsHandler.writeMineClusterIndex(i, commsHandler.UNDEFINED_CLUSTER_INDEX);
+            }
+        }
+        // Clear explore slots
+        for (int i = 0; i < commsHandler.EXPLORE_CLUSTER_SLOTS; i++) {
+            int nearestClusterAll = commsHandler.readExploreClusterAll(exploreClusterIndex);
+            int nearestCluster = nearestClusterAll & 127; // 7 lowest order bits
+            int nearestClusterStatus = (nearestClusterAll & 128) >> 7; // 2^7
+            int controlStatus = commsHandler.readClusterControlStatus(nearestCluster);
+            if (nearestClusterStatus == CommsHandler.ClaimStatus.CLAIMED
+                || controlStatus == CommsHandler.ControlStatus.OURS
+                || controlStatus == CommsHandler.ControlStatus.THEIRS) {
+                // Also resets claimed/unclaimed bit to unclaimed
+                commsHandler.writeExploreClusterAll(i, commsHandler.UNDEFINED_CLUSTER_INDEX);
+            }
+        }
+
         // Preserve combat clusters which still have enemies
         while (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS) {
             int cluster = commsHandler.readCombatClusterIndex(combatClusterIndex);
             if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                break;
-            }
-            if (commsHandler.readClusterControlStatus(cluster) != CommsHandler.ControlStatus.THEIRS) {
                 break;
             }
             combatClusterIndex++;
@@ -168,18 +216,12 @@ public class Archon extends Robot {
             if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 break;
             }
-            if (commsHandler.readClusterResourceCount(cluster) == 0) {
-                break;
-            }
             mineClusterIndex++;
         }
         // Preserve explore clusters which still have not been claimed
         while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS) {
-            int nearestClusterAll = commsHandler.readExploreClusterAll(exploreClusterIndex);
-            int nearestCluster = nearestClusterAll & 127; // 7 lowest order bits
-            int nearestClusterStatus = (nearestClusterAll & 128) >> 7; // 2^7
-            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX
-                || nearestClusterStatus == CommsHandler.ClaimStatus.CLAIMED) {
+            int nearestCluster = commsHandler.readExploreClusterIndex(exploreClusterIndex);
+            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 break;
             }
             exploreClusterIndex++;
@@ -196,54 +238,76 @@ public class Archon extends Robot {
             // Combat cluster
             if (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS 
                 && controlStatus == CommsHandler.ControlStatus.THEIRS) {
-                commsHandler.writeCombatClusterIndex(combatClusterIndex, i);
-                combatClusterIndex++;
-
-                // Preserve combat clusters which still have enemies
-                while (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS) {
-                    int cluster = commsHandler.readCombatClusterIndex(combatClusterIndex);
-                    if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                // Verify cluster is not already in comms list
+                boolean isValid = true;
+                for (int j = 0; j < commsHandler.COMBAT_CLUSTER_SLOTS; j++) {
+                    if (commsHandler.readCombatClusterIndex(j) == i) {
+                        isValid = false;
                         break;
                     }
-                    if (commsHandler.readClusterControlStatus(cluster) != CommsHandler.ControlStatus.THEIRS) {
-                        break;
-                    }
+                }
+                if (isValid) {
+                    commsHandler.writeCombatClusterIndex(combatClusterIndex, i);
                     combatClusterIndex++;
+
+                    // Preserve combat clusters which still have enemies
+                    while (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS) {
+                        int cluster = commsHandler.readCombatClusterIndex(combatClusterIndex);
+                        if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                            break;
+                        }
+                        combatClusterIndex++;
+                    }
                 }
             }
             // Mine cluster
             if (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS && resourceCount > 0) {
-                commsHandler.writeMineClusterAll(mineClusterIndex, i + ((resourceCount/4) << 7));
-                mineClusterIndex++;
-
-                // Preserve mining clusters which still have resources
-                while (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
-                    int cluster = commsHandler.readMineClusterIndex(mineClusterIndex);
-                    if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                // Verify cluster is not already in comms list
+                boolean isValid = true;
+                for (int j = 0; j < commsHandler.MINE_CLUSTER_SLOTS; j++) {
+                    if (commsHandler.readMineClusterIndex(j) == i) {
+                        isValid = false;
                         break;
                     }
-                    if (commsHandler.readClusterResourceCount(cluster) == 0) {
-                        break;
-                    }
+                }
+                if (isValid) {
+                    commsHandler.writeMineClusterAll(mineClusterIndex, i + ((resourceCount/4) << 7));
                     mineClusterIndex++;
+
+                    // Preserve mining clusters which still have resources
+                    while (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
+                        int cluster = commsHandler.readMineClusterIndex(mineClusterIndex);
+                        if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                            break;
+                        }
+                        mineClusterIndex++;
+                    }
                 }
             }
             // Explore cluster
             if (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS
                     && controlStatus == CommsHandler.ControlStatus.UNKNOWN) {
-                commsHandler.writeExploreClusterAll(exploreClusterIndex, i + (CommsHandler.ClaimStatus.UNCLAIMED << 7));
-                exploreClusterIndex++;
-
-                /// Preserve explore clusters which still have not been claimed
-                while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS) {
-                    int nearestClusterAll = commsHandler.readExploreClusterAll(exploreClusterIndex);
-                    int nearestCluster = nearestClusterAll & 127; // 7 lowest order bits
-                    int nearestClusterStatus = (nearestClusterAll & 128) >> 7; // 2^7
-                    if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX
-                        || nearestClusterStatus == CommsHandler.ClaimStatus.CLAIMED) {
+                // Verify cluster is not already in comms list
+                boolean isValid = true;
+                for (int j = 0; j < commsHandler.EXPLORE_CLUSTER_SLOTS; j++) {
+                    if (commsHandler.readExploreClusterIndex(j) == i) {
+                        isValid = false;
                         break;
                     }
+                }
+                if (isValid) {
+                    // Implicitly sets unclaimed bit to 0 (unclaimed)
+                    commsHandler.writeExploreClusterAll(exploreClusterIndex, i);
                     exploreClusterIndex++;
+
+                    // Preserve explore clusters which still have not been claimed
+                    while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS) {
+                        int nearestCluster = commsHandler.readExploreClusterIndex(exploreClusterIndex);
+                        if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                            break;
+                        }
+                        exploreClusterIndex++;
+                    }
                 }
             }
         }
