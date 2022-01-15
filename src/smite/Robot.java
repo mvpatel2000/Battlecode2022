@@ -407,7 +407,7 @@ public class Robot {
                 score += 1000000;
             }
             // Prioritize archons after opening
-            if (enemy.type == RobotType.ARCHON) {
+            if (currentRound > 500 && enemy.type == RobotType.ARCHON) {
                 score += 20000;
             }
             // Prioritize combat units
