@@ -328,7 +328,13 @@ public class Robot {
         if (isDying && baseLocation != null) {
             if (myLocation.distanceSquaredTo(baseLocation) > 13) {
                 //rc.setIndicatorString("Retreating to base!");
-                pathing.pathTo(baseLocation);
+                pathing.updateDestination(baseLocation);
+                pathing.pathToDestination();
+            }
+            else if (myLocation.x + myLocation.y % 2 == 0) { // only settle down if we're on an odd square, otherwise keep moving
+                Direction rotateDir = myLocation.directionTo(baseLocation).rotateRight().rotateRight();
+                pathing.updateDestination(myLocation.add(rotateDir).add(rotateDir.rotateLeft()).add(rotateDir).add(rotateDir));
+                pathing.pathToDestination();
             }
             return true;
         }

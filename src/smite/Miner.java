@@ -1,9 +1,5 @@
 package smite;
 
-import java.util.Map;
-
-import javax.print.attribute.standard.Destination;
-
 import battlecode.common.*;
 
 public class Miner extends Robot {
@@ -186,13 +182,18 @@ public class Miner extends Robot {
             return;
         }
 
-        // Navigate to nearest resources found
+        // Navigate to nearest resources found 
         if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
-            resetControlStatus(pathing.destination);
             MapLocation newDestination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                                             clusterCentersY[nearestCluster / clusterWidthsLength]);
-            pathing.updateDestination(newDestination);
-            return;
+            double distToDest = pathing.destination == null ? 99999.0 : Math.sqrt(myLocation.distanceSquaredTo(pathing.destination));
+            double distToNewDest = Math.sqrt(myLocation.distanceSquaredTo(newDestination));
+            // If we're exploring and close to destination (squared distance <= 8), finish exploring
+            if (!exploreMode || distToDest <= 2.9 || distToDest * 2.0 > distToNewDest) {
+                resetControlStatus(pathing.destination);
+                pathing.updateDestination(newDestination);
+                return;
+            }
         }
 
         // Explore map. Get new cluster if not in explore mode or close to destination

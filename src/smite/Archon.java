@@ -61,7 +61,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 400) {
+        // if (currentRound > 45) {
         //     //rc.resign\();
         // }
 
@@ -160,7 +160,8 @@ public class Archon extends Robot {
         // //System.out.println\("Combat"+status);
         // String status = "";
         // for (int i = 0; i < commsHandler.EXPLORE_CLUSTER_SLOTS; i++) {
-        //     status += " " + commsHandler.readExploreClusterIndex(i);
+        //     int cluster = commsHandler.readExploreClusterIndex(i);
+        //     status += " " + cluster + "(" + commsHandler.readClusterControlStatus(cluster) + "," + commsHandler.readExploreClusterClaimStatus(i) + ")";
         // }
         // //System.out.println\("Explore"+status);
         // String status = "";
@@ -196,7 +197,7 @@ public class Archon extends Robot {
         }
         // Clear explore slots
         for (int i = 0; i < commsHandler.EXPLORE_CLUSTER_SLOTS; i++) {
-            int nearestClusterAll = commsHandler.readExploreClusterAll(exploreClusterIndex);
+            int nearestClusterAll = commsHandler.readExploreClusterAll(i);
             int nearestCluster = nearestClusterAll & 127; // 7 lowest order bits
             int nearestClusterStatus = (nearestClusterAll & 128) >> 7; // 2^7
             int controlStatus = commsHandler.readClusterControlStatus(nearestCluster);
