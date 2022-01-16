@@ -90,6 +90,15 @@ public class Archon extends Robot {
         }
     }
 
+    public boolean isTheirs(int controlStatus) {
+        if (controlStatus == CommsHandler.ControlStatus.MINOR_ENEMY ||
+            controlStatus == CommsHandler.ControlStatus.MEDIUM_ENEMY ||
+            controlStatus == CommsHandler.ControlStatus.MAJOR_ENEMY) {
+                return true;
+        }
+        return false;
+    }
+
     /**
      * Sets initial explore clusters
      * @throws GameActionException
@@ -177,7 +186,7 @@ public class Archon extends Robot {
             if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 continue;
             }
-            if (commsHandler.readClusterControlStatus(cluster) != CommsHandler.ControlStatus.THEIRS) {
+            if (!isTheirs(commsHandler.readClusterControlStatus(cluster))) {
                 commsHandler.writeCombatClusterIndex(i, commsHandler.UNDEFINED_CLUSTER_INDEX);
             }
         }
@@ -203,7 +212,7 @@ public class Archon extends Robot {
             int controlStatus = commsHandler.readClusterControlStatus(nearestCluster);
             if (nearestClusterStatus == CommsHandler.ClaimStatus.CLAIMED
                 || controlStatus == CommsHandler.ControlStatus.OURS
-                || controlStatus == CommsHandler.ControlStatus.THEIRS) {
+                || isTheirs(controlStatus)) {
                 // Also resets claimed/unclaimed bit to unclaimed
                 commsHandler.writeExploreClusterAll(i, commsHandler.UNDEFINED_CLUSTER_INDEX);
             }
@@ -245,7 +254,7 @@ public class Archon extends Robot {
             resourcesOnMap += resourceCount * LEAD_RESOLUTION;
             // Combat cluster
             if (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS 
-                && controlStatus == CommsHandler.ControlStatus.THEIRS) {
+                && isTheirs(controlStatus)) {
                 // Verify cluster is not already in comms list
                 boolean isValid = true;
                 for (int j = 0; j < commsHandler.COMBAT_CLUSTER_SLOTS; j++) {
@@ -256,6 +265,8 @@ public class Archon extends Robot {
                 }
                 if (isValid) {
                     commsHandler.writeCombatClusterIndex(combatClusterIndex, i);
+                    // Writes a 0 for miners, 1 for 1 soldier, 2 for multi-soldiers.
+                    commsHandler.writeCombatClusterPriority(combatClusterIndex, controlStatus - commsHandler.CONTROL_STATUS_ENEMY_OFFSET);
                     combatClusterIndex++;
 
                     // Preserve combat clusters which still have enemies

@@ -189,9 +189,21 @@ public class Robot {
     }
 
     /**
+     * Cluster Helper functions
+     */
+    public int getClusterHeight(int clusterIndex) {
+        return clusterHeights[clusterIndex / clusterWidthsLength];
+    }
+
+    public int getClusterWidth(int clusterIndex) {
+        return clusterWidths[clusterIndex % clusterWidthsLength];
+    }
+
+
+    /**
      * Updates cluster information. Scans nearby tiles and enemy locations and aggregates into 
      * clusterControls as a buffer. Uses markedClustersBuffer to track which buffers have been
-     * modified each turn to write them. In clusterControls, we set the 3rd and 4th bits to be
+     * modified each turn to write them. In clusterControls, we set the 4th - 6th bits to be
      * the new value and only read/write if it is different from the previous state.
      * 
      * @throws GameActionException
@@ -217,23 +229,113 @@ public class Robot {
             }
         }
 
-        // Mark nearby clusters with enemies as hostile
-        // Process at max 10 enemies
-        int numEnemies = Math.min(nearbyEnemies.length, 10);
-        for (int i = 0; i < numEnemies; i++) {
-            RobotInfo enemy = nearbyEnemies[i];
-            // int clusterIdx = whichCluster(enemy.location); Note: Inlined to save bytecode
-            int clusterIdx = whichXLoc[enemy.location.x] + whichYLoc[enemy.location.y];
-            // Write new status to buffer if we haven't marked as enemy controlled yet
-            if (clusterControls[clusterIdx] < 16) {
-                // Only add to modified list if we haven't marked this cluster yet
-                if (clusterControls[clusterIdx] < 8) {
-                    markedClustersBuffer[markedClustersCount] = clusterIdx;
-                    markedClustersCount++;
+        // Create list of adjacent clusters
+        int myClusterIdx = whichCluster(myLocation);
+        int myClusterWidth = getClusterWidth(myClusterIdx);
+        int myClusterHeight = getClusterHeight(myClusterIdx);
+        int[] adjacentClusterIndices = new int[9];
+        int[] adjacentEnemySoldiers = new int[9];
+        int[] adjacentEnemyMiners = new int[9];
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                MapLocation newLoc = new MapLocation(myLocation.x + i*myClusterWidth, myLocation.y + j*myClusterHeight);
+                if (newLoc.x >= 0 && newLoc.x < rc.getMapWidth() && newLoc.y >= 0 && newLoc.y < rc.getMapHeight()) {
+                    adjacentClusterIndices[(i+1)*3 + (j+1)] = whichCluster(newLoc);
+                } else {
+                    adjacentClusterIndices[(i+1)*3 + (j+1)] = -1;
                 }
-                clusterControls[clusterIdx] = 16 + (clusterControls[clusterIdx] & 7);
             }
         }
+
+        // Mark nearby clusters with enemies as hostile
+        // Process nearest 50 enemies.
+        int numEnemies = Math.min(nearbyEnemies.length, 50);
+        for (int i = 0; i < nearbyEnemies.length; i++) {
+            RobotInfo enemy = nearbyEnemies[i];
+            // int clusterIdx = whichCluster(enemy.location); Note: Inlined to save bytecode
+            int enemyClusterIdx = whichXLoc[enemy.location.x] + whichYLoc[enemy.location.y];
+            if (enemyClusterIdx == adjacentClusterIndices[0]) {
+                if (enemy.type == RobotType.MINER) { adjacentEnemyMiners[0] += 1; } 
+                else if (enemy.type == RobotType.SOLDIER) { adjacentEnemySoldiers[0] += 1; }
+                continue;
+            }
+            if (enemyClusterIdx == adjacentClusterIndices[1]) {
+                if (enemy.type == RobotType.MINER) { adjacentEnemyMiners[1] += 1; } 
+                else if (enemy.type == RobotType.SOLDIER) { adjacentEnemySoldiers[1] += 1; }
+                continue;
+            }
+            if (enemyClusterIdx == adjacentClusterIndices[2]) {
+                if (enemy.type == RobotType.MINER) { adjacentEnemyMiners[2] += 1; } 
+                else if (enemy.type == RobotType.SOLDIER) { adjacentEnemySoldiers[2] += 1; }
+                continue;
+            }
+            if (enemyClusterIdx == adjacentClusterIndices[3]) {
+                if (enemy.type == RobotType.MINER) { adjacentEnemyMiners[3] += 1; } 
+                else if (enemy.type == RobotType.SOLDIER) { adjacentEnemySoldiers[3] += 1; }
+                continue;
+            }
+            if (enemyClusterIdx == adjacentClusterIndices[4]) {
+                if (enemy.type == RobotType.MINER) { adjacentEnemyMiners[4] += 1; } 
+                else if (enemy.type == RobotType.SOLDIER) { adjacentEnemySoldiers[4] += 1; }
+                continue;
+            }
+            if (enemyClusterIdx == adjacentClusterIndices[5]) {
+                if (enemy.type == RobotType.MINER) { adjacentEnemyMiners[5] += 1; } 
+                else if (enemy.type == RobotType.SOLDIER) { adjacentEnemySoldiers[5] += 1; }
+                continue;
+            }
+            if (enemyClusterIdx == adjacentClusterIndices[6]) {
+                if (enemy.type == RobotType.MINER) { adjacentEnemyMiners[6] += 1; } 
+                else if (enemy.type == RobotType.SOLDIER) { adjacentEnemySoldiers[6] += 1; }
+                continue;
+            }
+            if (enemyClusterIdx == adjacentClusterIndices[7]) {
+                if (enemy.type == RobotType.MINER) { adjacentEnemyMiners[7] += 1; } 
+                else if (enemy.type == RobotType.SOLDIER) { adjacentEnemySoldiers[7] += 1; }
+                continue;
+            }
+            if (enemyClusterIdx == adjacentClusterIndices[8]) {
+                if (enemy.type == RobotType.MINER) { adjacentEnemyMiners[8] += 1; } 
+                else if (enemy.type == RobotType.SOLDIER) { adjacentEnemySoldiers[8] += 1; }
+                continue;
+            }
+        }
+        // Loop over adjacent clusters, consider the number of enemies
+        // and assign priorities.
+        for (int j=0; j<9; j++) {
+            // Adjacent cluster doesn't exist, it is off the map.
+            if (adjacentClusterIndices[j] == -1) {
+                continue;
+            }
+            int clusterIdx = adjacentClusterIndices[j];
+            if (adjacentEnemySoldiers[j] == 0 && adjacentEnemyMiners[j] == 0) {
+                continue;
+            }
+            if (clusterControls[clusterIdx] < 8) {
+                markedClustersBuffer[markedClustersCount] = clusterIdx;
+                markedClustersCount++;
+            }
+            if (adjacentEnemySoldiers[j] == 0) {
+                clusterControls[clusterIdx] = (CommsHandler.ControlStatus.MINOR_ENEMY << 3) + (clusterControls[clusterIdx] & 7);
+            }
+            else if (adjacentEnemySoldiers[j] == 1) {
+                clusterControls[clusterIdx] = (CommsHandler.ControlStatus.MEDIUM_ENEMY << 3) + (clusterControls[clusterIdx] & 7);
+            } else {
+                clusterControls[clusterIdx] = (CommsHandler.ControlStatus.MAJOR_ENEMY << 3) + (clusterControls[clusterIdx] & 7);
+            }
+        }
+
+        /**
+        int clusterIndex = adjacentClusterIndices[j]
+        // Write new status to buffer if we haven't marked as enemy controlled yet
+        if (clusterControls[clusterIdx] < 16) {
+            // Only add to modified list if we haven't marked this cluster yet
+            if (clusterControls[clusterIdx] < 8) {
+                markedClustersBuffer[markedClustersCount] = clusterIdx;
+                markedClustersCount++;
+            }
+            clusterControls[clusterIdx] = 16 + (clusterControls[clusterIdx] & 7); // 010xxx
+        }*/
 
         // Flush control buffer and write to comms
         for (int i = 0; i < markedClustersCount; i++) {
@@ -440,6 +542,45 @@ public class Robot {
     }
 
     /**
+     * Returns highest best combat cluster (as weighted by priority and distance)
+     * or UNDEFINED_CLUSTER_INDEX otherwise
+     * @return
+     * @throws GameActionException
+     */
+    public int getBestCombatCluster() throws GameActionException {
+        int bestCluster = commsHandler.UNDEFINED_CLUSTER_INDEX;
+        int bestClusterWeight = Integer.MAX_VALUE;
+        for (int i = 0; i < commsHandler.COMBAT_CLUSTER_SLOTS; i++) {
+            int currentCluster = commsHandler.readCombatClusterIndex(i);
+            int clusterPriority = commsHandler.readCombatClusterPriority(i);
+            // Skip if no more combat clusters written
+            if (currentCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                continue;
+            }
+            int distance = myLocation.distanceSquaredTo(
+                new MapLocation(
+                    clusterCentersX[currentCluster % clusterWidthsLength], 
+                    clusterCentersY[currentCluster / clusterWidthsLength]
+                )
+            );
+            // Closer clusters and those with more enemies have lower weights (lowest weight optimal)
+            // A cluster with a minor enemy has to be 3x closer to have equal weight to a cluster with major enemy.
+            int clusterWeight = distance * (commsHandler.CLUSTER_ENEMY_LEVELS - clusterPriority);
+            
+            System.out.println("Considering cluster: " + getClusterCenter(currentCluster));
+            System.out.println("Distance " + distance);
+            System.out.println("Enemy Level: " + clusterPriority);
+            System.out.println("Weight: " + clusterWeight);
+
+            if (clusterWeight < bestClusterWeight) {
+                bestClusterWeight = clusterWeight;
+                bestCluster = currentCluster;
+            }
+        }
+        return bestCluster;
+    }
+
+    /**
      * Returns nearest combat cluster or UNDEFINED_CLUSTER_INDEX otherwise
      * @return
      * @throws GameActionException
@@ -576,6 +717,14 @@ public class Robot {
             clusterCentersY[j] = yCenter;
             yStart += clusterHeights[j];
         }
+    }
+
+    // Helper method to convert from cluster index to MapLocation
+    public MapLocation getClusterCenter(int clusterIndex) {
+        return new MapLocation(
+            clusterCentersX[clusterIndex % clusterWidthsLength], 
+            clusterCentersY[clusterIndex / clusterWidthsLength]
+        );
     }
 
     /**
