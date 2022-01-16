@@ -1,5 +1,7 @@
 package ares;
 
+import java.sql.Driver;
+
 import battlecode.common.*;
 
 public class Miner extends Robot {
@@ -134,8 +136,32 @@ public class Miner extends Robot {
             // rc.setIndicatorLine(myLocation, fleeDirection, 255, 0, 0);
             fleeingCounter--;
         }
+        // Next to mining destination, pick lowest rubble tile adjacent to mine
+        else if (pathing.destination != null && myLocation.distanceSquaredTo(pathing.destination) <= 2
+                    && rc.canSenseLocation(pathing.destination) 
+                    && (rc.senseLead(pathing.destination) > requiredLead || rc.senseLead(pathing.destination) > 0)) {
+            Direction optimalDir = Direction.CENTER;
+            int optimalRubble = rc.senseRubble(myLocation) * 100 + myLocation.distanceSquaredTo(pathing.destination);
+            for (Direction dir : directionsWithoutCenter) {
+                if (rc.canMove(dir)) {
+                    MapLocation moveLocation = myLocation.add(dir);
+                    if (moveLocation.distanceSquaredTo(pathing.destination) <= 2) {
+                        int rubble = rc.senseRubble(moveLocation) * 100 + moveLocation.distanceSquaredTo(pathing.destination);
+                        if (rubble < optimalRubble) {
+                            optimalDir = dir;
+                            optimalRubble = rubble;
+                        }
+                    }
+                }
+            }
+            if (optimalDir != Direction.CENTER && rc.canMove(optimalDir)) {
+                pathing.move(optimalDir);
+            }
+        }
         // Path
-        pathing.pathToDestination();
+        else {
+            pathing.pathToDestination();
+        }
     }
 
     /**
