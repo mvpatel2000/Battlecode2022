@@ -1,4 +1,4 @@
-package ares;
+package smite;
 
 import battlecode.common.*;
 
@@ -150,12 +150,12 @@ public class Soldier extends Robot {
                         // They can hit me, full points off
                         if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared) {
                             score -= enemy.type.getDamage(enemy.level) * enemyRubbleFactor;
-                            // System.out.println("  hit: " + (-enemy.type.getDamage(enemy.level) * enemyRubbleFactor));
+                            // //System.out.println\("  hit: " + (-enemy.type.getDamage(enemy.level) * enemyRubbleFactor));
                         }
                         // They can see me. If they step in, I can start shooting but they can too, so normalize by rubble
                         else if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.visionRadiusSquared) {
                             score -= GAMMA * enemy.type.getDamage(enemy.level) * enemyRubbleFactor;
-                            // System.out.println("  view: " + (-enemy.type.getDamage(enemy.level) * enemyRubbleFactor) + " " + enemy.location);
+                            // //System.out.println\("  view: " + (-enemy.type.getDamage(enemy.level) * enemyRubbleFactor) + " " + enemy.location);
                             canView = true;
                         }
                     }
@@ -179,12 +179,12 @@ public class Soldier extends Robot {
                 double myRubbleFactor = 10 / (10.0 + (rc.senseRubble(moveLocation)));
                 // Add damage normalized to per turn by rubble
                 if (canAttack || canView) {
-                    // System.out.println("  Shoot: " + (RobotType.SOLDIER.damage * myRubbleFactor));
+                    // //System.out.println\("  Shoot: " + (RobotType.SOLDIER.damage * myRubbleFactor));
                     double viewOnlyMultiplier = canAttack ? 1.0 : GAMMA;
                     score += RobotType.SOLDIER.damage * myRubbleFactor  * viewOnlyMultiplier;
                     // Pursue if higher health, otherwise flee
                     // if (distToNearestEnemy < 1000000.0) {
-                    //     // System.out.println("Chase: " + ((rc.getHealth() * myRubbleFactor - enemyCombatHealth) * distToNearestEnemy /10000.0));
+                    //     // //System.out.println\("Chase: " + ((rc.getHealth() * myRubbleFactor - enemyCombatHealth) * distToNearestEnemy /10000.0));
                     //     score += (rc.getHealth() * myRubbleFactor - enemyCombatHealth) * distToNearestEnemy /10000.0;
                     // }
                 }
@@ -192,7 +192,7 @@ public class Soldier extends Robot {
                 if (dir == Direction.CENTER) {
                     score += 0.00001;
                 }
-                // System.out.println(myLocation + " " + dir + " " + score);
+                // //System.out.println\(myLocation + " " + dir + " " + score);
                 // Add rubble movement factor, often serves as a tiebreak for flee
                 score += myRubbleFactor;
                 if (score > optimalScore) {
@@ -202,8 +202,8 @@ public class Soldier extends Robot {
             }
         }
         if (optimalDirection != null && optimalDirection != Direction.CENTER) {
-            rc.setIndicatorLine(myLocation, myLocation.add(optimalDirection), 0, 255, 0);
-            // System.out.println("Moving!: " + myLocation + " -> " + myLocation.add(optimalDirection));
+            //rc.setIndicatorLine(myLocation, myLocation.add(optimalDirection), 0, 255, 0);
+            // //System.out.println\("Moving!: " + myLocation + " -> " + myLocation.add(optimalDirection));
             pathing.move(optimalDirection);
         }
     }
