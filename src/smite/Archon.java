@@ -25,6 +25,7 @@ public class Archon extends Robot {
     boolean lastArchon = false;
 
     MapLocation optimalResourceBuildLocation;
+    MapLocation optimalCombatBuildLocation;
 
     int resourcesOnMap;
 
@@ -54,18 +55,41 @@ public class Archon extends Robot {
         for (int i = 0; i < length; i++) {
             MapLocation tile = resourceLocations[i];
             int distance = myLocation.distanceSquaredTo(tile);
-            if (distance <= nearestDistance) {
+            if (distance < nearestDistance) {
                 nearestDistance = distance;
                 toResources = myLocation.directionTo(tile);
             }
         }
         optimalResourceBuildLocation = myLocation.add(toResources);
+
+        // Get best soldier spawn location
+        Direction toEnemy = Direction.CENTER;
+        nearestDistance = Integer.MAX_VALUE;
+        RobotInfo[] nearbyArchons = rc.senseNearbyRobots(RobotType.ARCHON.visionRadiusSquared, enemyTeam);
+        // Spawn towards nearby enemy if there exists one
+        if (nearbyArchons.length > 0) {
+            for (int i = 0; i < nearbyArchons.length; i++) {
+                MapLocation nearbyArchon = nearbyArchons[i].location;
+                int distance = myLocation.distanceSquaredTo(nearbyArchon);
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    toEnemy = myLocation.directionTo(nearbyArchon);
+                }
+            }
+            optimalCombatBuildLocation = myLocation.add(toEnemy);
+        }
+        // Otherwise spawn towards middle of map
+        else {
+            MapLocation center = new MapLocation(mapWidth/2, mapHeight/2);
+            Direction toCenter = myLocation.directionTo(center);
+            optimalCombatBuildLocation = myLocation.add(toCenter);
+        }
     }
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 45) {
-        // //rc.resign\();
+        // if (currentRound > 27) {
+        //     //rc.resign\();
         // }
 
         archonStatusCheck();
@@ -426,13 +450,14 @@ public class Archon extends Robot {
         }
 
         // Prioritize building towards resources on low rubble
+        MapLocation optimalBuildLocation = toBuild == RobotType.MINER ? optimalResourceBuildLocation : optimalCombatBuildLocation;
         Direction optimalDir = null;
         int optimalScore = Integer.MAX_VALUE;
         for (Direction dir : directionsWithoutCenter) {
             if (rc.canBuildRobot(toBuild, dir)) {
                 MapLocation buildLocation = myLocation.add(dir);
                 int score = rc.senseRubble(buildLocation)
-                        + buildLocation.distanceSquaredTo(optimalResourceBuildLocation);
+                        + buildLocation.distanceSquaredTo(optimalBuildLocation);
                 if (score < optimalScore) {
                     optimalDir = dir;
                     optimalScore = score;
