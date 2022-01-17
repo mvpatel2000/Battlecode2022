@@ -4,6 +4,8 @@ import battlecode.common.*;
 
 public class Soldier extends Robot {
 
+    final double GAMMA = 0.9;
+
     public Soldier(RobotController rc) throws GameActionException {
         super(rc);
     }
@@ -151,7 +153,7 @@ public class Soldier extends Robot {
                         }
                         // They can see me. If they step in, I can start shooting but they can too, so normalize by rubble
                         else if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.visionRadiusSquared) {
-                            score -= enemy.type.getDamage(enemy.level) * enemyRubbleFactor;
+                            score -= GAMMA * enemy.type.getDamage(enemy.level) * enemyRubbleFactor;
                             // System.out.println("  view: " + (-enemy.type.getDamage(enemy.level) * enemyRubbleFactor) + " " + enemy.location);
                             canView = true;
                         }
@@ -175,7 +177,7 @@ public class Soldier extends Robot {
                 // Add damage normalized to per turn by rubble
                 if (canAttack || canView) {
                     // System.out.println("  Shoot: " + (RobotType.SOLDIER.damage * myRubbleFactor));
-                    double viewOnlyMultiplier = canAttack ? 1.0 : 0.9;
+                    double viewOnlyMultiplier = canAttack ? 1.0 : GAMMA;
                     score += RobotType.SOLDIER.damage * myRubbleFactor  * viewOnlyMultiplier;
                     // Pursue if higher health, otherwise flee
                     // if (distToNearestEnemy < 1000000.0) {
