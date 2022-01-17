@@ -112,8 +112,8 @@ public class Soldier extends Robot {
                 repairPerTurn = (2*ally.level) * 10 / (10.0 + rc.senseRubble(archonLocation));
             }
         }
-        boolean isPositionReinforced = rc.getHealth() > 30 && ((archonLocation != null) || (combatAllies - nearbyEnemies.length >= 2));
-        // boolean isPositionReinforced = archonLocation != null && rc.getHealth() > 10;
+        // boolean isPositionReinforced = rc.getHealth() > 30 && ((archonLocation != null) || (combatAllies - nearbyEnemies.length >= 2));
+        boolean isPositionReinforced = archonLocation != null && rc.getHealth() > 10;
 
         Direction optimalDirection = null;
         double optimalScore = -999.0;

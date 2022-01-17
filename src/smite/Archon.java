@@ -91,7 +91,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 109) {
+        // if (currentRound > 103) {
         //     //rc.resign\();
         // }
 
@@ -269,8 +269,9 @@ public class Archon extends Robot {
         // TODO: Convert this into a generated comms handler fn which resets all of them
         if (turnsWithNoExploring >= 5) {
             turnsWithNoExploring = 0;
-            //System.out.println\("RESETING EXPLORE");
-            for (int prePermuteIdx = 0; prePermuteIdx < 100; prePermuteIdx++) {
+            //System.out.println\("RESETTING EXPLORE");
+            int length = clusterPermutation.length;
+            for (int prePermuteIdx = 0; prePermuteIdx < length; prePermuteIdx++) {
                 int i = clusterPermutation[prePermuteIdx];
                 if (commsHandler.readClusterControlStatus(i) == CommsHandler.ControlStatus.OURS) {
                     commsHandler.writeClusterControlStatus(i, CommsHandler.ControlStatus.UNKNOWN);
