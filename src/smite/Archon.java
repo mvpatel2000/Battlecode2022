@@ -56,45 +56,7 @@ public class Archon extends Robot {
             lastArchon = true;
         }
 
-        // Get best build direction closest to resources
-        Direction toResources = Direction.CENTER;
-        int nearestDistance = Integer.MAX_VALUE;
-        MapLocation[] resourceLocations = rc.senseNearbyLocationsWithLead(RobotType.ARCHON.visionRadiusSquared);
-        int length = Math.min(resourceLocations.length, 10);
-        for (int i = 0; i < length; i++) {
-            MapLocation tile = resourceLocations[i];
-            int distance = myLocation.distanceSquaredTo(tile);
-            if (distance < nearestDistance) {
-                nearestDistance = distance;
-                toResources = myLocation.directionTo(tile);
-            }
-        }
-        optimalResourceBuildLocation = myLocation.add(toResources);
-
-        // Get best soldier spawn location
-        Direction toEnemy = Direction.CENTER;
-        nearestDistance = Integer.MAX_VALUE;
-        RobotInfo[] nearbyArchons = rc.senseNearbyRobots(RobotType.ARCHON.visionRadiusSquared, enemyTeam);
-        // Spawn towards nearby enemy if there exists one
-        if (nearbyArchons.length > 0) {
-            for (int i = 0; i < nearbyArchons.length; i++) {
-                MapLocation nearbyArchon = nearbyArchons[i].location;
-                int distance = myLocation.distanceSquaredTo(nearbyArchon);
-                if (distance < nearestDistance) {
-                    nearestDistance = distance;
-                    toEnemy = myLocation.directionTo(nearbyArchon);
-                }
-            }
-            optimalCombatBuildLocation = myLocation.add(toEnemy);
-            optimalShelteredBuildLocation = myLocation.add(toEnemy.opposite());
-        }
-        // Otherwise spawn towards middle of map
-        else {
-            MapLocation center = new MapLocation(mapWidth/2, mapHeight/2);
-            Direction toCenter = myLocation.directionTo(center);
-            optimalCombatBuildLocation = myLocation.add(toCenter);
-            optimalShelteredBuildLocation = myLocation.add(toCenter.opposite());
-        }
+        setBestBuildLocations();
     }
 
     @Override
@@ -127,6 +89,7 @@ public class Archon extends Robot {
             if (shouldLand) {
                 if (rc.canTransform()) {
                     rc.transform();
+                    setBestBuildLocations();
                     shouldLand = false;
                 }
             }
@@ -180,9 +143,14 @@ public class Archon extends Robot {
                     if (!canRepair) {
                         int nearestCluster = getNearestCombatCluster();
                         // Transform and return target cluster
-                        if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX && rc.canTransform()) {
-                            rc.transform();
-                            return nearestCluster;
+                        if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                            MapLocation newDest = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
+                                                clusterCentersY[nearestCluster / clusterWidthsLength]);
+                            if (myLocation.distanceSquaredTo(newDest) <= 64 && rc.canTransform()) {
+                                // rc.transform();
+                                commsHandler.writeOurArchonIsMoving(myArchonNum, CommsHandler.ArchonStatus.MOVING);
+                                return nearestCluster;
+                            }
                         }
                     }
                 }
@@ -204,6 +172,52 @@ public class Archon extends Robot {
         else {
             //System.out.println\("UNEXPECTED STATE! ARCHON IS NIETHER TURRET NOR PORTABLE");
             return commsHandler.UNDEFINED_CLUSTER_INDEX;
+        }
+    }
+
+    /**
+     * Sets best build locations
+     * @throws GameActionException
+     */
+    public void setBestBuildLocations() throws GameActionException {
+        // Get best build direction closest to resources
+        Direction toResources = Direction.CENTER;
+        int nearestDistance = Integer.MAX_VALUE;
+        MapLocation[] resourceLocations = rc.senseNearbyLocationsWithLead(RobotType.ARCHON.visionRadiusSquared);
+        int length = Math.min(resourceLocations.length, 10);
+        for (int i = 0; i < length; i++) {
+            MapLocation tile = resourceLocations[i];
+            int distance = myLocation.distanceSquaredTo(tile);
+            if (distance < nearestDistance) {
+                nearestDistance = distance;
+                toResources = myLocation.directionTo(tile);
+            }
+        }
+        optimalResourceBuildLocation = myLocation.add(toResources);
+
+        // Get best soldier spawn location
+        Direction toEnemy = Direction.CENTER;
+        nearestDistance = Integer.MAX_VALUE;
+        RobotInfo[] nearbyArchons = rc.senseNearbyRobots(RobotType.ARCHON.visionRadiusSquared, enemyTeam);
+        // Spawn towards nearby enemy if there exists one
+        if (nearbyArchons.length > 0) {
+            for (int i = 0; i < nearbyArchons.length; i++) {
+                MapLocation nearbyArchon = nearbyArchons[i].location;
+                int distance = myLocation.distanceSquaredTo(nearbyArchon);
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    toEnemy = myLocation.directionTo(nearbyArchon);
+                }
+            }
+            optimalCombatBuildLocation = myLocation.add(toEnemy);
+            optimalShelteredBuildLocation = myLocation.add(toEnemy.opposite());
+        }
+        // Otherwise spawn towards middle of map
+        else {
+            MapLocation center = new MapLocation(mapWidth/2, mapHeight/2);
+            Direction toCenter = myLocation.directionTo(center);
+            optimalCombatBuildLocation = myLocation.add(toCenter);
+            optimalShelteredBuildLocation = myLocation.add(toCenter.opposite());
         }
     }
 
