@@ -35,6 +35,9 @@ public class Archon extends Robot {
     // used to reset exploration
     int turnsWithNoExploring = 0;
 
+    int previousResources = 0;
+    int resourceRate = 0;
+
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
         computeArchonNum();
@@ -88,9 +91,9 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 27) {
-        //     //rc.resign\();
-        // }
+        if (currentRound > 54) {
+            //rc.resign\();
+        }
 
         archonStatusCheck();
         updateUnitCounts();
@@ -99,10 +102,16 @@ public class Archon extends Robot {
             setInitialExploreClusters();
         }
 
+        updateResourceRate();
+
         setPriorityClusters();
 
         build();
         repair();
+    }
+
+    public void updateResourceRate() throws GameActionException {
+        int newResourceCount = 0;
     }
 
     public void updateUnitCounts() throws GameActionException {
