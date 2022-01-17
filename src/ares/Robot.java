@@ -179,8 +179,7 @@ public class Robot {
         
         if (turnCount % 2 == 1) {
             setClusterControlStates();
-        }
-        else {
+        } else {
             setClusterResourceStates();
         }
 
@@ -231,6 +230,7 @@ public class Robot {
 
         // Create list of adjacent clusters
         int myClusterIdx = whichCluster(myLocation);
+        MapLocation myClusterCenter = getClusterCenter(myClusterIdx);
         int myClusterWidth = getClusterWidth(myClusterIdx);
         int myClusterHeight = getClusterHeight(myClusterIdx);
         int[] adjacentClusterIndices = new int[9];
@@ -238,7 +238,7 @@ public class Robot {
         int[] adjacentEnemyMiners = new int[9];
         for (int i = -1; i <= 1; i++) {
             for (int j = -1; j <= 1; j++) {
-                MapLocation newLoc = new MapLocation(myLocation.x + i*myClusterWidth, myLocation.y + j*myClusterHeight);
+                MapLocation newLoc = new MapLocation(myClusterCenter.x + i*myClusterWidth, myClusterCenter.y + j*myClusterHeight);
                 if (newLoc.x >= 0 && newLoc.x < rc.getMapWidth() && newLoc.y >= 0 && newLoc.y < rc.getMapHeight()) {
                     adjacentClusterIndices[(i+1)*3 + (j+1)] = whichCluster(newLoc);
                 } else {
@@ -254,6 +254,7 @@ public class Robot {
             RobotInfo enemy = nearbyEnemies[i];
             // int clusterIdx = whichCluster(enemy.location); Note: Inlined to save bytecode
             int enemyClusterIdx = whichXLoc[enemy.location.x] + whichYLoc[enemy.location.y];
+            System.out.println("Identified enemy in cluster: " + enemyClusterIdx);
             if (enemyClusterIdx == adjacentClusterIndices[0]) {
                 if (enemy.type == RobotType.MINER) { adjacentEnemyMiners[0] += 1; } 
                 else if (enemy.type == RobotType.SOLDIER) { adjacentEnemySoldiers[0] += 1; }
@@ -304,10 +305,10 @@ public class Robot {
         // and assign priorities.
         for (int j=0; j<9; j++) {
             // Adjacent cluster doesn't exist, it is off the map.
-            if (adjacentClusterIndices[j] == -1) {
+            int clusterIdx = adjacentClusterIndices[j];
+            if (clusterIdx == -1) {
                 continue;
             }
-            int clusterIdx = adjacentClusterIndices[j];
             if (adjacentEnemySoldiers[j] == 0 && adjacentEnemyMiners[j] == 0) {
                 continue;
             }
@@ -316,11 +317,14 @@ public class Robot {
                 markedClustersCount++;
             }
             if (adjacentEnemySoldiers[j] == 0) {
+                System.out.println("Miners in cluster: " + clusterIdx);
                 clusterControls[clusterIdx] = (CommsHandler.ControlStatus.MINOR_ENEMY << 3) + (clusterControls[clusterIdx] & 7);
             }
             else if (adjacentEnemySoldiers[j] == 1) {
+                System.out.println("One soldier in cluster: " + clusterIdx);
                 clusterControls[clusterIdx] = (CommsHandler.ControlStatus.MEDIUM_ENEMY << 3) + (clusterControls[clusterIdx] & 7);
             } else {
+                System.out.println("Multiple soldiers in cluster: " + clusterIdx);
                 clusterControls[clusterIdx] = (CommsHandler.ControlStatus.MAJOR_ENEMY << 3) + (clusterControls[clusterIdx] & 7);
             }
         }
@@ -342,8 +346,12 @@ public class Robot {
             int clusterIdx = markedClustersBuffer[i];
             int oldClusterStatus = clusterControls[clusterIdx] & 7;
             int newClusterStatus = (clusterControls[clusterIdx] - oldClusterStatus) >>> 3;
-            if (oldClusterStatus != newClusterStatus 
-                    && newClusterStatus != commsHandler.readClusterControlStatus(clusterIdx)) {
+            if (clusterIdx == 37) {
+                    System.out.println("Cluster 37: " + oldClusterStatus + " " + newClusterStatus);
+            }
+            if (//oldClusterStatus != newClusterStatus && 
+            newClusterStatus > commsHandler.readClusterControlStatus(clusterIdx)) {
+                System.out.println("Writing." + clusterIdx);
                 commsHandler.writeClusterControlStatus(clusterIdx, newClusterStatus);
             }
             clusterControls[clusterIdx] = newClusterStatus;

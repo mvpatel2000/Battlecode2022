@@ -76,6 +76,11 @@ public class Archon extends Robot {
 
         build();
         repair();
+
+        if (turnCount % 4 == 0) {
+            System.out.println("RESETTING CLUSTER CONTROL STATUSES");
+            resetClusterControlStatus();
+        }
     }
 
     public void updateUnitCounts() throws GameActionException {
@@ -161,12 +166,12 @@ public class Archon extends Robot {
         int mineClusterIndex = 0;
         int exploreClusterIndex = 0;
 
-        // String status = "";
-        // for (int i = 0; i < commsHandler.COMBAT_CLUSTER_SLOTS; i++) {
-        //     int cluster = commsHandler.readCombatClusterIndex(i);
-        //     status += " " + cluster + "(" + commsHandler.readClusterControlStatus(cluster) + ")";
-        // }
-        // System.out.println("Combat"+status);
+        String status = "";
+        for (int i = 0; i < commsHandler.COMBAT_CLUSTER_SLOTS; i++) {
+            int cluster = commsHandler.readCombatClusterIndex(i);
+            status += " " + cluster + "(" + commsHandler.readClusterControlStatus(cluster) + ")";
+        }
+        System.out.println("Combat"+status);
         // String status = "";
         // for (int i = 0; i < commsHandler.EXPLORE_CLUSTER_SLOTS; i++) {
         //     int cluster = commsHandler.readExploreClusterIndex(i);
@@ -334,6 +339,42 @@ public class Archon extends Robot {
         // System.out.println("Estimated resources on the map: " + resourcesOnMap);
 
         // rc.setIndicatorString(combatClusterIndex + " " + mineClusterIndex + " " + exploreClusterIndex);
+    }
+
+
+    public void resetClusterControlStatus() throws GameActionException {
+        if (!lastArchon) {
+            return;
+        }
+        /**
+        int myClusterIdx = whichCluster(myLocation);
+        int myClusterWidth = getClusterWidth(myClusterIdx);
+        int myClusterHeight = getClusterHeight(myClusterIdx);
+        int[] adjacentClusterIndices = new int[9];
+        int[] adjacentClusterControlStatuses = new int[9];
+
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                MapLocation newLoc = new MapLocation(myLocation.x + i*myClusterWidth, myLocation.y + j*myClusterHeight);
+                if (newLoc.x >= 0 && newLoc.x < rc.getMapWidth() && newLoc.y >= 0 && newLoc.y < rc.getMapHeight()) {
+                    adjacentClusterIndices[(i+1)*3 + (j+1)] = whichCluster(newLoc);
+                    adjacentClusterControlStatuses[(i+1)*3 + (j+1)] = commsHandlers.readClusterControlStatus(adjacentClusterIndices[(i+1)*3 + (j+1)])
+                } else {
+                    adjacentClusterIndices[(i+1)*3 + (j+1)] = -1;
+                }
+            }
+        }*/
+        for (int i=0; i < numClusters; i++) {
+            commsHandler.writeClusterControlStatus(i, 0);
+        }
+        /**
+        for (int j=0; j<9; j++) {
+            int clusterIndex = adjacentClusterIndices[j]
+            int controlStatus = adjacentClusterControlStatuses[j]
+            if (adjacentClusterIndices[j] > 0) {
+                commsHandler.writeClusterControlStatus(clusterIndex, controlStatus)
+            }
+        }*/
     }
 
     /**
