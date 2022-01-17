@@ -442,10 +442,6 @@ public class Archon extends Robot {
         } else if (minerCount < rc.getRobotCount() / (Math.max(2.5, (4.5 - resourcesOnMap / 600)))) {
             toBuild = RobotType.MINER;
         }
-        // else if (soldierCount > 20 + 2 * builderCount && numBuildersBuilt < Math.min(2, builderCount / 4)) {
-        //     System.out.println("Builder count: " + builderCount + " soldier count: " + soldierCount);
-        //     toBuild = RobotType.BUILDER;
-        // }
 
         // TODO: actually make builders sometime?
         // // Build builders if lots of lead for watchtowers
@@ -453,17 +449,23 @@ public class Archon extends Robot {
         // toBuild = RobotType.BUILDER;
         // }
 
+        // Override: if I'm dying (and there are no enemy threats visible) and there aren't many builders out on the map, priority build a builder
+        if (rc.getHealth() < 0.3 * RobotType.ARCHON.getMaxHealth(rc.getLevel()) && builderCount < 2) {
+            toBuild = RobotType.BUILDER;
+            reservedLead = RobotType.BUILDER.buildCostLead / LEAD_RESERVE_SCALE;
+        }
+
         // Override: if I haven't built a miner yet, priority build one
         if (numMinersBuilt == 0) {
             toBuild = RobotType.MINER;
             reservedLead = RobotType.MINER.buildCostLead / LEAD_RESERVE_SCALE;
         }
 
-        // Override: if there is a visible enemy archon or soldier, priority build a
+        // Override: if there is a visible enemy archon/soldier/sage/watchtower, priority build a
         // soldier
         if (nearbyEnemies.length > 0) {
             for (RobotInfo enemy : nearbyEnemies) {
-                if (enemy.type == RobotType.SOLDIER || enemy.type == RobotType.ARCHON) {
+                if (enemy.type == RobotType.SOLDIER || enemy.type == RobotType.ARCHON || enemy.type == RobotType.SAGE || enemy.type == RobotType.WATCHTOWER) {
                     toBuild = RobotType.SOLDIER;
                     reservedLead = RobotType.SOLDIER.buildCostLead / LEAD_RESERVE_SCALE; // priority build
                     // System.out.println("Would like to priority build a soldier");
