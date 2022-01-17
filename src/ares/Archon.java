@@ -417,7 +417,7 @@ public class Archon extends Robot {
         }
 
         RobotType toBuild = RobotType.SOLDIER;
-        int initialMiners = (mapHeight * mapWidth / 200) + 2; // 20x20: 4 total; 60x60: 20 total
+        int initialMiners = Math.max(4, (int) ((mapHeight * mapWidth / 250) + 3)); // 4-15
 
         if (minerCount < initialMiners) {
             toBuild = RobotType.MINER;

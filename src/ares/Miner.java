@@ -1,7 +1,5 @@
 package ares;
 
-import java.sql.Driver;
-
 import battlecode.common.*;
 
 public class Miner extends Robot {

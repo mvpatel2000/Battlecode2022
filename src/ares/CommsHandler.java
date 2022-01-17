@@ -2,7 +2,6 @@ package ares;
 
 import battlecode.common.*;
 
-
 public class CommsHandler {
     
     RobotController rc;
@@ -22,6 +21,10 @@ public class CommsHandler {
         public static final int DEAD = 0;
         public static final int STANDBY_ODD = 1;
         public static final int STANDBY_EVEN = 2;
+        public static final int STATIONARY = 0;
+        public static final int MOVING = 1;
+        public static final int NOT_ACCEPTING_PATIENTS = 0;
+        public static final int ACCEPTING_PATIENTS = 1;
     }
     public class MapSymmetry {
         public static final int UNKNOWN = 0;
@@ -86,13 +89,13 @@ public class CommsHandler {
     public int readOurArchonStatus(int idx) throws GameActionException {
         switch (idx) {
             case 0:
-                return (rc.readSharedArray(0) & 61440) >>> 12;
+                return (rc.readSharedArray(0) & 49152) >>> 14;
             case 1:
-                return (rc.readSharedArray(1) & 61440) >>> 12;
+                return (rc.readSharedArray(1) & 49152) >>> 14;
             case 2:
-                return (rc.readSharedArray(2) & 61440) >>> 12;
+                return (rc.readSharedArray(2) & 49152) >>> 14;
             case 3:
-                return (rc.readSharedArray(3) & 61440) >>> 12;
+                return (rc.readSharedArray(3) & 49152) >>> 14;
             default:
                 return -1;
         }
@@ -101,16 +104,80 @@ public class CommsHandler {
     public void writeOurArchonStatus(int idx, int value) throws GameActionException {
         switch (idx) {
             case 0:
-                rc.writeSharedArray(0, (rc.readSharedArray(0) & 4095) | (value << 12));
+                rc.writeSharedArray(0, (rc.readSharedArray(0) & 16383) | (value << 14));
                 break;
             case 1:
-                rc.writeSharedArray(1, (rc.readSharedArray(1) & 4095) | (value << 12));
+                rc.writeSharedArray(1, (rc.readSharedArray(1) & 16383) | (value << 14));
                 break;
             case 2:
-                rc.writeSharedArray(2, (rc.readSharedArray(2) & 4095) | (value << 12));
+                rc.writeSharedArray(2, (rc.readSharedArray(2) & 16383) | (value << 14));
                 break;
             case 3:
-                rc.writeSharedArray(3, (rc.readSharedArray(3) & 4095) | (value << 12));
+                rc.writeSharedArray(3, (rc.readSharedArray(3) & 16383) | (value << 14));
+                break;
+        }
+    }
+
+    public int readOurArchonIsMoving(int idx) throws GameActionException {
+        switch (idx) {
+            case 0:
+                return (rc.readSharedArray(0) & 8192) >>> 13;
+            case 1:
+                return (rc.readSharedArray(1) & 8192) >>> 13;
+            case 2:
+                return (rc.readSharedArray(2) & 8192) >>> 13;
+            case 3:
+                return (rc.readSharedArray(3) & 8192) >>> 13;
+            default:
+                return -1;
+        }
+    }
+
+    public void writeOurArchonIsMoving(int idx, int value) throws GameActionException {
+        switch (idx) {
+            case 0:
+                rc.writeSharedArray(0, (rc.readSharedArray(0) & 57343) | (value << 13));
+                break;
+            case 1:
+                rc.writeSharedArray(1, (rc.readSharedArray(1) & 57343) | (value << 13));
+                break;
+            case 2:
+                rc.writeSharedArray(2, (rc.readSharedArray(2) & 57343) | (value << 13));
+                break;
+            case 3:
+                rc.writeSharedArray(3, (rc.readSharedArray(3) & 57343) | (value << 13));
+                break;
+        }
+    }
+
+    public int readOurArchonAcceptingPatients(int idx) throws GameActionException {
+        switch (idx) {
+            case 0:
+                return (rc.readSharedArray(0) & 4096) >>> 12;
+            case 1:
+                return (rc.readSharedArray(1) & 4096) >>> 12;
+            case 2:
+                return (rc.readSharedArray(2) & 4096) >>> 12;
+            case 3:
+                return (rc.readSharedArray(3) & 4096) >>> 12;
+            default:
+                return -1;
+        }
+    }
+
+    public void writeOurArchonAcceptingPatients(int idx, int value) throws GameActionException {
+        switch (idx) {
+            case 0:
+                rc.writeSharedArray(0, (rc.readSharedArray(0) & 61439) | (value << 12));
+                break;
+            case 1:
+                rc.writeSharedArray(1, (rc.readSharedArray(1) & 61439) | (value << 12));
+                break;
+            case 2:
+                rc.writeSharedArray(2, (rc.readSharedArray(2) & 61439) | (value << 12));
+                break;
+            case 3:
+                rc.writeSharedArray(3, (rc.readSharedArray(3) & 61439) | (value << 12));
                 break;
         }
     }

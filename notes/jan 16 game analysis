@@ -1,0 +1,20 @@
+Notes on games 1/16
+
+Hard Coders
+https://play.battlecode.org/clients/2022/visualizer.html?https://play.battlecode.org/replays/5098800f5b97deb71876b21c3006b5.bc22
+Game 1 (eckleburg): loss
+    * build order loss; we made too many miners and didn't make soldiers till it was too late
+Game 2 (valley): win
+    * bad early game; we lost a lot of soldiers and miners who ventured onto high (> 50) rubble and then multiple
+        enemies walked into vision and finished them off
+    * got pretty lucky with a vortex at the end that opened up a nice attack path
+Game 3 (nottestsmall): win
+    * looked pretty much flawless
+
+5 Musketeers
+https://play.battlecode.org/clients/2022/visualizer.html?https://play.battlecode.org/replays/045116d3005d6e10132c80b22d187e.bc22
+Game 1 (squer): loss
+    * opening build difference: we make 6 miners, they make 4 + 2 soldier
+    * not necessarily the end of the world, because we actually hold on for a while and by round 226 we are at 3s5m to 3s2m
+    * we have a significant eco advantage throughout this game; we should play a bit more defensively
+    * we lose because we try to fight near their archons without build up critical mass

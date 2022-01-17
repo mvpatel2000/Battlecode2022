@@ -5,7 +5,9 @@ SCHEMA = {
     'our_archon': {
         'slots': 4,
         'bits': {
-            'status': 4,
+            'status': 2,
+            'is_moving': 1,
+            'accepting_patients': 1,
             'x_coord': 6,
             'y_coord': 6,
         }

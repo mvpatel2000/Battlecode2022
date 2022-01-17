@@ -1,0 +1,34 @@
+Micro heuristic
+
+Approach: assign a score to each of the 9 possible squares to move to.
+
+Score computation factors:
+* Number of enemies that can attack that square
+* Health of those enemies
+* Whether they can move
+* Number of allies weighted by their attack area overlap with that square
+* Health of those allies
+* Archon heal benefit
+* Enemy archon heal benefit? (we may not know this)
+* Rubble at that square and rubble at enemy squares
+* Enemies I can hit from that square -- prioritize enemies with high (myHealth - enemyHealth)
+
+
+
+
+
+                    // TODO: Stop moving around archon?
+                    // TODO: Encourage moving towards targets?
+                    // TODO: Points for being able to kill (finish off) someone?
+                    // TODO: Don't flee into high rubble terrain?
+                    // TODO: encourage aggressiveness if outnumbering?
+                    // TODO: pursue enemy if low hp
+
+
+
+
+- soldiers should run if taking bad fights
+- be conservative when fighting near enemy archons / group up till we have critical mass
+- we are not factoring in support
+- higher health guys should lead the charge
+- address known soldier micro issues (kite back into rubble)
