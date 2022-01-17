@@ -151,7 +151,6 @@ public class Robot {
         setClusterStates();
         archonStatusCheck();
         distanceToSymmetryLine = distanceAcrossSymmetry(myLocation);
-        //rc.setIndicatorString("SymDist " + distanceToSymmetryLine);
         // Flee to archon if dying
         int myHealth = rc.getHealth();
         if (myHealth == rc.getType().getMaxHealth(rc.getLevel())) {
@@ -163,6 +162,8 @@ public class Robot {
 
         // Does turn
         runUnit();
+        
+        //rc.setIndicatorString("SymDist " + distanceToSymmetryLine);
 
         // After unit runs
         if (rc.getRoundNum() < 150 && Clock.getBytecodesLeft() > 1000) {
