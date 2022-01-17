@@ -10,5 +10,10 @@ public class Sage extends Robot {
 
     @Override
     public void runUnit() throws GameActionException { 
+        announceAlive();
+    }
+
+    public void announceAlive() throws GameActionException {
+        commsHandler.writeFighterCountSages(commsHandler.readFighterCountSages() + 1);
     }
 }

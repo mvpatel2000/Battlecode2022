@@ -44,6 +44,7 @@ public class Robot {
     int[] clusterPermutation;
 
     boolean isDying;
+    int FLEE_HEALTH = 8;
 
     CommsHandler commsHandler;
 
@@ -143,7 +144,7 @@ public class Robot {
         if (myHealth == rc.getType().getMaxHealth(rc.getLevel())) {
             isDying = false;
         }
-        else if (myHealth <= 8) {
+        else if (myHealth <= FLEE_HEALTH) {
             isDying = true;
         }
 
@@ -331,7 +332,7 @@ public class Robot {
                 pathing.updateDestination(baseLocation);
                 pathing.pathToDestination();
             }
-            else if (myLocation.x + myLocation.y % 2 == 0) { // only settle down if we're on an odd square, otherwise keep moving
+            else if ((myLocation.x + myLocation.y) % 2 == 0) { // only settle down if we're on an odd square, otherwise keep moving
                 Direction rotateDir = myLocation.directionTo(baseLocation).rotateRight().rotateRight();
                 pathing.updateDestination(myLocation.add(rotateDir).add(rotateDir.rotateLeft()).add(rotateDir).add(rotateDir));
                 pathing.pathToDestination();

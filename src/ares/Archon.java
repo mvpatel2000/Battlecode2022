@@ -15,6 +15,8 @@ public class Archon extends Robot {
     // current total counts of our units on the map
     int minerCount = 0;
     int soldierCount = 0;
+    int builderCount = 0;
+    int sageCount = 0;
 
     boolean archonZeroAlive = true;
     boolean archonOneAlive = true;
@@ -26,6 +28,7 @@ public class Archon extends Robot {
 
     MapLocation optimalResourceBuildLocation;
     MapLocation optimalCombatBuildLocation;
+    MapLocation optimalShelteredBuildLocation;
 
     int resourcesOnMap;
 
@@ -80,12 +83,14 @@ public class Archon extends Robot {
                 }
             }
             optimalCombatBuildLocation = myLocation.add(toEnemy);
+            optimalShelteredBuildLocation = myLocation.add(toEnemy.opposite());
         }
         // Otherwise spawn towards middle of map
         else {
             MapLocation center = new MapLocation(mapWidth/2, mapHeight/2);
             Direction toCenter = myLocation.directionTo(center);
             optimalCombatBuildLocation = myLocation.add(toCenter);
+            optimalShelteredBuildLocation = myLocation.add(toCenter.opposite());
         }
     }
 
@@ -115,15 +120,17 @@ public class Archon extends Robot {
     }
 
     public void updateUnitCounts() throws GameActionException {
-        minerCount = commsHandler.readMinerCount();
-        soldierCount = commsHandler.readSoldierCount();
+        minerCount = commsHandler.readWorkerCountMiners();
+        soldierCount = commsHandler.readFighterCountSoldiers();
+        builderCount = commsHandler.readWorkerCountBuilders();
+        sageCount = commsHandler.readFighterCountSages();
 
         // System.out.println("We currently have " + minerCount + " miners and " +
         // soldierCount + " soldiers.");
 
         if (lastArchon) {
-            commsHandler.writeMinerCount(0);
-            commsHandler.writeSoldierCount(0);
+            commsHandler.writeWorkerCountAll(0);
+            commsHandler.writeFighterCountAll(0);
         }
     }
 
@@ -426,13 +433,18 @@ public class Archon extends Robot {
         }
 
         RobotType toBuild = RobotType.SOLDIER;
-        int initialMiners = Math.max(4, (int) ((mapHeight * mapWidth / 250) + 3)); // 4-15
+        int initialMiners = Math.max(4, (int) ((mapHeight * mapWidth / 240) + 3)); // 4-18
+        // int initialMiners = (mapHeight * mapWidth / 200) + 2;
 
         if (minerCount < initialMiners) {
             toBuild = RobotType.MINER;
         } else if (minerCount < rc.getRobotCount() / (Math.max(2.5, (4.5 - resourcesOnMap / 600)))) {
             toBuild = RobotType.MINER;
         }
+        // else if (soldierCount > 20 + 2 * builderCount && numBuildersBuilt < Math.min(2, builderCount / 4)) {
+        //     System.out.println("Builder count: " + builderCount + " soldier count: " + soldierCount);
+        //     toBuild = RobotType.BUILDER;
+        // }
 
         // TODO: actually make builders sometime?
         // // Build builders if lots of lead for watchtowers
@@ -459,7 +471,7 @@ public class Archon extends Robot {
         }
 
         // Prioritize building towards resources on low rubble
-        MapLocation optimalBuildLocation = toBuild == RobotType.MINER ? optimalResourceBuildLocation : optimalCombatBuildLocation;
+        MapLocation optimalBuildLocation = toBuild == RobotType.MINER ? optimalResourceBuildLocation : toBuild == RobotType.BUILDER ? optimalShelteredBuildLocation : optimalCombatBuildLocation;
         Direction optimalDir = null;
         int optimalScore = Integer.MAX_VALUE;
         for (Direction dir : directionsWithoutCenter) {
@@ -543,6 +555,7 @@ public class Archon extends Robot {
             }
             if (optimalRepair != null && rc.canRepair(optimalRepair)) {
                 rc.repair(optimalRepair);
+                // System.out.println("Repairing " + optimalRepair);
             }
         }
     }
