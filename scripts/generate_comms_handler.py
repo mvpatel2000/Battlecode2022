@@ -10,6 +10,18 @@ SCHEMA = {
             'y_coord': 6,
         }
     },
+    'miner_count': { # make sure this is in a single int
+        'slots': 1,
+        'bits': {
+            '': 8,
+        }
+    },
+    'soldier_count': { # mamke sure this is in a single int
+        'slots': 1,
+        'bits': {
+            '': 8,
+        }
+    },
     'cluster': {
         'slots': 100,
         'bits': {
@@ -20,6 +32,7 @@ SCHEMA = {
     'combat_cluster': {
         'slots': 10,
         'bits': {
+            'priority': 2,
             'index': 7,
         }
     },
@@ -35,24 +48,6 @@ SCHEMA = {
         'bits': {
             'claim_status': 3,
             'index': 7,
-        }
-    },
-    'filler_do_not_use': {
-        'slots': 1,
-        'bits': {
-            '': 6,
-        }
-    },
-    'miner_count': { # make sure this is in a single int
-        'slots': 1,
-        'bits': {
-            '': 8,
-        }
-    },
-    'soldier_count': { # mamke sure this is in a single int
-        'slots': 1,
-        'bits': {
-            '': 8,
         }
     },
     'last_archon': {

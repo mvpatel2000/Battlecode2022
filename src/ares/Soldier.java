@@ -71,8 +71,14 @@ public class Soldier extends Robot {
         else {
             MapLocation newDestination = pathing.destination;
             // Navigate to nearest found enemy
-            int nearestCluster = getNearestCombatCluster();
+            int nearestCluster = getBestCombatCluster();
             if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                System.out.println("My best cluster is: " 
+                    + nearestCluster 
+                    + " at location "
+                    + clusterCentersX[nearestCluster % clusterWidthsLength] 
+                    + " " 
+                    + clusterCentersY[nearestCluster / clusterWidthsLength]);
                 resetControlStatus(pathing.destination);
                 newDestination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                                 clusterCentersY[nearestCluster / clusterWidthsLength]);

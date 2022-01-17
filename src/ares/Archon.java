@@ -108,6 +108,11 @@ public class Archon extends Robot {
 
         build();
         repair();
+
+        if (turnCount % 4 == 0) {
+            System.out.println("RESETTING CLUSTER CONTROL STATUSES");
+            resetClusterControlStatus();
+        }
     }
 
     public void updateResourceRate() throws GameActionException {
@@ -125,6 +130,15 @@ public class Archon extends Robot {
             commsHandler.writeMinerCount(0);
             commsHandler.writeSoldierCount(0);
         }
+    }
+
+    public boolean isTheirs(int controlStatus) {
+        if (controlStatus == CommsHandler.ControlStatus.MINOR_ENEMY ||
+            controlStatus == CommsHandler.ControlStatus.MEDIUM_ENEMY ||
+            controlStatus == CommsHandler.ControlStatus.MAJOR_ENEMY) {
+                return true;
+        }
+        return false;
     }
 
     /**
@@ -193,13 +207,12 @@ public class Archon extends Robot {
         int exploreClusterIndex = 0;
         int emptyExploreClusters = 0;
 
-        // String status = "";
-        // for (int i = 0; i < commsHandler.COMBAT_CLUSTER_SLOTS; i++) {
-        // int cluster = commsHandler.readCombatClusterIndex(i);
-        // status += " " + cluster + "(" +
-        // commsHandler.readClusterControlStatus(cluster) + ")";
-        // }
-        // System.out.println("Combat"+status);
+        String status = "";
+        for (int i = 0; i < commsHandler.COMBAT_CLUSTER_SLOTS; i++) {
+            int cluster = commsHandler.readCombatClusterIndex(i);
+            status += " " + cluster + "(" + commsHandler.readClusterControlStatus(cluster) + ")";
+        }
+        System.out.println("Combat"+status);
         // String status = "";
         // for (int i = 0; i < commsHandler.EXPLORE_CLUSTER_SLOTS; i++) {
         // int cluster = commsHandler.readExploreClusterIndex(i);
@@ -222,7 +235,7 @@ public class Archon extends Robot {
             if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 continue;
             }
-            if (commsHandler.readClusterControlStatus(cluster) != CommsHandler.ControlStatus.THEIRS) {
+            if (!isTheirs(commsHandler.readClusterControlStatus(cluster))) {
                 commsHandler.writeCombatClusterIndex(i, commsHandler.UNDEFINED_CLUSTER_INDEX);
             }
         }
@@ -251,8 +264,8 @@ public class Archon extends Robot {
             int nearestClusterStatus = (nearestClusterAll & 128) >> 7; // 2^7
             int controlStatus = commsHandler.readClusterControlStatus(nearestCluster);
             if (nearestClusterStatus == CommsHandler.ClaimStatus.CLAIMED
-                    || controlStatus == CommsHandler.ControlStatus.OURS
-                    || controlStatus == CommsHandler.ControlStatus.THEIRS) {
+                || controlStatus == CommsHandler.ControlStatus.OURS
+                || isTheirs(controlStatus)) {
                 // Also resets claimed/unclaimed bit to unclaimed
                 commsHandler.writeExploreClusterAll(i, commsHandler.UNDEFINED_CLUSTER_INDEX);
             }
@@ -313,8 +326,8 @@ public class Archon extends Robot {
             int resourceCount = commsHandler.readClusterResourceCount(i);
             resourcesOnMap += resourceCount * LEAD_RESOLUTION;
             // Combat cluster
-            if (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS
-                    && controlStatus == CommsHandler.ControlStatus.THEIRS) {
+            if (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS 
+                && isTheirs(controlStatus)) {
                 // Verify cluster is not already in comms list
                 boolean isValid = true;
                 for (int j = 0; j < commsHandler.COMBAT_CLUSTER_SLOTS; j++) {
@@ -325,6 +338,8 @@ public class Archon extends Robot {
                 }
                 if (isValid) {
                     commsHandler.writeCombatClusterIndex(combatClusterIndex, i);
+                    // Writes a 0 for miners, 1 for 1 soldier, 2 for multi-soldiers.
+                    commsHandler.writeCombatClusterPriority(combatClusterIndex, controlStatus - commsHandler.CONTROL_STATUS_ENEMY_OFFSET);
                     combatClusterIndex++;
 
                     // Preserve combat clusters which still have enemies
@@ -394,6 +409,42 @@ public class Archon extends Robot {
 
         // rc.setIndicatorString(combatClusterIndex + " " + mineClusterIndex + " " +
         // exploreClusterIndex);
+    }
+
+
+    public void resetClusterControlStatus() throws GameActionException {
+        if (!lastArchon) {
+            return;
+        }
+        /**
+        int myClusterIdx = whichCluster(myLocation);
+        int myClusterWidth = getClusterWidth(myClusterIdx);
+        int myClusterHeight = getClusterHeight(myClusterIdx);
+        int[] adjacentClusterIndices = new int[9];
+        int[] adjacentClusterControlStatuses = new int[9];
+
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                MapLocation newLoc = new MapLocation(myLocation.x + i*myClusterWidth, myLocation.y + j*myClusterHeight);
+                if (newLoc.x >= 0 && newLoc.x < rc.getMapWidth() && newLoc.y >= 0 && newLoc.y < rc.getMapHeight()) {
+                    adjacentClusterIndices[(i+1)*3 + (j+1)] = whichCluster(newLoc);
+                    adjacentClusterControlStatuses[(i+1)*3 + (j+1)] = commsHandlers.readClusterControlStatus(adjacentClusterIndices[(i+1)*3 + (j+1)])
+                } else {
+                    adjacentClusterIndices[(i+1)*3 + (j+1)] = -1;
+                }
+            }
+        }*/
+        for (int i=0; i < numClusters; i++) {
+            commsHandler.writeClusterControlStatus(i, 0);
+        }
+        /**
+        for (int j=0; j<9; j++) {
+            int clusterIndex = adjacentClusterIndices[j]
+            int controlStatus = adjacentClusterControlStatuses[j]
+            if (adjacentClusterIndices[j] > 0) {
+                commsHandler.writeClusterControlStatus(clusterIndex, controlStatus)
+            }
+        }*/
     }
 
     /**
