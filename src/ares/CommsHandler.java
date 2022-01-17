@@ -16,6 +16,7 @@ public class CommsHandler {
     final int MINE_CLUSTER_SLOTS = 10;
     final int LAST_ARCHON_SLOTS = 1;
     final int RESERVED_RESOURCES_SLOTS = 1;
+    final int MAP_SLOTS = 1;
 
     public class ArchonStatus {
         public static final int DEAD = 0;
@@ -2476,5 +2477,21 @@ public class CommsHandler {
     public void writeReservedResourcesAll(int value) throws GameActionException {
         rc.writeSharedArray(59, (rc.readSharedArray(59) & 61440) | ((value & 65520) >>> 4));
         rc.writeSharedArray(60, (rc.readSharedArray(60) & 4095) | ((value & 15) << 12));
+    }
+
+    public int readMapSymmetry() throws GameActionException {
+        return (rc.readSharedArray(60) & 3072) >>> 10;
+    }
+
+    public void writeMapSymmetry(int value) throws GameActionException {
+        rc.writeSharedArray(60, (rc.readSharedArray(60) & 62463) | (value << 10));
+    }
+
+    public int readMapAll() throws GameActionException {
+        return (rc.readSharedArray(60) & 3072) >>> 10;
+    }
+
+    public void writeMapAll(int value) throws GameActionException {
+        rc.writeSharedArray(60, (rc.readSharedArray(60) & 62463) | (value << 10));
     }
 }

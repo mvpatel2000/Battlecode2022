@@ -65,6 +65,12 @@ SCHEMA = {
             'lead': 10,
             'gold': 6,
         }
+    },
+    'map': {
+        'slots': 1,
+        'bits': {
+            'symmetry': 2
+        }
     }
 }
 
