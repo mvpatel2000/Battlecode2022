@@ -38,8 +38,11 @@ public class Archon extends Robot {
     // used to reset exploration
     int turnsWithNoExploring = 0;
 
-    int previousResources = 0;
+    int oldResourceCount = 0;
     int resourceRate = 0;
+
+    // used to move around
+    boolean shouldLand = false;
 
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
@@ -96,7 +99,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 150) {
+        // if (currentRound > 300) {
         //     System.out.println("Symmetry: " + commsHandler.readMapSymmetry());
         //     rc.resign();
         // }
@@ -110,14 +113,122 @@ public class Archon extends Robot {
 
         updateResourceRate();
 
-        setPriorityClusters();
+        int nearestCluster = considerTransform();
+        rc.setIndicatorString(shouldLand + " " + nearestCluster);
+
+        if (rc.getMode() == RobotMode.TURRET) {
+            setPriorityClusters();
+        }
+        else if (rc.getMode() == RobotMode.PORTABLE) {
+            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                shouldLand = true;
+            }
+            // Transform back to turret
+            if (shouldLand) {
+                if (rc.canTransform()) {
+                    rc.transform();
+                    shouldLand = false;
+                }
+            }
+            // Keep going
+            else {
+                MapLocation newDest = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
+                                                clusterCentersY[nearestCluster / clusterWidthsLength]);
+                pathing.updateDestination(newDest);
+                pathing.pathToDestination();
+            }
+        }
 
         build();
         repair();
     }
 
+    /**
+     * Consider transforming to mobile mode or vice-versa. Returns target cluster at each step or UNDEFINED_CLUSTER_INDEX
+     * @throws GameActionException
+     */
+    public int considerTransform() throws GameActionException {
+        // Must be in turret mode with no allies nearby
+        if (rc.getMode() == RobotMode.TURRET) {
+            if (nearbyEnemies.length == 0) {
+                boolean otherArchonTurretExists = false;
+                if (archonZeroAlive && myArchonNum != 0 && commsHandler.readOurArchonIsMoving(0) == CommsHandler.ArchonStatus.STATIONARY) {
+                    otherArchonTurretExists = true;
+                }
+                else if (archonOneAlive && myArchonNum != 1 && commsHandler.readOurArchonIsMoving(1) == CommsHandler.ArchonStatus.STATIONARY) {
+                    otherArchonTurretExists = true;
+                }
+                else if (archonTwoAlive && myArchonNum != 2 && commsHandler.readOurArchonIsMoving(2) == CommsHandler.ArchonStatus.STATIONARY) {
+                    otherArchonTurretExists = true;
+                }
+                else if (archonThreeAlive && myArchonNum != 3 && commsHandler.readOurArchonIsMoving(3) == CommsHandler.ArchonStatus.STATIONARY) {
+                    otherArchonTurretExists = true;
+                }
+                // Must have at least one archon in turret mode
+                if (otherArchonTurretExists) {
+                    RobotInfo[] nearbyAllies = rc.senseNearbyRobots(RobotType.ARCHON.actionRadiusSquared, allyTeam);
+                    int length = nearbyAllies.length;
+                    boolean canRepair = false;
+                    for (int i = 0; i < length; i++) {
+                        RobotInfo ally = nearbyAllies[i];
+                        if (ally.health < ally.type.getMaxHealth(ally.level)) {
+                            canRepair = true;
+                            break;
+                        }
+                    }
+                    // Must not be any repair targets
+                    if (!canRepair) {
+                        int nearestCluster = getNearestCombatCluster();
+                        // Transform and return target cluster
+                        if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX && rc.canTransform()) {
+                            rc.transform();
+                            return nearestCluster;
+                        }
+                    }
+                }
+            }
+            return commsHandler.UNDEFINED_CLUSTER_INDEX;
+        }
+        // indicate whether we should land or otherwise return target cluster
+        else if (rc.getMode() == RobotMode.PORTABLE) {
+            if (nearbyEnemies.length > 0 || (pathing.destination != null && myLocation.distanceSquaredTo(pathing.destination) <= 64)) {
+                shouldLand = true;
+            }
+            int nearestCluster = getNearestCombatCluster();
+            System.out.println(nearbyEnemies.length + " " + pathing.destination + " " + nearestCluster);
+            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                shouldLand = true;
+            }
+            return nearestCluster;
+        }
+        else {
+            System.out.println("UNEXPECTED STATE! ARCHON IS NIETHER TURRET NOR PORTABLE");
+            return commsHandler.UNDEFINED_CLUSTER_INDEX;
+        }
+    }
+
     public void updateResourceRate() throws GameActionException {
-        int newResourceCount = 0;
+        int newResourceCount = rc.getTeamLeadAmount(allyTeam);
+        resourceRate = newResourceCount - oldResourceCount;
+        // Built a unit, adjust for it
+        if (resourceRate < 0) {
+            // Built builder
+            if (resourceRate > -40) {
+                resourceRate += 40;
+            }
+            // Built miner
+            else if (resourceRate > -50) {
+                resourceRate += 50;
+            }
+            // Built soldier
+            else {
+                resourceRate += 75;
+            }
+            // Built multiple units, unclear what we built. Set rate to 10
+            if (resourceRate < 0) {
+                resourceRate = 10;
+            }
+        }
     }
 
     public void updateUnitCounts() throws GameActionException {
