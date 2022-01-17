@@ -557,7 +557,7 @@ public class Robot {
      */
     public int getBestCombatCluster() throws GameActionException {
         int bestCluster = commsHandler.UNDEFINED_CLUSTER_INDEX;
-        int bestClusterWeight = Integer.MAX_VALUE;
+        double bestClusterWeight = Double.MAX_VALUE;
         for (int i = 0; i < commsHandler.COMBAT_CLUSTER_SLOTS; i++) {
             int currentCluster = commsHandler.readCombatClusterIndex(i);
             int clusterPriority = commsHandler.readCombatClusterPriority(i);
@@ -573,7 +573,7 @@ public class Robot {
             );
             // Closer clusters and those with more enemies have lower weights (lowest weight optimal)
             // A cluster with a minor enemy has to be 3x closer to have equal weight to a cluster with major enemy.
-            int clusterWeight = distance * (commsHandler.CLUSTER_ENEMY_LEVELS - clusterPriority);
+            double clusterWeight = (double)(distance) * (CommsHandler.ControlStatus.CLUSTER_ENEMY_LEVELS - clusterPriority);
             
             System.out.println("Considering cluster: " + getClusterCenter(currentCluster));
             System.out.println("Distance " + distance);

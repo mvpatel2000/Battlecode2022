@@ -16,6 +16,9 @@ public class Archon extends Robot {
     int minerCount = 0;
     int soldierCount = 0;
 
+    // Start and end indices for resetting
+    int startResetCluster = 0;
+
     boolean archonZeroAlive = true;
     boolean archonOneAlive = true;
     boolean archonTwoAlive = true;
@@ -80,10 +83,7 @@ public class Archon extends Robot {
         build();
         repair();
 
-        if (turnCount % 4 == 0) {
-            System.out.println("RESETTING CLUSTER CONTROL STATUSES");
-            resetClusterControlStatus();
-        }
+        resetClusterControlStatus();
     }
 
     public void updateUnitCounts() throws GameActionException {
@@ -174,12 +174,12 @@ public class Archon extends Robot {
         int exploreClusterIndex = 0;
         int emptyExploreClusters = 0;
 
-        String status = "";
-        for (int i = 0; i < commsHandler.COMBAT_CLUSTER_SLOTS; i++) {
-            int cluster = commsHandler.readCombatClusterIndex(i);
-            status += " " + cluster + "(" + commsHandler.readClusterControlStatus(cluster) + ")";
-        }
-        System.out.println("Combat"+status);
+        // String status = "";
+        // for (int i = 0; i < commsHandler.COMBAT_CLUSTER_SLOTS; i++) {
+        //     int cluster = commsHandler.readCombatClusterIndex(i);
+        //     status += " " + cluster + "(" + commsHandler.readClusterControlStatus(cluster) + ")";
+        // }
+        // System.out.println("Combat"+status);
         // String status = "";
         // for (int i = 0; i < commsHandler.EXPLORE_CLUSTER_SLOTS; i++) {
         // int cluster = commsHandler.readExploreClusterIndex(i);
@@ -306,7 +306,7 @@ public class Archon extends Robot {
                 if (isValid) {
                     commsHandler.writeCombatClusterIndex(combatClusterIndex, i);
                     // Writes a 0 for miners, 1 for 1 soldier, 2 for multi-soldiers.
-                    commsHandler.writeCombatClusterPriority(combatClusterIndex, controlStatus - commsHandler.CONTROL_STATUS_ENEMY_OFFSET);
+                    commsHandler.writeCombatClusterPriority(combatClusterIndex, controlStatus - CommsHandler.ControlStatus.ENEMY_OFFSET);
                     combatClusterIndex++;
 
                     // Preserve combat clusters which still have enemies
@@ -380,38 +380,25 @@ public class Archon extends Robot {
 
 
     public void resetClusterControlStatus() throws GameActionException {
+        int frequency = 4;
         if (!lastArchon) {
             return;
         }
-        /**
-        int myClusterIdx = whichCluster(myLocation);
-        int myClusterWidth = getClusterWidth(myClusterIdx);
-        int myClusterHeight = getClusterHeight(myClusterIdx);
-        int[] adjacentClusterIndices = new int[9];
-        int[] adjacentClusterControlStatuses = new int[9];
-
-        for (int i = -1; i <= 1; i++) {
-            for (int j = -1; j <= 1; j++) {
-                MapLocation newLoc = new MapLocation(myLocation.x + i*myClusterWidth, myLocation.y + j*myClusterHeight);
-                if (newLoc.x >= 0 && newLoc.x < rc.getMapWidth() && newLoc.y >= 0 && newLoc.y < rc.getMapHeight()) {
-                    adjacentClusterIndices[(i+1)*3 + (j+1)] = whichCluster(newLoc);
-                    adjacentClusterControlStatuses[(i+1)*3 + (j+1)] = commsHandlers.readClusterControlStatus(adjacentClusterIndices[(i+1)*3 + (j+1)])
-                } else {
-                    adjacentClusterIndices[(i+1)*3 + (j+1)] = -1;
-                }
-            }
-        }*/
-        for (int i=0; i < numClusters; i++) {
+        int nbl = Clock.getBytecodesLeft() / 200;
+        int endResetCluster = Math.min(startResetCluster + numClusters/frequency, numClusters);
+        endResetCluster = Math.min(startResetCluster + nbl, endResetCluster);
+        int diff = endResetCluster - startResetCluster;
+        System.out.println("indices: " + startResetCluster + " " + endResetCluster);
+        System.out.println("RESETTTING: " + diff);
+        
+        for (int i=startResetCluster; i < endResetCluster; i++) {
             commsHandler.writeClusterControlStatus(i, 0);
         }
-        /**
-        for (int j=0; j<9; j++) {
-            int clusterIndex = adjacentClusterIndices[j]
-            int controlStatus = adjacentClusterControlStatuses[j]
-            if (adjacentClusterIndices[j] > 0) {
-                commsHandler.writeClusterControlStatus(clusterIndex, controlStatus)
-            }
-        }*/
+        if (endResetCluster == numClusters) {
+            startResetCluster = 0;
+        } else {
+            startResetCluster = endResetCluster;
+        }
     }
 
     /**

@@ -17,11 +17,6 @@ public class CommsHandler {
     final int LAST_ARCHON_SLOTS = 1;
     final int RESERVED_RESOURCES_SLOTS = 1;
 
-    // ENEMY_OFFSET = minimum control status
-    // representing enemy control.
-    final int CONTROL_STATUS_ENEMY_OFFSET = 3;
-    final int CLUSTER_ENEMY_LEVELS = 3;
-
     public class ArchonStatus {
         public static final int DEAD = 0;
         public static final int STANDBY_ODD = 1;
@@ -40,6 +35,9 @@ public class CommsHandler {
         public static final int MINOR_ENEMY = 3;
         public static final int MEDIUM_ENEMY = 4;
         public static final int MAJOR_ENEMY = 5;
+        // Enemy_offset = first status representing enemy control
+        public static final int ENEMY_OFFSET = 3;
+        public static final int CLUSTER_ENEMY_LEVELS = 3;
     }
     public class ClaimStatus {
         public static final int UNCLAIMED = 0;
