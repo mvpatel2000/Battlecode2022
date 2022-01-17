@@ -10,8 +10,9 @@ public class Miner extends Robot {
     MapLocation lastEnemyLocation;
     int requiredLead;
 
-    final static int[][] INNER_SPIRAL_ORDER = {{0,0},{0,1},{1,0},{0,-1},{-1,0},{1,1},{1,-1},{-1,-1},{-1,1},{0,2},{2,0},{0,-2},{-2,0},{1,2},{2,1},{2,-1},{1,-2},{-1,-2},{-2,-1},{-2,1},{-1,2},{2,2},{2,-2},{-2,-2},{-2,2},{0,3},{3,0},{0,-3},{-3,0},{1,3},{3,1},{3,-1},{1,-3},{-1,-3},{-3,-1},{-3,1},{-1,3},{2,3},{3,2},{3,-2},{2,-3},{-2,-3},{-3,-2},{-3,2},{-2,3}};
-    final static int[][] OUTER_SPIRAL_ORDER = {{0,4},{4,0},{0,-4},{-4,0},{1,4},{4,1},{4,-1},{1,-4},{-1,-4},{-4,-1},{-4,1},{-1,4},{3,3},{3,-3},{-3,-3},{-3,3},{2,4},{4,2},{4,-2},{2,-4},{-2,-4},{-4,-2},{-4,2},{-2,4}};
+    MapLocation startLocation;
+    MapLocation[] nearbyActionLead;
+    MapLocation[] nearbyActionGold;
     
     public Miner(RobotController rc) throws GameActionException {
         super(rc);
@@ -24,6 +25,7 @@ public class Miner extends Robot {
     public void runUnit() throws GameActionException { 
         announceAlive();
 
+        startLocation = myLocation;
         requiredLead = 2;
         int maxScan = Math.min(nearbyEnemies.length, 10);
         for (int i = 0; i < maxScan; i++) {
@@ -32,13 +34,19 @@ public class Miner extends Robot {
                 requiredLead = 1;
             }
         }
+        nearbyActionLead = rc.senseNearbyLocationsWithLead(RobotType.MINER.actionRadiusSquared, requiredLead);
+        nearbyActionGold = rc.senseNearbyLocationsWithGold(RobotType.MINER.actionRadiusSquared);
         
         mineNearbySquares();
 
         move();
 
         // Try to act again if we didn't before moving
-        mineNearbySquares();
+        if (myLocation != startLocation) {
+            nearbyActionLead = rc.senseNearbyLocationsWithLead(RobotType.MINER.actionRadiusSquared, requiredLead);
+            nearbyActionGold = rc.senseNearbyLocationsWithGold(RobotType.MINER.actionRadiusSquared);
+            mineNearbySquares();
+        }
 
         // disintegrate();
     }
@@ -78,8 +86,7 @@ public class Miner extends Robot {
         if (!rc.isActionReady()) {
             return;
         }
-        MapLocation[] mineLocations = rc.senseNearbyLocationsWithGold(RobotType.MINER.actionRadiusSquared);
-        for (MapLocation mineLocation : mineLocations) {
+        for (MapLocation mineLocation : nearbyActionGold) {
             while (rc.canMineGold(mineLocation)) {
                 rc.mineGold(mineLocation);
             }
@@ -88,8 +95,7 @@ public class Miner extends Robot {
                 return;
             }
         }
-        mineLocations = rc.senseNearbyLocationsWithLead(RobotType.MINER.actionRadiusSquared, requiredLead);
-        for (MapLocation mineLocation : mineLocations) {
+        for (MapLocation mineLocation : nearbyActionLead) {
             int leadCount = rc.senseLead(mineLocation);
             while (rc.canMineLead(mineLocation) && leadCount >= requiredLead) {
                 rc.mineLead(mineLocation);
