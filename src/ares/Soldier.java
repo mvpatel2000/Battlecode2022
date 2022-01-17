@@ -128,7 +128,7 @@ public class Soldier extends Robot {
                 }
                 double myRubbleFactor = 10 / (10.0 + rc.senseRubble(moveLocation));
                 // Include archon repair benefit
-                int score = 0;
+                double score = 0;
                 if (archonLocation != null 
                     && myLocation.distanceSquaredTo(archonLocation) <= RobotType.ARCHON.actionRadiusSquared) {
                     score += repairPerTurn;
@@ -165,6 +165,7 @@ public class Soldier extends Robot {
                 if (canAttack) {
                     score += RobotType.SOLDIER.damage * myRubbleFactor;
                 }
+                // System.out.println(myLocation + " " + dir + " " + score);
                 // Add rubble movement factor, often serves as a tiebreak for flee
                 score += myRubbleFactor;
                 if (score > optimalScore) {
