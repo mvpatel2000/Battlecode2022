@@ -96,16 +96,10 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-<<<<<<< HEAD
-        // if (currentRound > 103) {
+        // if (currentRound > 150) {
+        //     //System.out.println\("Symmetry: " + commsHandler.readMapSymmetry());
         //     //rc.resign\();
         // }
-=======
-        if (currentRound > 150) {
-            //System.out.println\("Symmetry: " + commsHandler.readMapSymmetry());
-            //rc.resign\();
-        }
->>>>>>> 4e71f029e2d061cb1edd5ff081ac0fa96be51882
 
         archonStatusCheck();
         updateUnitCounts();
