@@ -110,7 +110,8 @@ public class Soldier extends Robot {
                 repairPerTurn = (2*ally.level) * 10 / (10.0 + rc.senseRubble(archonLocation));
             }
         }
-        boolean holdGround = rc.getHealth() > 30 && ((archonLocation != null) || (combatAllies - nearbyEnemies.length >= 2));
+        boolean isPositionReinforced = rc.getHealth() > 30 && ((archonLocation != null) || (combatAllies - nearbyEnemies.length >= 2));
+        // boolean isPositionReinforced = archonLocation != null && rc.getHealth() > 10;
 
         Direction optimalDirection = null;
         double optimalScore = -999.0;
@@ -127,15 +128,22 @@ public class Soldier extends Robot {
                     && myLocation.distanceSquaredTo(archonLocation) <= RobotType.ARCHON.actionRadiusSquared) {
                     score += repairPerTurn;
                 }
+                double enemyCombatHealth = 0.0;
+                double distToNearestEnemy = 1000000.1;
                 boolean canAttack = false;
                 boolean canView = false;
                 for (RobotInfo enemy : nearbyEnemies) {
                     // Penalize by their damage per turn times how long I will be there
-                    if (!holdGround &&
+                    if (!isPositionReinforced &&
                             (enemy.type == RobotType.WATCHTOWER && enemy.mode == RobotMode.TURRET 
                             || enemy.type == RobotType.SOLDIER
                             || enemy.type == RobotType.SAGE)) {
                         double enemyRubbleFactor = 10 / (10.0 + rc.senseRubble(enemy.location));
+                        enemyCombatHealth += enemy.getHealth() * enemyRubbleFactor;
+                        double enemyDist = myLocation.distanceSquaredTo(enemy.location);
+                        if (enemyDist < distToNearestEnemy) {
+                            distToNearestEnemy = enemyDist;
+                        }
                         // They can hit me, full points off
                         if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared) {
                             score -= enemy.type.getDamage(enemy.level) * enemyRubbleFactor;
@@ -149,7 +157,7 @@ public class Soldier extends Robot {
                         }
                     }
                     // Factor in enemy archon repair
-                    if (!holdGround && enemy.type == RobotType.ARCHON && nearbyEnemies.length > 1) {
+                    if (!isPositionReinforced && enemy.type == RobotType.ARCHON && nearbyEnemies.length > 1) {
                         double enemyRubbleFactor = 10 / (10.0 + rc.senseRubble(enemy.location));
                         score -= enemy.level * 2 * enemyRubbleFactor;
                     }
@@ -167,7 +175,13 @@ public class Soldier extends Robot {
                 // Add damage normalized to per turn by rubble
                 if (canAttack || canView) {
                     // //System.out.println\("  Shoot: " + (RobotType.SOLDIER.damage * myRubbleFactor));
-                    score += RobotType.SOLDIER.damage * myRubbleFactor;
+                    double viewOnlyMultiplier = canAttack ? 1.0 : 0.9;
+                    score += RobotType.SOLDIER.damage * myRubbleFactor  * viewOnlyMultiplier;
+                    // Pursue if higher health, otherwise flee
+                    // if (distToNearestEnemy < 1000000.0) {
+                    //     // //System.out.println\("Chase: " + ((rc.getHealth() * myRubbleFactor - enemyCombatHealth) * distToNearestEnemy /10000.0));
+                    //     score += (rc.getHealth() * myRubbleFactor - enemyCombatHealth) * distToNearestEnemy /10000.0;
+                    // }
                 }
                 // Tiebreaker
                 if (dir == Direction.CENTER) {
@@ -184,6 +198,7 @@ public class Soldier extends Robot {
         }
         if (optimalDirection != null && optimalDirection != Direction.CENTER) {
             //rc.setIndicatorLine(myLocation, myLocation.add(optimalDirection), 0, 255, 0);
+            // //System.out.println\("Moving!: " + myLocation + " -> " + myLocation.add(optimalDirection));
             pathing.move(optimalDirection);
         }
     }
