@@ -128,6 +128,7 @@ public class Soldier extends Robot {
                     score += repairPerTurn;
                 }
                 boolean canAttack = false;
+                boolean canView = false;
                 for (RobotInfo enemy : nearbyEnemies) {
                     // Penalize by their damage per turn times how long I will be there
                     if (!holdGround &&
@@ -141,8 +142,14 @@ public class Soldier extends Robot {
                         }
                         // They can see me. If they step in, I can start shooting but they can too, so normalize by rubble
                         else if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.visionRadiusSquared) {
-                            score -= Math.max(0, (enemy.type.getDamage(enemy.level) * enemyRubbleFactor - RobotType.SOLDIER.damage * myRubbleFactor));
+                            score -= enemy.type.getDamage(enemy.level);
+                            canView = true;
                         }
+                    }
+                    // Factor in enemy archon repair
+                    if (!holdGround && enemy.type == RobotType.ARCHON && nearbyEnemies.length > 1) {
+                        double enemyRubbleFactor = 10 / (10.0 + rc.senseRubble(enemy.location));
+                        score -= enemy.level * 2 * enemyRubbleFactor;
                     }
                     // See if you can attack anyone
                     if (moveLocation.distanceSquaredTo(enemy.location) <= RobotType.SOLDIER.actionRadiusSquared) {
@@ -158,6 +165,14 @@ public class Soldier extends Robot {
                 // Add damage normalized to per turn by rubble
                 if (canAttack) {
                     score += RobotType.SOLDIER.damage * myRubbleFactor;
+                }
+                // Next turn attack for someone who can see me and might step in
+                if (canView) {
+                    score += RobotType.SOLDIER.damage * myRubbleFactor;
+                }
+                // Tiebreaker
+                if (dir == Direction.CENTER) {
+                    score += 0.00001;
                 }
                 // System.out.println(myLocation + " " + dir + " " + score);
                 // Add rubble movement factor, often serves as a tiebreak for flee
