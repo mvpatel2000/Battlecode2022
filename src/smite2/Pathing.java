@@ -1,4 +1,4 @@
-package ares;
+package smite2;
 
 import battlecode.common.*;
 
@@ -8,10 +8,8 @@ public class Pathing {
     RobotController rc;
     SoldierPathing sp;
     MinerPathing mp;
-    ArchonPathing ap;
     boolean isSoldier = false;
     boolean isMiner = false;
-    boolean isArchon = false;
     MapLocation destination;
 
     int[] tracker = new int[113];
@@ -25,12 +23,10 @@ public class Pathing {
         if (rc.getType() == RobotType.SOLDIER) {
             isSoldier = true;
             sp = new SoldierPathing(rc);
-        } else if (rc.getType() == RobotType.MINER) {
+        }
+        else if (rc.getType() == RobotType.MINER) {
             isMiner = true;
             mp = new MinerPathing(rc);
-        } else if (rc.getType() == RobotType.ARCHON) {
-            isArchon = true;
-            ap = new ArchonPathing(rc);
         }
     }
 
@@ -46,11 +42,12 @@ public class Pathing {
         if (destination != null) {
             pathTo(destination);
             if (isSoldier && destination.distanceSquaredTo(r.baseLocation) > 0) {
-                rc.setIndicatorLine(r.myLocation, destination, 100 - rc.getTeam().ordinal() * 100, 50, rc.getTeam().ordinal() * 100);
-            } else if (isMiner && destination.distanceSquaredTo(r.baseLocation) > 0) {
-                rc.setIndicatorLine(r.myLocation, destination, 150 + 100 - rc.getTeam().ordinal() * 100, 150, 150 + rc.getTeam().ordinal() * 100);
+                //rc.setIndicatorLine(r.myLocation, destination, 100 - rc.getTeam().ordinal() * 100, 50, rc.getTeam().ordinal() * 100);
+            }
+            else if (isMiner && destination.distanceSquaredTo(r.baseLocation) > 0) {
+                //rc.setIndicatorLine(r.myLocation, destination, 150 + 100 - rc.getTeam().ordinal() * 100, 150, 150 + rc.getTeam().ordinal() * 100);
             } else if (destination.distanceSquaredTo(r.baseLocation) == 0) {
-                rc.setIndicatorLine(r.myLocation, destination, 200, 200, 200);
+                //rc.setIndicatorLine(r.myLocation, destination, 200, 200, 200);
             }
         }
     }
@@ -58,8 +55,8 @@ public class Pathing {
     public void pathTo(MapLocation target) throws GameActionException {
         if (!rc.isMovementReady()) return;
 
-        // if i'm not a special pather or if i still have fuzzy moves left, fuzzy move
-        if ((!isSoldier && !isMiner & !isArchon) || fuzzyMovesLeft > 0) {
+        // if i'm not a soldier/miner or if i still have fuzzy moves left, fuzzy move
+        if ((!isSoldier && !isMiner) || fuzzyMovesLeft > 0) {
             fuzzyMove(target);
             return;
         }
@@ -80,14 +77,12 @@ public class Pathing {
             dir = sp.bestDir(target);
         } else if (isMiner) {
             dir = mp.bestDir(target);
-        } else if (isArchon) {
-            dir = ap.bestDir(target);
         }
 
         if (dir == null || !rc.canMove(dir)) return;
         
         if (isVisited(r.myLocation.add(dir))) {
-            // System.out.println("Switching to fuzzy move for " + MAX_FUZZY_MOVES + " moves");
+            // //System.out.println\("Switching to fuzzy move for " + MAX_FUZZY_MOVES + " moves");
             fuzzyMovesLeft = MAX_FUZZY_MOVES;
             pathTo(target);
         } else {

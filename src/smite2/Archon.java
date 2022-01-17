@@ -1,4 +1,4 @@
-package ares;
+package smite2;
 
 import battlecode.common.*;
 
@@ -18,6 +18,12 @@ public class Archon extends Robot {
     int builderCount = 0;
     int sageCount = 0;
 
+    boolean archonZeroAlive = true;
+    boolean archonOneAlive = true;
+    boolean archonTwoAlive = true;
+    boolean archonThreeAlive = true;
+    int numOurArchonsAlive = 1;
+
     boolean lastArchon = false;
 
     MapLocation optimalResourceBuildLocation;
@@ -32,11 +38,8 @@ public class Archon extends Robot {
     // used to reset exploration
     int turnsWithNoExploring = 0;
 
-    int oldResourceCount = 0;
+    int previousResources = 0;
     int resourceRate = 0;
-
-    // used to move around
-    boolean shouldLand = false;
 
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
@@ -50,135 +53,6 @@ public class Archon extends Robot {
             lastArchon = true;
         }
 
-        setBestBuildLocations();
-    }
-
-    @Override
-    public void runUnit() throws GameActionException {
-        // if (currentRound > 150) {
-        //     System.out.println("Symmetry: " + commsHandler.readMapSymmetry());
-        //     rc.resign();
-        // }
-
-        updateUnitCounts();
-
-        if (currentRound == 2) {
-            setInitialExploreClusters();
-        }
-
-        updateResourceRate();
-
-        int nearestCluster = considerTransform();
-        // Finished transforming back to turret from moving
-        if (rc.getMode() == RobotMode.TURRET && rc.isActionReady() 
-            && commsHandler.readOurArchonIsMoving(myArchonNum) == CommsHandler.ArchonStatus.MOVING) {
-            commsHandler.writeOurArchonIsMoving(myArchonNum, CommsHandler.ArchonStatus.STATIONARY);
-        }
-        // rc.setIndicatorString(shouldLand + " " + nearestCluster);
-
-        if (rc.getMode() == RobotMode.TURRET) {
-            setPriorityClusters();
-        }
-        else if (rc.getMode() == RobotMode.PORTABLE) {
-            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                shouldLand = true;
-            }
-            // Transform back to turret
-            if (shouldLand) {
-                // TODO: @Mihir make these guys find a better place to land
-                if (rc.canTransform()) {
-                    // rc.transform();
-                    setBestBuildLocations();
-                    shouldLand = false;
-                }
-            }
-            // Keep going
-            else {
-                MapLocation newDest = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
-                                                clusterCentersY[nearestCluster / clusterWidthsLength]);
-                pathing.updateDestination(newDest);
-                pathing.pathToDestination();
-            }
-        }
-
-        build();
-        repair();
-    }
-
-    /**
-     * Consider transforming to mobile mode or vice-versa. Returns target cluster at each step or UNDEFINED_CLUSTER_INDEX
-     * @throws GameActionException
-     */
-    public int considerTransform() throws GameActionException {
-        // Must be in turret mode with no allies nearby
-        if (rc.getMode() == RobotMode.TURRET) {
-            if (nearbyEnemies.length == 0) {
-                boolean otherArchonTurretExists = false;
-                if (archonZeroAlive && myArchonNum != 0 && commsHandler.readOurArchonIsMoving(0) == CommsHandler.ArchonStatus.STATIONARY) {
-                    otherArchonTurretExists = true;
-                }
-                else if (archonOneAlive && myArchonNum != 1 && commsHandler.readOurArchonIsMoving(1) == CommsHandler.ArchonStatus.STATIONARY) {
-                    otherArchonTurretExists = true;
-                }
-                else if (archonTwoAlive && myArchonNum != 2 && commsHandler.readOurArchonIsMoving(2) == CommsHandler.ArchonStatus.STATIONARY) {
-                    otherArchonTurretExists = true;
-                }
-                else if (archonThreeAlive && myArchonNum != 3 && commsHandler.readOurArchonIsMoving(3) == CommsHandler.ArchonStatus.STATIONARY) {
-                    otherArchonTurretExists = true;
-                }
-                // Must have at least one archon in turret mode
-                if (otherArchonTurretExists) {
-                    RobotInfo[] nearbyAllies = rc.senseNearbyRobots(RobotType.ARCHON.actionRadiusSquared, allyTeam);
-                    int length = nearbyAllies.length;
-                    boolean canRepair = false;
-                    for (int i = 0; i < length; i++) {
-                        RobotInfo ally = nearbyAllies[i];
-                        if (ally.health < ally.type.getMaxHealth(ally.level)) {
-                            canRepair = true;
-                            break;
-                        }
-                    }
-                    // Must not be any repair targets
-                    if (!canRepair) {
-                        int nearestCluster = getNearestCombatCluster();
-                        // Transform and return target cluster
-                        if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                            MapLocation newDest = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
-                                                clusterCentersY[nearestCluster / clusterWidthsLength]);
-                            if (myLocation.distanceSquaredTo(newDest) > 64 && rc.canTransform()) {
-                                // rc.transform();
-                                commsHandler.writeOurArchonIsMoving(myArchonNum, CommsHandler.ArchonStatus.MOVING);
-                                return nearestCluster;
-                            }
-                        }
-                    }
-                }
-            }
-            return commsHandler.UNDEFINED_CLUSTER_INDEX;
-        }
-        // indicate whether we should land or otherwise return target cluster
-        else if (rc.getMode() == RobotMode.PORTABLE) {
-            if (nearbyEnemies.length > 0 || (pathing.destination != null && myLocation.distanceSquaredTo(pathing.destination) <= 64)) {
-                shouldLand = true;
-            }
-            int nearestCluster = getNearestCombatCluster();
-            System.out.println(nearbyEnemies.length + " " + pathing.destination + " " + nearestCluster);
-            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                shouldLand = true;
-            }
-            return nearestCluster;
-        }
-        else {
-            System.out.println("UNEXPECTED STATE! ARCHON IS NIETHER TURRET NOR PORTABLE");
-            return commsHandler.UNDEFINED_CLUSTER_INDEX;
-        }
-    }
-
-    /**
-     * Sets best build locations
-     * @throws GameActionException
-     */
-    public void setBestBuildLocations() throws GameActionException {
         // Get best build direction closest to resources
         Direction toResources = Direction.CENTER;
         int nearestDistance = Integer.MAX_VALUE;
@@ -220,28 +94,30 @@ public class Archon extends Robot {
         }
     }
 
-    public void updateResourceRate() throws GameActionException {
-        int newResourceCount = rc.getTeamLeadAmount(allyTeam);
-        resourceRate = newResourceCount - oldResourceCount;
-        // Built a unit, adjust for it
-        if (resourceRate < 0) {
-            // Built builder
-            if (resourceRate > -40) {
-                resourceRate += 40;
-            }
-            // Built miner
-            else if (resourceRate > -50) {
-                resourceRate += 50;
-            }
-            // Built soldier
-            else {
-                resourceRate += 75;
-            }
-            // Built multiple units, unclear what we built. Set rate to 10
-            if (resourceRate < 0) {
-                resourceRate = 10;
-            }
+    @Override
+    public void runUnit() throws GameActionException {
+        if (currentRound > 150) {
+            //System.out.println\("Symmetry: " + commsHandler.readMapSymmetry());
+            //rc.resign\();
         }
+
+        archonStatusCheck();
+        updateUnitCounts();
+
+        if (currentRound == 2) {
+            setInitialExploreClusters();
+        }
+
+        updateResourceRate();
+
+        setPriorityClusters();
+
+        build();
+        repair();
+    }
+
+    public void updateResourceRate() throws GameActionException {
+        int newResourceCount = 0;
     }
 
     public void updateUnitCounts() throws GameActionException {
@@ -250,7 +126,7 @@ public class Archon extends Robot {
         builderCount = commsHandler.readWorkerCountBuilders();
         sageCount = commsHandler.readFighterCountSages();
 
-        // System.out.println("We currently have " + minerCount + " miners and " +
+        // //System.out.println\("We currently have " + minerCount + " miners and " +
         // soldierCount + " soldiers.");
 
         if (lastArchon) {
@@ -331,7 +207,7 @@ public class Archon extends Robot {
         // status += " " + cluster + "(" +
         // commsHandler.readClusterControlStatus(cluster) + ")";
         // }
-        // System.out.println("Combat"+status);
+        // //System.out.println\("Combat"+status);
         // String status = "";
         // for (int i = 0; i < commsHandler.EXPLORE_CLUSTER_SLOTS; i++) {
         // int cluster = commsHandler.readExploreClusterIndex(i);
@@ -339,14 +215,14 @@ public class Archon extends Robot {
         // commsHandler.readClusterControlStatus(cluster) + "," +
         // commsHandler.readExploreClusterClaimStatus(i) + ")";
         // }
-        // System.out.println("Explore"+status);
+        // //System.out.println\("Explore"+status);
         // String status = "";
         // for (int i = 0; i < commsHandler.MINE_CLUSTER_SLOTS; i++) {
         // int cluster = commsHandler.readMineClusterIndex(i);
         // status += " " + cluster + "(" + commsHandler.readMineClusterClaimStatus(i) +
         // "," + commsHandler.readClusterResourceCount(cluster) + ")";
         // }
-        // System.out.println("Mine"+status);
+        // //System.out.println\("Mine"+status);
 
         // Clear combat clusters
         for (int i = 0; i < commsHandler.COMBAT_CLUSTER_SLOTS; i++) {
@@ -401,9 +277,8 @@ public class Archon extends Robot {
         // TODO: Convert this into a generated comms handler fn which resets all of them
         if (turnsWithNoExploring >= 5) {
             turnsWithNoExploring = 0;
-            System.out.println("RESETTING EXPLORE");
-            int length = clusterPermutation.length;
-            for (int prePermuteIdx = 0; prePermuteIdx < length; prePermuteIdx++) {
+            //System.out.println\("RESETING EXPLORE");
+            for (int prePermuteIdx = 0; prePermuteIdx < 100; prePermuteIdx++) {
                 int i = clusterPermutation[prePermuteIdx];
                 if (commsHandler.readClusterControlStatus(i) == CommsHandler.ControlStatus.OURS) {
                     commsHandler.writeClusterControlStatus(i, CommsHandler.ControlStatus.UNKNOWN);
@@ -523,9 +398,9 @@ public class Archon extends Robot {
             }
         }
 
-        // System.out.println("Estimated resources on the map: " + resourcesOnMap);
+        // //System.out.println\("Estimated resources on the map: " + resourcesOnMap);
 
-        // rc.setIndicatorString(combatClusterIndex + " " + mineClusterIndex + " " +
+        // //rc.setIndicatorString(combatClusterIndex + " " + mineClusterIndex + " " +
         // exploreClusterIndex);
     }
 
@@ -544,9 +419,9 @@ public class Archon extends Robot {
 
         // un-reserve whatever we previously reserved; we'll decide what to build
         // independently from the past
-        // System.out.println("Start of build, currently have reserved " + reservedLead
+        // //System.out.println\("Start of build, currently have reserved " + reservedLead
         // + " lead and " + reservedGold + " gold");
-        // System.out.println("Global reserves are " +
+        // //System.out.println\("Global reserves are " +
         // commsHandler.readReservedResourcesLead() + " lead and " +
         // commsHandler.readReservedResourcesGold() + " gold");
         if (reservedLead > 0) {
@@ -593,7 +468,7 @@ public class Archon extends Robot {
                 if (enemy.type == RobotType.SOLDIER || enemy.type == RobotType.ARCHON || enemy.type == RobotType.SAGE || enemy.type == RobotType.WATCHTOWER) {
                     toBuild = RobotType.SOLDIER;
                     reservedLead = RobotType.SOLDIER.buildCostLead / LEAD_RESERVE_SCALE; // priority build
-                    // System.out.println("Would like to priority build a soldier");
+                    // //System.out.println\("Would like to priority build a soldier");
                 }
             }
         }
@@ -626,12 +501,12 @@ public class Archon extends Robot {
             reservedGold = 0;
         } else { // Can't build now, reserve resources for it
             if (reservedLead > 0) {
-                // System.out.println("Updating global lead reserve to " +
+                // //System.out.println\("Updating global lead reserve to " +
                 // commsHandler.readReservedResourcesLead() + reservedLead);
                 commsHandler.writeReservedResourcesLead(commsHandler.readReservedResourcesLead() + reservedLead);
             }
             if (reservedGold > 0) {
-                // System.out.println("Updating global gold reserve to " +
+                // //System.out.println\("Updating global gold reserve to " +
                 // commsHandler.readReservedResourcesGold() + reservedGold);
                 commsHandler.writeReservedResourcesGold(commsHandler.readReservedResourcesGold() + reservedGold);
             }
@@ -683,7 +558,7 @@ public class Archon extends Robot {
             }
             if (optimalRepair != null && rc.canRepair(optimalRepair)) {
                 rc.repair(optimalRepair);
-                // System.out.println("Repairing " + optimalRepair);
+                // //System.out.println\("Repairing " + optimalRepair);
             }
         }
     }
@@ -707,10 +582,9 @@ public class Archon extends Robot {
         if (commsHandler.readOurArchonStatus(2) == CommsHandler.ArchonStatus.STANDBY_ODD) {
             myArchonNum = 3;
         }
-        System.out.println("I am archon number " + myArchonNum);
+        //System.out.println\("I am archon number " + myArchonNum);
     }
 
-    @Override
     public void archonStatusCheck() throws GameActionException {
         boolean odd = currentRound % 2 == 1;
         if (currentRound > 1) {
@@ -807,16 +681,16 @@ public class Archon extends Robot {
         if (archonThreeAlive)
             numOurArchonsAlive++;
 
-        // System.out.println("Archon survival: " + archonZeroAlive + " " +
+        // //System.out.println\("Archon survival: " + archonZeroAlive + " " +
         // archonOneAlive + " " + archonTwoAlive + " " + archonThreeAlive);
 
         // if (lastArchon) {
-        // System.out.println("I am archon " + myArchonNum + " and I am the last
+        // //System.out.println\("I am archon " + myArchonNum + " and I am the last
         // archon!");
         // }
 
         int newStatus = odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN;
-        // System.out.println("Writing status " + newStatus + " on archon " +
+        // //System.out.println\("Writing status " + newStatus + " on archon " +
         // myArchonNum);
         commsHandler.writeOurArchonStatus(myArchonNum, newStatus);
         commsHandler.writeOurArchonLocation(myArchonNum, myLocation);

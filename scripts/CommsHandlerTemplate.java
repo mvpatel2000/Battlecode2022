@@ -47,7 +47,7 @@ public class CommsHandler {
         this.rc = rc;
     }
 
-    public MapLocation getOurArchonLocation(int idx) throws GameActionException {
+    public MapLocation readOurArchonLocation(int idx) throws GameActionException {
         return new MapLocation(readOurArchonXCoord(idx), readOurArchonYCoord(idx));
     }
 

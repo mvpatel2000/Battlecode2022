@@ -1,4 +1,4 @@
-package ares;
+package smite2;
 
 import battlecode.common.*;
 
@@ -57,7 +57,7 @@ public class CommsHandler {
         this.rc = rc;
     }
 
-    public MapLocation readOurArchonLocation(int idx) throws GameActionException {
+    public MapLocation getOurArchonLocation(int idx) throws GameActionException {
         return new MapLocation(readOurArchonXCoord(idx), readOurArchonYCoord(idx));
     }
 

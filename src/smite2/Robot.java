@@ -1,11 +1,8 @@
-package ares;
+package smite2;
 
 import battlecode.common.*;
 
 import java.util.Random;
-
-import javax.swing.text.GapContent;
-
 import java.util.ArrayList;
 
 public class Robot {
@@ -52,12 +49,6 @@ public class Robot {
     CommsHandler commsHandler;
 
     final int LEAD_RESOLUTION = 20; 
-
-    boolean archonZeroAlive = true;
-    boolean archonOneAlive = true;
-    boolean archonTwoAlive = true;
-    boolean archonThreeAlive = true;
-    int numOurArchonsAlive = 0;
 
     /** Array containing all the possible movement directions. */
     final Direction[] directionsWithoutCenter = {
@@ -148,8 +139,6 @@ public class Robot {
         currentRound = rc.getRoundNum();
         nearbyEnemies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, enemyTeam);
         setClusterStates();
-        archonStatusCheck();
-        int x = distanceAcrossSymmetry(myLocation);
         // Flee to archon if dying
         int myHealth = rc.getHealth();
         if (myHealth == rc.getType().getMaxHealth(rc.getLevel())) {
@@ -164,9 +153,9 @@ public class Robot {
 
         // After unit runs
         if (rc.getRoundNum() < 150 && Clock.getBytecodesLeft() > 1000) {
-            // System.out.println("Bytecodes left before symmetry: " + Clock.getBytecodesLeft());
+            // //System.out.println\("Bytecodes left before symmetry: " + Clock.getBytecodesLeft());
             updateSymmetry();
-            // System.out.println("Bytecodes left after symmetry: " + Clock.getBytecodesLeft());
+            // //System.out.println\("Bytecodes left after symmetry: " + Clock.getBytecodesLeft());
         }
     }
 
@@ -190,8 +179,8 @@ public class Robot {
                 // check some rubble points to see if we can eliminate the symmetry axis
                 MapLocation test1 = new MapLocation(mapWidth/2 - 1, myLocation.y);
                 MapLocation test2 = new MapLocation(mapWidth - mapWidth/2, myLocation.y);
-                rc.setIndicatorDot(test1, 0, 255, 0);
-                rc.setIndicatorDot(test2, 0, 255, 0);
+                //rc.setIndicatorDot(test1, 0, 255, 0);
+                //rc.setIndicatorDot(test2, 0, 255, 0);
                 if (rc.canSenseLocation(test1)) {
                     if (rc.canSenseLocation(test2)) {
                         if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
@@ -207,8 +196,8 @@ public class Robot {
             if (myLocation.y * 2 < mapHeight + 5 && myLocation.y * 2 > mapHeight - 5) {
                 MapLocation test1 = new MapLocation(myLocation.x, mapHeight/2 - 1);
                 MapLocation test2 = new MapLocation(myLocation.x, mapHeight - mapHeight/2);
-                rc.setIndicatorDot(test1, 0, 255, 0);
-                rc.setIndicatorDot(test2, 0, 255, 0);
+                //rc.setIndicatorDot(test1, 0, 255, 0);
+                //rc.setIndicatorDot(test2, 0, 255, 0);
                 if (rc.canSenseLocation(test1)) {
                     if (rc.canSenseLocation(test2)) {
                         if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
@@ -245,7 +234,7 @@ public class Robot {
         }
 
         // int bytecodeUsed2 = Clock.getBytecodeNum();
-        // rc.setIndicatorString("Cluster States: "+(bytecodeUsed2 - bytecodeUsed));
+        // //rc.setIndicatorString("Cluster States: "+(bytecodeUsed2 - bytecodeUsed));
     }
 
     /**
@@ -385,49 +374,14 @@ public class Robot {
      * @throws GameActionException
      */
     public boolean baseRetreat() throws GameActionException {
-        // get nearest archon location
-        MapLocation nearestArchonLocation = null;
-        int nearestArchonDistance = Integer.MAX_VALUE;
-        if (archonZeroAlive) {
-            MapLocation archonZeroLocation = commsHandler.readOurArchonLocation(0);
-            int dist = myLocation.distanceSquaredTo(archonZeroLocation);
-            if (dist < nearestArchonDistance) {
-                nearestArchonLocation = archonZeroLocation;
-                nearestArchonDistance = dist;
-            }
-        }
-        if (archonOneAlive) {
-            MapLocation archonOneLocation = commsHandler.readOurArchonLocation(1);
-            int dist = myLocation.distanceSquaredTo(archonOneLocation);
-            if (dist < nearestArchonDistance) {
-                nearestArchonLocation = archonOneLocation;
-                nearestArchonDistance = dist;
-            }
-        }
-        if (archonTwoAlive) {
-            MapLocation archonTwoLocation = commsHandler.readOurArchonLocation(2);
-            int dist = myLocation.distanceSquaredTo(archonTwoLocation);
-            if (dist < nearestArchonDistance) {
-                nearestArchonLocation = archonTwoLocation;
-                nearestArchonDistance = dist;
-            }
-        }
-        if (archonThreeAlive) {
-            MapLocation archonThreeLocation = commsHandler.readOurArchonLocation(3);
-            int dist = myLocation.distanceSquaredTo(archonThreeLocation);
-            if (dist < nearestArchonDistance) {
-                nearestArchonLocation = archonThreeLocation;
-                nearestArchonDistance = dist;
-            }
-        }
-        if (isDying && nearestArchonLocation != null) {
-            if (myLocation.distanceSquaredTo(nearestArchonLocation) > 13) {
-                rc.setIndicatorString("Retreating to base!");
-                pathing.updateDestination(nearestArchonLocation);
+        if (isDying && baseLocation != null) {
+            if (myLocation.distanceSquaredTo(baseLocation) > 13) {
+                //rc.setIndicatorString("Retreating to base!");
+                pathing.updateDestination(baseLocation);
                 pathing.pathToDestination();
             }
-            else if ((myLocation.x + myLocation.y) % 2 == 0) { // only settle down if we're on an odd square, otherwise keep moving to avoid clogs
-                Direction rotateDir = myLocation.directionTo(nearestArchonLocation).rotateRight().rotateRight();
+            else if ((myLocation.x + myLocation.y) % 2 == 0) { // only settle down if we're on an odd square, otherwise keep moving
+                Direction rotateDir = myLocation.directionTo(baseLocation).rotateRight().rotateRight();
                 pathing.updateDestination(myLocation.add(rotateDir).add(rotateDir.rotateLeft()).add(rotateDir).add(rotateDir));
                 pathing.pathToDestination();
             }
@@ -484,39 +438,6 @@ public class Robot {
             }
             pathing.updateDestination(newDestination);
         }
-    }
-
-    /**
-     * Returns the distance to the best known line of symmetry. This number is negative on our side
-     * and positive on the enemy's side.
-     * 
-     * @param loc MapLocation to check
-     * @return distance to symmetry line (negative on our side, positive on enemy's side)
-     * @throws GameActionException
-     */
-    public int distanceAcrossSymmetry(MapLocation loc) throws GameActionException {
-        int symmetry = commsHandler.readMapSymmetry();
-        int archonXSum = 0;
-        int archonYSum = 0;
-        if (archonZeroAlive) {
-            archonXSum += commsHandler.readOurArchonXCoord(0);
-            archonYSum += commsHandler.readOurArchonYCoord(0);
-        }
-        if (archonOneAlive) {
-            archonXSum += commsHandler.readOurArchonXCoord(1);
-            archonYSum += commsHandler.readOurArchonYCoord(1);
-        }
-        if (archonTwoAlive) {
-            archonXSum += commsHandler.readOurArchonXCoord(2);
-            archonYSum += commsHandler.readOurArchonYCoord(2);
-        }
-        if (archonThreeAlive) {
-            archonXSum += commsHandler.readOurArchonXCoord(3);
-            archonYSum += commsHandler.readOurArchonYCoord(3);
-        }
-        MapLocation ourArchonCentroid = new MapLocation(archonXSum/numOurArchonsAlive, archonYSum/numOurArchonsAlive);
-        rc.setIndicatorDot(ourArchonCentroid, 0, 255, 0);
-        return 0;
     }
 
     /**
@@ -675,40 +596,6 @@ public class Robot {
             }
         }
         return closestCluster;
-    }
-    
-    public void archonStatusCheck() throws GameActionException {
-        boolean odd = currentRound % 2 == 1;
-        // update each of archons zero through three
-        if (archonZeroAlive) {
-            if (commsHandler.readOurArchonStatus(0) != (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN)) {
-                archonZeroAlive = false;
-            }
-        }
-        if (archonOneAlive) {
-            if (commsHandler.readOurArchonStatus(1) != (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN)) {
-                archonOneAlive = false;
-            }
-        }
-        if (archonTwoAlive) {
-            if (commsHandler.readOurArchonStatus(2) != (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN)) {
-                archonTwoAlive = false;
-            }
-        }
-        if (archonThreeAlive) {
-            if (commsHandler.readOurArchonStatus(3) != (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN)) {
-                archonThreeAlive = false;
-            }
-        }
-        numOurArchonsAlive = 0;
-        if (archonZeroAlive)
-            numOurArchonsAlive++;
-        if (archonOneAlive)
-            numOurArchonsAlive++;
-        if (archonTwoAlive)
-            numOurArchonsAlive++;
-        if (archonThreeAlive)
-            numOurArchonsAlive++;
     }
 
     public void setupClusters() {
