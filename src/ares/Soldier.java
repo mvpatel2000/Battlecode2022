@@ -139,10 +139,12 @@ public class Soldier extends Robot {
                         // They can hit me, full points off
                         if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared) {
                             score -= enemy.type.getDamage(enemy.level) * enemyRubbleFactor;
+                            // System.out.println("  hit: " + (-enemy.type.getDamage(enemy.level) * enemyRubbleFactor));
                         }
                         // They can see me. If they step in, I can start shooting but they can too, so normalize by rubble
                         else if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.visionRadiusSquared) {
-                            score -= enemy.type.getDamage(enemy.level);
+                            score -= enemy.type.getDamage(enemy.level) * enemyRubbleFactor;
+                            // System.out.println("  view: " + (-enemy.type.getDamage(enemy.level) * enemyRubbleFactor) + " " + enemy.location);
                             canView = true;
                         }
                     }
@@ -163,11 +165,8 @@ public class Soldier extends Robot {
                     // TODO: pursue enemy if low hp
                 }
                 // Add damage normalized to per turn by rubble
-                if (canAttack) {
-                    score += RobotType.SOLDIER.damage * myRubbleFactor;
-                }
-                // Next turn attack for someone who can see me and might step in
-                if (canView) {
+                if (canAttack || canView) {
+                    // System.out.println("  Shoot: " + (RobotType.SOLDIER.damage * myRubbleFactor));
                     score += RobotType.SOLDIER.damage * myRubbleFactor;
                 }
                 // Tiebreaker
