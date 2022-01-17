@@ -1,4 +1,4 @@
-package smite;
+package smite2;
 
 import battlecode.common.*;
 

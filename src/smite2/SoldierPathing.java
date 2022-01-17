@@ -1,5 +1,5 @@
 // Inspired by https://github.com/IvanGeffner/battlecode2021/blob/master/thirtyone/BFSMuckraker.java.
-package smite;
+package smite2;
 
 import battlecode.common.*;
 
