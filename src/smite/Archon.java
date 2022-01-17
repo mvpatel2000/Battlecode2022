@@ -18,12 +18,6 @@ public class Archon extends Robot {
     int builderCount = 0;
     int sageCount = 0;
 
-    boolean archonZeroAlive = true;
-    boolean archonOneAlive = true;
-    boolean archonTwoAlive = true;
-    boolean archonThreeAlive = true;
-    int numOurArchonsAlive = 1;
-
     boolean lastArchon = false;
 
     MapLocation optimalResourceBuildLocation;
@@ -99,12 +93,11 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 300) {
+        // if (currentRound > 150) {
         //     //System.out.println\("Symmetry: " + commsHandler.readMapSymmetry());
         //     //rc.resign\();
         // }
 
-        archonStatusCheck();
         updateUnitCounts();
 
         if (currentRound == 2) {
@@ -126,7 +119,7 @@ public class Archon extends Robot {
             // Transform back to turret
             if (shouldLand) {
                 if (rc.canTransform()) {
-                    rc.transform();
+                    // rc.transform();
                     shouldLand = false;
                 }
             }
@@ -181,7 +174,7 @@ public class Archon extends Robot {
                         int nearestCluster = getNearestCombatCluster();
                         // Transform and return target cluster
                         if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX && rc.canTransform()) {
-                            rc.transform();
+                            // rc.transform();
                             return nearestCluster;
                         }
                     }
@@ -697,6 +690,7 @@ public class Archon extends Robot {
         //System.out.println\("I am archon number " + myArchonNum);
     }
 
+    @Override
     public void archonStatusCheck() throws GameActionException {
         boolean odd = currentRound % 2 == 1;
         if (currentRound > 1) {

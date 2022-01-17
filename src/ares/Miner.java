@@ -24,7 +24,7 @@ public class Miner extends Robot {
         announceAlive();
 
         startLocation = myLocation;
-        requiredLead = 2;
+        requiredLead = distanceToSymmetryLine > 0 ? 1 : 2;
         int maxScan = Math.min(nearbyEnemies.length, 10);
         for (int i = 0; i < maxScan; i++) {
             RobotInfo enemy = nearbyEnemies[i];

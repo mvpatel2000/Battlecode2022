@@ -119,7 +119,7 @@ public class Archon extends Robot {
             // Transform back to turret
             if (shouldLand) {
                 if (rc.canTransform()) {
-                    rc.transform();
+                    // rc.transform();
                     shouldLand = false;
                 }
             }
@@ -174,7 +174,7 @@ public class Archon extends Robot {
                         int nearestCluster = getNearestCombatCluster();
                         // Transform and return target cluster
                         if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX && rc.canTransform()) {
-                            rc.transform();
+                            // rc.transform();
                             return nearestCluster;
                         }
                     }
