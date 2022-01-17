@@ -214,7 +214,7 @@ public class Archon extends Robot {
             }
             int resourceCount = commsHandler.readClusterResourceCount(cluster);
             int controlStatus = commsHandler.readClusterControlStatus(cluster);
-            if (resourceCount == 0 || controlStatus == CommsHandler.ControlStatus.THEIRS) {
+            if (resourceCount == 0 || isTheirs(controlStatus)) {
                 commsHandler.writeMineClusterIndex(i, commsHandler.UNDEFINED_CLUSTER_INDEX);
             } else {
                 commsHandler.writeMineClusterClaimStatus(i, resourceCount / 4);
@@ -321,7 +321,7 @@ public class Archon extends Robot {
             }
             // Mine cluster
             if (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS && resourceCount > 0
-                    && controlStatus != CommsHandler.ControlStatus.THEIRS) {
+                    &&  isTheirs(controlStatus)) {
                 // Verify cluster is not already in comms list
                 boolean isValid = true;
                 for (int j = 0; j < commsHandler.MINE_CLUSTER_SLOTS; j++) {
