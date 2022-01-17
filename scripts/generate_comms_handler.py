@@ -5,9 +5,25 @@ SCHEMA = {
     'our_archon': {
         'slots': 4,
         'bits': {
-            'status': 4,
+            'status': 2,
+            'is_moving': 1,
+            'accepting_patients': 1,
             'x_coord': 6,
             'y_coord': 6,
+        }
+    },
+    'worker_count': { # make sure this is in a single int
+        'slots': 1,
+        'bits': {
+            'miners': 8,
+            'builders': 8,
+        }
+    },
+    'fighter_count': { # make sure this is in a single int
+        'slots': 1,
+        'bits': {
+            'soldiers': 8,
+            'sages': 8,
         }
     },
     'cluster': {
@@ -37,24 +53,6 @@ SCHEMA = {
             'index': 7,
         }
     },
-    'filler_do_not_use': {
-        'slots': 1,
-        'bits': {
-            '': 6,
-        }
-    },
-    'miner_count': { # make sure this is in a single int
-        'slots': 1,
-        'bits': {
-            '': 8,
-        }
-    },
-    'soldier_count': { # mamke sure this is in a single int
-        'slots': 1,
-        'bits': {
-            '': 8,
-        }
-    },
     'last_archon': {
         'slots': 1,
         'bits': {
@@ -66,6 +64,12 @@ SCHEMA = {
         'bits': {
             'lead': 10,
             'gold': 6,
+        }
+    },
+    'map': {
+        'slots': 1,
+        'bits': {
+            'symmetry': 2
         }
     }
 }

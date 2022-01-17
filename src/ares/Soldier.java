@@ -25,7 +25,7 @@ public class Soldier extends Robot {
     }
 
     public void announceAlive() throws GameActionException {
-        commsHandler.writeSoldierCount(commsHandler.readSoldierCount() + 1);
+        commsHandler.writeFighterCountSoldiers(commsHandler.readFighterCountSoldiers() + 1);
     }
 
     /**
@@ -103,7 +103,7 @@ public class Soldier extends Robot {
         double repairPerTurn = 0;
         RobotInfo[] allies = rc.senseNearbyRobots(RobotType.SOLDIER.visionRadiusSquared, allyTeam);
         for (RobotInfo ally : allies) {
-            if (ally.type == RobotType.WATCHTOWER || ally.type == RobotType.SOLDIER) {
+            if (ally.type == RobotType.WATCHTOWER || (ally.type == RobotType.SOLDIER && ally.health > FLEE_HEALTH)) { // && ally.health > FLEE_HEALTH
                 combatAllies++;
             }
             else if (ally.type == RobotType.ARCHON) {
@@ -123,7 +123,6 @@ public class Soldier extends Robot {
                 if (!rc.onTheMap(moveLocation)) {
                     continue;
                 }
-                double myRubbleFactor = 10 / (10.0 + rc.senseRubble(moveLocation));
                 // Include archon repair benefit
                 double score = 0;
                 if (archonLocation != null 
@@ -132,6 +131,7 @@ public class Soldier extends Robot {
                 }
                 double enemyCombatHealth = 0.0;
                 double distToNearestEnemy = 1000000.1;
+                MapLocation nearestEnemyLoc = null;
                 boolean canAttack = false;
                 boolean canView = false;
                 for (RobotInfo enemy : nearbyEnemies) {
@@ -140,11 +140,12 @@ public class Soldier extends Robot {
                             (enemy.type == RobotType.WATCHTOWER && enemy.mode == RobotMode.TURRET 
                             || enemy.type == RobotType.SOLDIER
                             || enemy.type == RobotType.SAGE)) {
-                        double enemyRubbleFactor = 10 / (10.0 + rc.senseRubble(enemy.location));
+                        double enemyRubbleFactor = 10 / (10.0 + (rc.senseRubble(enemy.location)));
                         enemyCombatHealth += enemy.getHealth() * enemyRubbleFactor;
                         double enemyDist = myLocation.distanceSquaredTo(enemy.location);
                         if (enemyDist < distToNearestEnemy) {
                             distToNearestEnemy = enemyDist;
+                            nearestEnemyLoc = enemy.location;
                         }
                         // They can hit me, full points off
                         if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared) {
@@ -174,6 +175,8 @@ public class Soldier extends Robot {
                     // TODO: encourage aggressiveness if outnumbering?
                     // TODO: pursue enemy if low hp
                 }
+                // double closeEnemyPenalty = 0.5 * distToNearestEnemy / moveLocation.distanceSquaredTo(nearestEnemyLoc); // multiply by rc.senseRubble(); this didn't work -- Vinjai
+                double myRubbleFactor = 10 / (10.0 + (rc.senseRubble(moveLocation)));
                 // Add damage normalized to per turn by rubble
                 if (canAttack || canView) {
                     // System.out.println("  Shoot: " + (RobotType.SOLDIER.damage * myRubbleFactor));

@@ -44,6 +44,7 @@ public class Robot {
     int[] clusterPermutation;
 
     boolean isDying;
+    int FLEE_HEALTH = 8;
 
     CommsHandler commsHandler;
 
@@ -143,7 +144,7 @@ public class Robot {
         if (myHealth == rc.getType().getMaxHealth(rc.getLevel())) {
             isDying = false;
         }
-        else if (myHealth <= 8) {
+        else if (myHealth <= FLEE_HEALTH) {
             isDying = true;
         }
 
@@ -151,6 +152,11 @@ public class Robot {
         runUnit();
 
         // After unit runs
+        if (rc.getRoundNum() < 150 && Clock.getBytecodesLeft() > 1000) {
+            // System.out.println("Bytecodes left before symmetry: " + Clock.getBytecodesLeft());
+            updateSymmetry();
+            // System.out.println("Bytecodes left after symmetry: " + Clock.getBytecodesLeft());
+        }
     }
 
     /**
@@ -158,6 +164,49 @@ public class Robot {
      * all unit-specific run stuff happens.
      */
     public void runUnit() throws GameActionException {
+    }
+
+    /**
+     * Updates symmetry information. If I can see one of the midlines, check some rubble points to see
+     * if I can eliminate a symmetry axis.
+     */
+    public void updateSymmetry() throws GameActionException {
+        int currentSymmetry = commsHandler.readMapSymmetry();
+        
+        // if I can see the vertical midline
+        if ((currentSymmetry & CommsHandler.MapSymmetry.HORIZONTAL) == 0) { // if we have not yet ruled out vertical symmetry
+            if (myLocation.x * 2 < mapWidth + 5 && myLocation.x * 2 > mapWidth - 5) { // if we are near the vertical midline
+                // check some rubble points to see if we can eliminate the symmetry axis
+                MapLocation test1 = new MapLocation(mapWidth/2 - 1, myLocation.y);
+                MapLocation test2 = new MapLocation(mapWidth - mapWidth/2, myLocation.y);
+                rc.setIndicatorDot(test1, 0, 255, 0);
+                rc.setIndicatorDot(test2, 0, 255, 0);
+                if (rc.canSenseLocation(test1)) {
+                    if (rc.canSenseLocation(test2)) {
+                        if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
+                            commsHandler.writeMapSymmetry(currentSymmetry | CommsHandler.MapSymmetry.HORIZONTAL); // eliminate vertical symmetry
+                        }
+                    }
+                }
+            }
+        }
+
+        // same for horizontal
+        if ((currentSymmetry & CommsHandler.MapSymmetry.VERTICAL) == 0) { // if we have not yet ruled out horizontal symmetry
+            if (myLocation.y * 2 < mapHeight + 5 && myLocation.y * 2 > mapHeight - 5) {
+                MapLocation test1 = new MapLocation(myLocation.x, mapHeight/2 - 1);
+                MapLocation test2 = new MapLocation(myLocation.x, mapHeight - mapHeight/2);
+                rc.setIndicatorDot(test1, 0, 255, 0);
+                rc.setIndicatorDot(test2, 0, 255, 0);
+                if (rc.canSenseLocation(test1)) {
+                    if (rc.canSenseLocation(test2)) {
+                        if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
+                            commsHandler.writeMapSymmetry(currentSymmetry | CommsHandler.MapSymmetry.VERTICAL); // eliminate horizontal symmetry
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -231,7 +280,7 @@ public class Robot {
                     markedClustersBuffer[markedClustersCount] = clusterIdx;
                     markedClustersCount++;
                 }
-                clusterControls[clusterIdx] = 16 + (clusterControls[clusterIdx] & 7);
+                clusterControls[clusterIdx] = 16 + (clusterControls[clusterIdx] & 7); // 010xxx
             }
         }
 
@@ -331,7 +380,7 @@ public class Robot {
                 pathing.updateDestination(baseLocation);
                 pathing.pathToDestination();
             }
-            else if (myLocation.x + myLocation.y % 2 == 0) { // only settle down if we're on an odd square, otherwise keep moving
+            else if ((myLocation.x + myLocation.y) % 2 == 0) { // only settle down if we're on an odd square, otherwise keep moving
                 Direction rotateDir = myLocation.directionTo(baseLocation).rotateRight().rotateRight();
                 pathing.updateDestination(myLocation.add(rotateDir).add(rotateDir.rotateLeft()).add(rotateDir).add(rotateDir));
                 pathing.pathToDestination();

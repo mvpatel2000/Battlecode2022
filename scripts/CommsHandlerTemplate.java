@@ -12,6 +12,10 @@ public class CommsHandler {
         public static final int DEAD = 0;
         public static final int STANDBY_ODD = 1;
         public static final int STANDBY_EVEN = 2;
+        public static final int STATIONARY = 0;
+        public static final int MOVING = 1;
+        public static final int NOT_ACCEPTING_PATIENTS = 0;
+        public static final int ACCEPTING_PATIENTS = 1;
     }
     public class MapSymmetry {
         public static final int UNKNOWN = 0;

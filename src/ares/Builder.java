@@ -10,12 +10,18 @@ public class Builder extends Robot {
 
     @Override
     public void runUnit() throws GameActionException { 
+        announceAlive();
+
         buildOrHealOrUpgrade();
 
-        move();
+        // move();
         
         // Try to act again if we didn't before moving
         buildOrHealOrUpgrade();
+    }
+
+    public void announceAlive() throws GameActionException {
+        commsHandler.writeWorkerCountBuilders(commsHandler.readWorkerCountBuilders() + 1);
     }
 
     /**
@@ -43,31 +49,31 @@ public class Builder extends Robot {
             rc.repair(repairLocation);
         }
         // Build watchtower if in danger and didn't heal
-        if (rc.isActionReady()) {
-            if (nearbyEnemies.length > 0 && rc.getTeamLeadAmount(allyTeam) >= RobotType.WATCHTOWER.buildCostLead) {
-                Direction optimalDir = null;
-                int optimalRubble = Integer.MAX_VALUE;
-                for (Direction dir : directionsWithoutCenter) {
-                    if (rc.canBuildRobot(RobotType.WATCHTOWER, dir)) {
-                        int rubble = rc.senseRubble(myLocation.add(dir));
-                        if (rubble < optimalRubble) {
-                            optimalDir = dir;
-                            optimalRubble = rubble;
-                        }
-                    }
-                }
-                if (optimalDir != null && rc.canBuildRobot(RobotType.WATCHTOWER, optimalDir)) {
-                    rc.buildRobot(RobotType.WATCHTOWER, optimalDir);
-                }
-            }
-        }
-        // Upgrade watchtower if lots of resources
-        if (rc.isActionReady() && rc.getTeamLeadAmount(allyTeam) - rc.getTeamLeadAmount(enemyTeam) > 5000) {
+        // if (rc.isActionReady()) {
+        //     if (nearbyEnemies.length > 0 && rc.getTeamLeadAmount(allyTeam) >= RobotType.WATCHTOWER.buildCostLead) {
+        //         Direction optimalDir = null;
+        //         int optimalRubble = Integer.MAX_VALUE;
+        //         for (Direction dir : directionsWithoutCenter) {
+        //             if (rc.canBuildRobot(RobotType.WATCHTOWER, dir)) {
+        //                 int rubble = rc.senseRubble(myLocation.add(dir));
+        //                 if (rubble < optimalRubble) {
+        //                     optimalDir = dir;
+        //                     optimalRubble = rubble;
+        //                 }
+        //             }
+        //         }
+        //         if (optimalDir != null && rc.canBuildRobot(RobotType.WATCHTOWER, optimalDir)) {
+        //             rc.buildRobot(RobotType.WATCHTOWER, optimalDir);
+        //         }
+        //     }
+        // }
+        // Upgrade watchtower or archon if lots of resources
+        if (rc.isActionReady() && rc.getTeamLeadAmount(allyTeam) - rc.getTeamLeadAmount(enemyTeam) > 1000) {
             allies = rc.senseNearbyRobots(2, allyTeam); // Can only mutate adjacent buildings
 
             int buildingsAroundMe = 0;
             for (RobotInfo ally : allies) {
-                if (ally.type == RobotType.WATCHTOWER) {
+                if (ally.type == RobotType.WATCHTOWER || ally.type == RobotType.ARCHON) {
                     buildingsAroundMe++;
                 }
             }

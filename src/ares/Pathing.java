@@ -41,11 +41,13 @@ public class Pathing {
     public void pathToDestination() throws GameActionException {
         if (destination != null) {
             pathTo(destination);
-            if (isSoldier) {
+            if (isSoldier && destination.distanceSquaredTo(r.baseLocation) > 0) {
                 rc.setIndicatorLine(r.myLocation, destination, 100 - rc.getTeam().ordinal() * 100, 50, rc.getTeam().ordinal() * 100);
             }
-            if (isMiner) {
+            else if (isMiner && destination.distanceSquaredTo(r.baseLocation) > 0) {
                 rc.setIndicatorLine(r.myLocation, destination, 150 + 100 - rc.getTeam().ordinal() * 100, 150, 150 + rc.getTeam().ordinal() * 100);
+            } else if (destination.distanceSquaredTo(r.baseLocation) == 0) {
+                rc.setIndicatorLine(r.myLocation, destination, 200, 200, 200);
             }
         }
     }
