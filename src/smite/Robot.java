@@ -424,17 +424,10 @@ public class Robot {
         //     }
         // }
         MapLocation nearestArchonLocation = baseLocation;
-        if (isDying && nearestArchonLocation != null) {
-            if (myLocation.distanceSquaredTo(nearestArchonLocation) > 13) {
-                //rc.setIndicatorString("Retreating to base!");
-                pathing.updateDestination(nearestArchonLocation);
-                pathing.pathToDestination();
-            }
-            else if ((myLocation.x + myLocation.y) % 2 == 0) { // only settle down if we're on an odd square, otherwise keep moving to avoid clogs
-                Direction rotateDir = myLocation.directionTo(nearestArchonLocation).rotateRight().rotateRight();
-                pathing.updateDestination(myLocation.add(rotateDir).add(rotateDir.rotateLeft()).add(rotateDir).add(rotateDir));
-                pathing.pathToDestination();
-            }
+        if (isDying && nearestArchonLocation != null && myLocation.distanceSquaredTo(nearestArchonLocation) > 13) {
+            //rc.setIndicatorString("Retreating to base!");
+            pathing.updateDestination(nearestArchonLocation);
+            pathing.pathToDestination();
             return true;
         }
         return false;
@@ -663,7 +656,7 @@ public class Robot {
      */
     public void resetControlStatus(MapLocation loc) throws GameActionException {
         if (exploreMode) {
-            int cluster = whichXLoc[loc.x] + whichYLoc[loc.y];
+            int cluster = whichXLoc[loc.x] + whichYLoc[loc.y]; 
             if (commsHandler.readClusterControlStatus(cluster) == CommsHandler.ControlStatus.EXPLORING) {
                 commsHandler.writeClusterControlStatus(cluster, CommsHandler.ControlStatus.UNKNOWN);
             }

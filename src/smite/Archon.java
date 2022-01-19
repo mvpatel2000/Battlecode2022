@@ -707,7 +707,6 @@ public class Archon extends Robot {
         if (commsHandler.readOurArchonStatus(2) == CommsHandler.ArchonStatus.STANDBY_ODD) {
             myArchonNum = 3;
         }
-        //System.out.println\("I am archon number " + myArchonNum);
     }
 
     @Override
