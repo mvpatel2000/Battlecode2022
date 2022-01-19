@@ -444,7 +444,9 @@ public class Archon extends Robot {
             int i = clusterPermutation[prePermuteIdx];
             int controlStatus = commsHandler.readClusterControlStatus(i);
             int resourceCount = commsHandler.readClusterResourceCount(i);
-            resourcesOnMap += resourceCount * LEAD_RESOLUTION;
+            if (controlStatus != CommsHandler.ControlStatus.THEIRS) {
+                resourcesOnMap += resourceCount * LEAD_RESOLUTION;
+            }
             // Combat cluster
             if (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS
                     && controlStatus == CommsHandler.ControlStatus.THEIRS) {
