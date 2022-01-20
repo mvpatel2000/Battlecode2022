@@ -189,6 +189,34 @@ def gen():
     out = out.replace(" << 0", "")
     return out
 
+def gen_cluster_control_status_reset():
+    # SPECIFIC TO 3 BIT CONTROL STATUS SCHEMA
+    out = f"""
+    public void resetAllClusterControlStatus() throws GameActionException {{"""
+    shmem = '1'*1024
+    bits_so_far = 0
+    for datatype in SCHEMA:
+        datatype_bits = sum(SCHEMA[datatype]['bits'].values())
+        prefix_bits = 0
+        if datatype == 'cluster':
+            for attribute in SCHEMA[datatype]['bits']:
+                attribute_bits = SCHEMA[datatype]['bits'][attribute]
+                if attribute == 'control_status':
+                    for idx in range(SCHEMA[datatype]['slots']):
+                        start_bit = bits_so_far + datatype_bits * idx + prefix_bits
+                        shmem = shmem[:start_bit] + '100' + shmem[start_bit+attribute_bits:]
+                prefix_bits += attribute_bits
+        bits_so_far += datatype_bits * SCHEMA[datatype]['slots']
+
+    shmem = [shmem[16*i:16*i+16] for i in range(64)]
+    for idx, word in enumerate(shmem):
+        if word != '1'*16:
+            out += f"""
+        rc.writeSharedArray({idx}, rc.readSharedArray({idx}) & {int(word, 2)});"""
+    out += f"""
+    }}"""
+    return out
+
 def capitalize(s):
     return ''.join(x.capitalize() for x in s.split('_'))
 
@@ -228,11 +256,13 @@ if __name__ == '__main__':
             for line in t:
                 if 'package examplefuncsplayer;' in line:
                     f.write(f"package {sys.argv[1]};\n")
-                elif '// TO BE GENERATED' in line:
+                elif '// MAIN READ AND WRITE METHODS' in line:
                     f.write(gen())
                 elif '// CONSTS' in line:
                     f.write(gen_constants())
                 elif '// PRIORITY CLUSTER INIT' in line:
                     f.write(gen_init_clusters())
+                elif '// CLUSTER CONTROL STATUS RESET' in line:
+                    f.write(gen_cluster_control_status_reset())
                 else:
                     f.write(line)

@@ -36,8 +36,8 @@ public class CommsHandler {
     public class ControlStatus {
         public static final int UNKNOWN = 0;
         public static final int OURS = 1;
-        public static final int THEIRS = 2;
-        public static final int EXPLORING = 3;
+        public static final int EXPLORING = 2;
+        public static final int THEIRS = 4;
     }
     public class ClaimStatus {
         public static final int UNCLAIMED = 0;
@@ -85,7 +85,48 @@ public class CommsHandler {
         rc.writeSharedArray(58, 32543);
         rc.writeSharedArray(59, 49152);
     }
+    
 
+    public void resetAllClusterControlStatus() throws GameActionException {
+        rc.writeSharedArray(6, rc.readSharedArray(6) & 40569);
+        rc.writeSharedArray(7, rc.readSharedArray(7) & 59294);
+        rc.writeSharedArray(8, rc.readSharedArray(8) & 31207);
+        rc.writeSharedArray(9, rc.readSharedArray(9) & 40569);
+        rc.writeSharedArray(10, rc.readSharedArray(10) & 59294);
+        rc.writeSharedArray(11, rc.readSharedArray(11) & 31207);
+        rc.writeSharedArray(12, rc.readSharedArray(12) & 40569);
+        rc.writeSharedArray(13, rc.readSharedArray(13) & 59294);
+        rc.writeSharedArray(14, rc.readSharedArray(14) & 31207);
+        rc.writeSharedArray(15, rc.readSharedArray(15) & 40569);
+        rc.writeSharedArray(16, rc.readSharedArray(16) & 59294);
+        rc.writeSharedArray(17, rc.readSharedArray(17) & 31207);
+        rc.writeSharedArray(18, rc.readSharedArray(18) & 40569);
+        rc.writeSharedArray(19, rc.readSharedArray(19) & 59294);
+        rc.writeSharedArray(20, rc.readSharedArray(20) & 31207);
+        rc.writeSharedArray(21, rc.readSharedArray(21) & 40569);
+        rc.writeSharedArray(22, rc.readSharedArray(22) & 59294);
+        rc.writeSharedArray(23, rc.readSharedArray(23) & 31207);
+        rc.writeSharedArray(24, rc.readSharedArray(24) & 40569);
+        rc.writeSharedArray(25, rc.readSharedArray(25) & 59294);
+        rc.writeSharedArray(26, rc.readSharedArray(26) & 31207);
+        rc.writeSharedArray(27, rc.readSharedArray(27) & 40569);
+        rc.writeSharedArray(28, rc.readSharedArray(28) & 59294);
+        rc.writeSharedArray(29, rc.readSharedArray(29) & 31207);
+        rc.writeSharedArray(30, rc.readSharedArray(30) & 40569);
+        rc.writeSharedArray(31, rc.readSharedArray(31) & 59294);
+        rc.writeSharedArray(32, rc.readSharedArray(32) & 31207);
+        rc.writeSharedArray(33, rc.readSharedArray(33) & 40569);
+        rc.writeSharedArray(34, rc.readSharedArray(34) & 59294);
+        rc.writeSharedArray(35, rc.readSharedArray(35) & 31207);
+        rc.writeSharedArray(36, rc.readSharedArray(36) & 40569);
+        rc.writeSharedArray(37, rc.readSharedArray(37) & 59294);
+        rc.writeSharedArray(38, rc.readSharedArray(38) & 31207);
+        rc.writeSharedArray(39, rc.readSharedArray(39) & 40569);
+        rc.writeSharedArray(40, rc.readSharedArray(40) & 59294);
+        rc.writeSharedArray(41, rc.readSharedArray(41) & 31207);
+        rc.writeSharedArray(42, rc.readSharedArray(42) & 40569);
+        rc.writeSharedArray(43, rc.readSharedArray(43) & 59391);
+    }
 
     public int readOurArchonStatus(int idx) throws GameActionException {
         switch (idx) {
