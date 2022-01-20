@@ -40,6 +40,9 @@ public class Archon extends Robot {
     // used to move around
     int turnsUntilLand = -1;
 
+    // regen cache
+    int[] timeToRegen;
+
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
         computeArchonNum();
@@ -54,6 +57,7 @@ public class Archon extends Robot {
 
         setBestBuildLocations();
         commsHandler.writeOurArchonAcceptingPatients(myArchonNum, CommsHandler.ArchonStatus.ACCEPTING_PATIENTS);
+        timeToRegen = new int[numClusters];
     }
 
     @Override
@@ -79,10 +83,10 @@ public class Archon extends Robot {
         }
         // //rc.setIndicatorString(turnsUntilLand + " " + nearestCluster);
 
-        if (rc.getMode() == RobotMode.TURRET) {
-            setPriorityClusters();
-        }
-        else if (rc.getMode() == RobotMode.PORTABLE) {
+        boolean isPortable = rc.getMode() == RobotMode.PORTABLE;
+
+        setPriorityClusters(isPortable);
+        if (isPortable) {
             portableMove(nearestCluster);
         }
 
@@ -349,7 +353,7 @@ public class Archon extends Robot {
      * 
      * @throws GameActionException
      */
-    public void setPriorityClusters() throws GameActionException {
+    public void setPriorityClusters(boolean isPortable) throws GameActionException {
         // Do not set for first turn as archons haven't all filled in data
         if (turnCount <= 1) {
             return;
@@ -388,94 +392,99 @@ public class Archon extends Robot {
         // }
         // //System.out.println\("Mine"+status);
 
-        // Clear combat clusters
-        for (int i = 0; i < commsHandler.COMBAT_CLUSTER_SLOTS; i++) {
-            int cluster = commsHandler.readCombatClusterIndex(i);
-            if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                continue;
+        // Clear slots and adjust indices if not moving
+        if (!isPortable) {
+            // Clear combat clusters
+            for (int i = 0; i < commsHandler.COMBAT_CLUSTER_SLOTS; i++) {
+                int cluster = commsHandler.readCombatClusterIndex(i);
+                if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                    continue;
+                }
+                if (commsHandler.readClusterControlStatus(cluster) != CommsHandler.ControlStatus.THEIRS) {
+                    commsHandler.writeCombatClusterIndex(i, commsHandler.UNDEFINED_CLUSTER_INDEX);
+                }
             }
-            if (commsHandler.readClusterControlStatus(cluster) != CommsHandler.ControlStatus.THEIRS) {
-                commsHandler.writeCombatClusterIndex(i, commsHandler.UNDEFINED_CLUSTER_INDEX);
+            // Clear mine slots
+            for (int i = 0; i < commsHandler.MINE_CLUSTER_SLOTS; i++) {
+                int cluster = commsHandler.readMineClusterIndex(i);
+                if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                    continue;
+                }
+                int resourceCount = commsHandler.readClusterResourceCount(cluster);
+                int controlStatus = commsHandler.readClusterControlStatus(cluster);
+                if (resourceCount == 0 || controlStatus == CommsHandler.ControlStatus.THEIRS) {
+                    commsHandler.writeMineClusterIndex(i, commsHandler.UNDEFINED_CLUSTER_INDEX);
+                } else {
+                    commsHandler.writeMineClusterClaimStatus(i, resourceCount / 4);
+                }
             }
-        }
-        // Clear mine slots
-        for (int i = 0; i < commsHandler.MINE_CLUSTER_SLOTS; i++) {
-            int cluster = commsHandler.readMineClusterIndex(i);
-            if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                continue;
+            // Clear explore slots
+            for (int i = 0; i < commsHandler.EXPLORE_CLUSTER_SLOTS; i++) {
+                int nearestClusterAll = commsHandler.readExploreClusterAll(i);
+                int nearestCluster = nearestClusterAll & 127; // 7 lowest order bits
+                if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                    emptyExploreClusters++;
+                    continue;
+                }
+                int nearestClusterStatus = (nearestClusterAll & 128) >> 7; // 2^7
+                int controlStatus = commsHandler.readClusterControlStatus(nearestCluster);
+                if (nearestClusterStatus == CommsHandler.ClaimStatus.CLAIMED
+                        || controlStatus == CommsHandler.ControlStatus.OURS
+                        || controlStatus == CommsHandler.ControlStatus.THEIRS) {
+                    // Also resets claimed/unclaimed bit to unclaimed
+                    commsHandler.writeExploreClusterAll(i, commsHandler.UNDEFINED_CLUSTER_INDEX);
+                }
             }
-            int resourceCount = commsHandler.readClusterResourceCount(cluster);
-            int controlStatus = commsHandler.readClusterControlStatus(cluster);
-            if (resourceCount == 0 || controlStatus == CommsHandler.ControlStatus.THEIRS) {
-                commsHandler.writeMineClusterIndex(i, commsHandler.UNDEFINED_CLUSTER_INDEX);
+
+            // Track number of turns no explore cluster has been set
+            boolean allExploredClustersEmpty = emptyExploreClusters == commsHandler.EXPLORE_CLUSTER_SLOTS;
+            if (currentRound > 1000 && allExploredClustersEmpty) {
+                turnsWithNoExploring++;
             } else {
-                commsHandler.writeMineClusterClaimStatus(i, resourceCount / 4);
+                turnsWithNoExploring = 0;
             }
-        }
-        // Clear explore slots
-        for (int i = 0; i < commsHandler.EXPLORE_CLUSTER_SLOTS; i++) {
-            int nearestClusterAll = commsHandler.readExploreClusterAll(i);
-            int nearestCluster = nearestClusterAll & 127; // 7 lowest order bits
-            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                emptyExploreClusters++;
-                continue;
+            // Reset explore bits
+            if (turnsWithNoExploring >= 2) {
+                turnsWithNoExploring = 0;
+                // //System.out.println\("RESETTING EXPLORE");
+                // int length = clusterPermutation.length;
+                // for (int prePermuteIdx = 0; prePermuteIdx < length; prePermuteIdx++) {
+                //     int i = clusterPermutation[prePermuteIdx];
+                //     if (commsHandler.readClusterControlStatus(i) == CommsHandler.ControlStatus.OURS) {
+                //         commsHandler.writeClusterControlStatus(i, CommsHandler.ControlStatus.UNKNOWN);
+                //     }
+                // }
+                commsHandler.resetAllClusterControlStatus();
             }
-            int nearestClusterStatus = (nearestClusterAll & 128) >> 7; // 2^7
-            int controlStatus = commsHandler.readClusterControlStatus(nearestCluster);
-            if (nearestClusterStatus == CommsHandler.ClaimStatus.CLAIMED
-                    || controlStatus == CommsHandler.ControlStatus.OURS
-                    || controlStatus == CommsHandler.ControlStatus.THEIRS) {
-                // Also resets claimed/unclaimed bit to unclaimed
-                commsHandler.writeExploreClusterAll(i, commsHandler.UNDEFINED_CLUSTER_INDEX);
+
+            // Preserve combat clusters which still have enemies
+            while (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS) {
+                int cluster = commsHandler.readCombatClusterIndex(combatClusterIndex);
+                if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                    break;
+                }
+                combatClusterIndex++;
+            }
+            // Preserve mining clusters which still have resources
+            while (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
+                int cluster = commsHandler.readMineClusterIndex(mineClusterIndex);
+                if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                    break;
+                }
+                mineClusterIndex++;
+            }
+            // Preserve explore clusters which still have not been claimed
+            while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS) {
+                int nearestCluster = commsHandler.readExploreClusterIndex(exploreClusterIndex);
+                if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                    break;
+                }
+                exploreClusterIndex++;
             }
         }
 
-        // Track number of turns no explore cluster has been set
-        boolean allExploredClustersEmpty = emptyExploreClusters == commsHandler.EXPLORE_CLUSTER_SLOTS;
-        if (currentRound > 1000 && allExploredClustersEmpty) {
-            turnsWithNoExploring++;
-        } else {
-            turnsWithNoExploring = 0;
-        }
-        // Reset explore bits
-        // TODO: Convert this into a generated comms handler fn which resets all of them
-        if (turnsWithNoExploring >= 5) {
-            turnsWithNoExploring = 0;
-            //System.out.println\("RESETTING EXPLORE");
-            // int length = clusterPermutation.length;
-            // for (int prePermuteIdx = 0; prePermuteIdx < length; prePermuteIdx++) {
-            //     int i = clusterPermutation[prePermuteIdx];
-            //     if (commsHandler.readClusterControlStatus(i) == CommsHandler.ControlStatus.OURS) {
-            //         commsHandler.writeClusterControlStatus(i, CommsHandler.ControlStatus.UNKNOWN);
-            //     }
-            // }
-            commsHandler.resetAllClusterControlStatus();
-        }
-
-        // Preserve combat clusters which still have enemies
-        while (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS) {
-            int cluster = commsHandler.readCombatClusterIndex(combatClusterIndex);
-            if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                break;
-            }
-            combatClusterIndex++;
-        }
-        // Preserve mining clusters which still have resources
-        while (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
-            int cluster = commsHandler.readMineClusterIndex(mineClusterIndex);
-            if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                break;
-            }
-            mineClusterIndex++;
-        }
-        // Preserve explore clusters which still have not been claimed
-        while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS) {
-            int nearestCluster = commsHandler.readExploreClusterIndex(exploreClusterIndex);
-            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                break;
-            }
-            exploreClusterIndex++;
-        }
+        // Cap number of regen writes
+        int regenWrites = 0;
 
         // Set priority clusters
         int startIdx = 0;
@@ -485,6 +494,23 @@ public class Archon extends Robot {
             int i = clusterPermutation[prePermuteIdx];
             int controlStatus = commsHandler.readClusterControlStatus(i);
             int resourceCount = commsHandler.readClusterResourceCount(i);
+
+            // Note: This will cause ghost pings on areas that are cleared out. We need
+            // 1 additional bit to indicate empty to avoid ghost pings
+            // Advance timer if it's on -- note that 0 means timer is off
+            if (timeToRegen[i] > 0) {
+                timeToRegen[i]++;
+            }
+            // Cluster has resoures, reset timer
+            if (resourceCount > 0) {
+                timeToRegen[i] = 1;
+            }
+            // Write regen to cluster
+            else if (regenWrites < 10 && resourceCount == 0 && timeToRegen[i] >= 30) {
+                commsHandler.writeClusterResourceCount(i, 1);
+                resourceCount = 1;
+                regenWrites++;
+            }
 
             // below for debugging
             // if (!lastArchon) {
@@ -504,82 +530,92 @@ public class Archon extends Robot {
             //             //rc.setIndicatorDot(clusterCenter, 255, 255, 0);
             //     }
             // }
+            
+            // debug mine clusters
+            // MapLocation clusterCenter = clusterToCenter(i);
+            // if (resourceCount > 0) {
+            //     //rc.setIndicatorDot(clusterCenter, 255, 0, 0);
+            // }
+
             if (controlStatus != CommsHandler.ControlStatus.THEIRS) {
                 resourcesOnMap += resourceCount * LEAD_RESOLUTION;
             }
-            // Combat cluster
-            if (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS
-                    && controlStatus == CommsHandler.ControlStatus.THEIRS) {
-                // Verify cluster is not already in comms list
-                boolean isValid = true;
-                for (int j = 0; j < commsHandler.COMBAT_CLUSTER_SLOTS; j++) {
-                    if (commsHandler.readCombatClusterIndex(j) == i) {
-                        isValid = false;
-                        break;
-                    }
-                }
-                if (isValid) {
-                    commsHandler.writeCombatClusterIndex(combatClusterIndex, i);
-                    combatClusterIndex++;
-
-                    // Preserve combat clusters which still have enemies
-                    while (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS) {
-                        int cluster = commsHandler.readCombatClusterIndex(combatClusterIndex);
-                        if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+            // Set short list if not moving
+            if (!isPortable) {
+                // Combat cluster
+                if (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS
+                        && controlStatus == CommsHandler.ControlStatus.THEIRS) {
+                    // Verify cluster is not already in comms list
+                    boolean isValid = true;
+                    for (int j = 0; j < commsHandler.COMBAT_CLUSTER_SLOTS; j++) {
+                        if (commsHandler.readCombatClusterIndex(j) == i) {
+                            isValid = false;
                             break;
                         }
+                    }
+                    if (isValid) {
+                        commsHandler.writeCombatClusterIndex(combatClusterIndex, i);
                         combatClusterIndex++;
-                    }
-                }
-            }
-            // Mine cluster
-            if (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS && resourceCount > 0
-                    && controlStatus != CommsHandler.ControlStatus.THEIRS) {
-                // Verify cluster is not already in comms list
-                boolean isValid = true;
-                for (int j = 0; j < commsHandler.MINE_CLUSTER_SLOTS; j++) {
-                    if (commsHandler.readMineClusterIndex(j) == i) {
-                        isValid = false;
-                        break;
-                    }
-                }
-                if (isValid) {
-                    commsHandler.writeMineClusterAll(mineClusterIndex, i + ((resourceCount / 4) << 7));
-                    mineClusterIndex++;
 
-                    // Preserve mining clusters which still have resources
-                    while (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
-                        int cluster = commsHandler.readMineClusterIndex(mineClusterIndex);
-                        if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                        // Preserve combat clusters which still have enemies
+                        while (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS) {
+                            int cluster = commsHandler.readCombatClusterIndex(combatClusterIndex);
+                            if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                                break;
+                            }
+                            combatClusterIndex++;
+                        }
+                    }
+                }
+                // Mine cluster
+                if (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS && resourceCount > 0
+                        && controlStatus != CommsHandler.ControlStatus.THEIRS) {
+                    // Verify cluster is not already in comms list
+                    boolean isValid = true;
+                    for (int j = 0; j < commsHandler.MINE_CLUSTER_SLOTS; j++) {
+                        if (commsHandler.readMineClusterIndex(j) == i) {
+                            isValid = false;
                             break;
                         }
+                    }
+                    if (isValid) {
+                        commsHandler.writeMineClusterAll(mineClusterIndex, i + ((resourceCount / 4) << 7));
                         mineClusterIndex++;
-                    }
-                }
-            }
-            // Explore cluster
-            if (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS
-                    && controlStatus == CommsHandler.ControlStatus.UNKNOWN) {
-                // Verify cluster is not already in comms list
-                boolean isValid = true;
-                for (int j = 0; j < commsHandler.EXPLORE_CLUSTER_SLOTS; j++) {
-                    if (commsHandler.readExploreClusterIndex(j) == i) {
-                        isValid = false;
-                        break;
-                    }
-                }
-                if (isValid) {
-                    // Implicitly sets unclaimed bit to 0 (unclaimed)
-                    commsHandler.writeExploreClusterAll(exploreClusterIndex, i);
-                    exploreClusterIndex++;
 
-                    // Preserve explore clusters which still have not been claimed
-                    while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS) {
-                        int nearestCluster = commsHandler.readExploreClusterIndex(exploreClusterIndex);
-                        if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                        // Preserve mining clusters which still have resources
+                        while (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
+                            int cluster = commsHandler.readMineClusterIndex(mineClusterIndex);
+                            if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                                break;
+                            }
+                            mineClusterIndex++;
+                        }
+                    }
+                }
+                // Explore cluster
+                if (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS
+                        && controlStatus == CommsHandler.ControlStatus.UNKNOWN) {
+                    // Verify cluster is not already in comms list
+                    boolean isValid = true;
+                    for (int j = 0; j < commsHandler.EXPLORE_CLUSTER_SLOTS; j++) {
+                        if (commsHandler.readExploreClusterIndex(j) == i) {
+                            isValid = false;
                             break;
                         }
+                    }
+                    if (isValid) {
+                        // Implicitly sets unclaimed bit to 0 (unclaimed)
+                        commsHandler.writeExploreClusterAll(exploreClusterIndex, i);
                         exploreClusterIndex++;
+
+                        // Preserve explore clusters which still have not been claimed
+                        while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS) {
+                            int nearestCluster = commsHandler.readExploreClusterIndex(exploreClusterIndex);
+                            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                                break;
+                            }
+                            exploreClusterIndex++;
+                        }
                     }
                 }
             }
@@ -735,6 +771,7 @@ public class Archon extends Robot {
         RobotInfo[] nearbyAllies = rc.senseNearbyRobots(RobotType.ARCHON.actionRadiusSquared, allyTeam);
         MapLocation optimalRepair = null;
         int remainingHealth = existEnemies ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+        boolean optimalPriority = false;
         for (RobotInfo ally : nearbyAllies) {
             if (ally.type == RobotType.ARCHON) {
                 numFriendlyArchons++;
@@ -742,9 +779,15 @@ public class Archon extends Robot {
             int amountToRepairForAlly = ally.type.getMaxHealth(ally.level) - ally.health;
             if (amountToRepairForAlly > 0) {
                 amountToRepair += amountToRepairForAlly;
-                if (rc.canRepair(ally.location)
+                // If under duress, prioritize healing soldiers unless a miner is about to die
+                boolean allyPriority = existEnemies 
+                                && (ally.type == RobotType.SOLDIER || (ally.type == RobotType.MINER && ally.health <= 9));
+                // Either ally is priority or both current priority and ally priority are false
+                boolean isHigherPriority = allyPriority || optimalPriority == allyPriority;
+                if (rc.canRepair(ally.location) && isHigherPriority
                         && ((existEnemies && ally.health < remainingHealth)
                         || (!existEnemies && ally.health > remainingHealth))) {
+                    optimalPriority = allyPriority;
                     optimalRepair = ally.location;
                     remainingHealth = ally.health;
                 }

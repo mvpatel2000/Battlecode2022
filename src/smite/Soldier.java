@@ -106,7 +106,7 @@ public class Soldier extends Robot {
             if (ally.type == RobotType.WATCHTOWER || (ally.type == RobotType.SOLDIER && ally.health > FLEE_HEALTH)) { // && ally.health > FLEE_HEALTH
                 combatAllies++;
             }
-            else if (ally.type == RobotType.ARCHON) {
+            else if (ally.type == RobotType.ARCHON && ally.mode == RobotMode.TURRET) {
                 archonLocation = ally.location;
                 // Repair normalized to per turn by rubble
                 repairPerTurn = (2*ally.level) * 10 / (10.0 + rc.senseRubble(archonLocation));
