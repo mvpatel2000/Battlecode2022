@@ -4,6 +4,8 @@ import battlecode.common.*;
 
 public class Archon extends Robot {
 
+    final int HOSPITAL_SIZE = 160;
+
     int myArchonNum = -1;
 
     // my build counts (not all archons, just me)
@@ -36,7 +38,7 @@ public class Archon extends Robot {
     int resourceRate = 0;
 
     // used to move around
-    boolean shouldLand = false;
+    int turnsUntilLand = -1;
 
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
@@ -51,6 +53,7 @@ public class Archon extends Robot {
         }
 
         setBestBuildLocations();
+        commsHandler.writeOurArchonAcceptingPatients(myArchonNum, CommsHandler.ArchonStatus.ACCEPTING_PATIENTS);
     }
 
     @Override
@@ -74,35 +77,64 @@ public class Archon extends Robot {
             && commsHandler.readOurArchonIsMoving(myArchonNum) == CommsHandler.ArchonStatus.MOVING) {
             commsHandler.writeOurArchonIsMoving(myArchonNum, CommsHandler.ArchonStatus.STATIONARY);
         }
-        // //rc.setIndicatorString(shouldLand + " " + nearestCluster);
+        // //rc.setIndicatorString(turnsUntilLand + " " + nearestCluster);
 
         if (rc.getMode() == RobotMode.TURRET) {
             setPriorityClusters();
         }
         else if (rc.getMode() == RobotMode.PORTABLE) {
-            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                shouldLand = true;
-            }
-            // Transform back to turret
-            if (shouldLand) {
-                // TODO: @Mihir make these guys find a better place to land
-                if (rc.canTransform()) {
-                    // rc.transform();
-                    setBestBuildLocations();
-                    shouldLand = false;
-                }
-            }
-            // Keep going
-            else {
-                MapLocation newDest = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
-                                                clusterCentersY[nearestCluster / clusterWidthsLength]);
-                pathing.updateDestination(newDest);
-                pathing.pathToDestination();
-            }
+            portableMove(nearestCluster);
         }
 
         build();
         repair();
+    }
+
+    /**
+     * Paths to nearest combat cluster. Prepares to land if appropriate
+     * @param nearestCluster
+     * @throws GameActionException
+     */
+    public void portableMove(int nearestCluster) throws GameActionException {
+        // Transform back to turret
+        if (turnsUntilLand >= 0) {
+            // Move if we can find a lower terrain tile near us
+            if (rc.isMovementReady()) {
+                Direction optimalDirection = Direction.CENTER;
+                int optimalRubble = rc.senseRubble(myLocation);
+                for (Direction dir : directionsWithoutCenter) {
+                    if (rc.canMove(dir)) {
+                        MapLocation moveLocation = myLocation.add(dir);
+                        int rubble = rc.senseRubble(moveLocation);
+                        if (rubble < optimalRubble) {
+                            optimalDirection = dir;
+                            optimalRubble = rubble;
+                        }
+                    }
+                }
+                // Move to lower rubble area
+                if (optimalDirection != Direction.CENTER) {
+                    pathing.move(optimalDirection);
+                }
+            }
+            // Decrease counter for finding a spot to land
+            if (turnsUntilLand > 0) {
+                turnsUntilLand--;
+            }
+            // Transform if we chose not to move or we're out of turns to find better land position
+            else if (rc.canTransform() && (rc.isMovementReady() || turnsUntilLand == 0)) {
+                rc.transform();
+                setBestBuildLocations();
+                turnsUntilLand = -1;
+            }
+        }
+        // Keep going
+        else {
+            MapLocation newDest = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
+                                            clusterCentersY[nearestCluster / clusterWidthsLength]);
+            pathing.updateDestination(newDest);
+            pathing.pathToDestination();
+        }
     }
 
     /**
@@ -146,7 +178,7 @@ public class Archon extends Robot {
                             MapLocation newDest = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                                 clusterCentersY[nearestCluster / clusterWidthsLength]);
                             if (myLocation.distanceSquaredTo(newDest) > 64 && rc.canTransform()) {
-                                // rc.transform();
+                                rc.transform();
                                 commsHandler.writeOurArchonIsMoving(myArchonNum, CommsHandler.ArchonStatus.MOVING);
                                 return nearestCluster;
                             }
@@ -158,13 +190,17 @@ public class Archon extends Robot {
         }
         // indicate whether we should land or otherwise return target cluster
         else if (rc.getMode() == RobotMode.PORTABLE) {
-            if (nearbyEnemies.length > 0 || (pathing.destination != null && myLocation.distanceSquaredTo(pathing.destination) <= 64)) {
-                shouldLand = true;
-            }
             int nearestCluster = getNearestCombatCluster();
-            //System.out.println\(nearbyEnemies.length + " " + pathing.destination + " " + nearestCluster);
-            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                shouldLand = true;
+            // Try to land if we're not already doing so
+            if (turnsUntilLand < 0) {
+                // Transform faster
+                if (nearbyEnemies.length > 0 || (pathing.destination != null && myLocation.distanceSquaredTo(pathing.destination) <= 64)) {
+                    turnsUntilLand = 3;
+                }
+                // Transform but allow moves to better location
+                if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                    turnsUntilLand = 5;
+                }
             }
             return nearestCluster;
         }
@@ -444,7 +480,9 @@ public class Archon extends Robot {
             int i = clusterPermutation[prePermuteIdx];
             int controlStatus = commsHandler.readClusterControlStatus(i);
             int resourceCount = commsHandler.readClusterResourceCount(i);
-            resourcesOnMap += resourceCount * LEAD_RESOLUTION;
+            if (controlStatus != CommsHandler.ControlStatus.THEIRS) {
+                resourcesOnMap += resourceCount * LEAD_RESOLUTION;
+            }
             // Combat cluster
             if (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS
                     && controlStatus == CommsHandler.ControlStatus.THEIRS) {
@@ -667,24 +705,37 @@ public class Archon extends Robot {
      * @throws GameActionException
      */
     public void repair() throws GameActionException {
-        if (rc.isActionReady()) {
-            boolean existEnemies = nearbyEnemies.length > 0;
-            RobotInfo[] nearbyAllies = rc.senseNearbyRobots(RobotType.ARCHON.actionRadiusSquared, allyTeam);
-            MapLocation optimalRepair = null;
-            int remainingHealth = existEnemies ? Integer.MAX_VALUE : Integer.MIN_VALUE;
-            for (RobotInfo ally : nearbyAllies) {
+        int amountToRepair = 0;
+        int numFriendlyArchons = 0;
+        boolean existEnemies = nearbyEnemies.length > 0;
+        RobotInfo[] nearbyAllies = rc.senseNearbyRobots(RobotType.ARCHON.actionRadiusSquared, allyTeam);
+        MapLocation optimalRepair = null;
+        int remainingHealth = existEnemies ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+        for (RobotInfo ally : nearbyAllies) {
+            if (ally.type == RobotType.ARCHON) {
+                numFriendlyArchons++;
+            }
+            int amountToRepairForAlly = ally.type.getMaxHealth(ally.level) - ally.health;
+            if (amountToRepairForAlly > 0) {
+                amountToRepair += amountToRepairForAlly;
                 if (rc.canRepair(ally.location)
-                        && (existEnemies && ally.health < remainingHealth)
-                        || !existEnemies && ally.health > remainingHealth
-                                && ally.health < ally.type.getMaxHealth(ally.level)) {
+                        && ((existEnemies && ally.health < remainingHealth)
+                        || (!existEnemies && ally.health > remainingHealth))) {
                     optimalRepair = ally.location;
                     remainingHealth = ally.health;
                 }
             }
-            if (optimalRepair != null && rc.canRepair(optimalRepair)) {
-                rc.repair(optimalRepair);
-                // //System.out.println\("Repairing " + optimalRepair);
-            }
+        }
+        if (optimalRepair != null && rc.canRepair(optimalRepair)) {
+            rc.repair(optimalRepair);
+            // //System.out.println\("Repairing " + optimalRepair);
+        }
+        double myRubbleFactor = 10 / (10.0 + rc.senseRubble(myLocation));
+        boolean shouldAcceptPatients = amountToRepair >= HOSPITAL_SIZE * myRubbleFactor * (numFriendlyArchons + 1);
+        int isHospitalFull = shouldAcceptPatients ? CommsHandler.ArchonStatus.NOT_ACCEPTING_PATIENTS
+                                                    : CommsHandler.ArchonStatus.ACCEPTING_PATIENTS;
+        if (commsHandler.readOurArchonAcceptingPatients(myArchonNum) != isHospitalFull) {
+            commsHandler.writeOurArchonAcceptingPatients(myArchonNum, isHospitalFull);
         }
     }
 
@@ -796,15 +847,7 @@ public class Archon extends Robot {
                 lastArchon = true;
         }
 
-        numOurArchonsAlive = 0;
-        if (archonZeroAlive)
-            numOurArchonsAlive++;
-        if (archonOneAlive)
-            numOurArchonsAlive++;
-        if (archonTwoAlive)
-            numOurArchonsAlive++;
-        if (archonThreeAlive)
-            numOurArchonsAlive++;
+        numOurArchonsAlive = rc.getArchonCount();
 
         // //System.out.println\("Archon survival: " + archonZeroAlive + " " +
         // archonOneAlive + " " + archonTwoAlive + " " + archonThreeAlive);

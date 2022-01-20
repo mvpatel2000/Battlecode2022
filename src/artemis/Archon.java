@@ -1,4 +1,4 @@
-package ares;
+package artemis;
 
 import battlecode.common.*;
 
@@ -123,7 +123,7 @@ public class Archon extends Robot {
             }
             // Transform if we chose not to move or we're out of turns to find better land position
             else if (rc.canTransform() && (rc.isMovementReady() || turnsUntilLand == 0)) {
-                // rc.transform();
+                rc.transform();
                 setBestBuildLocations();
                 turnsUntilLand = -1;
             }
@@ -178,7 +178,7 @@ public class Archon extends Robot {
                             MapLocation newDest = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                                 clusterCentersY[nearestCluster / clusterWidthsLength]);
                             if (myLocation.distanceSquaredTo(newDest) > 64 && rc.canTransform()) {
-                                // rc.transform();
+                                rc.transform();
                                 commsHandler.writeOurArchonIsMoving(myArchonNum, CommsHandler.ArchonStatus.MOVING);
                                 return nearestCluster;
                             }

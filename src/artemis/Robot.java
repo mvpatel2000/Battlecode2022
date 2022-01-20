@@ -1,4 +1,4 @@
-package smite;
+package artemis;
 
 import battlecode.common.*;
 
@@ -163,13 +163,13 @@ public class Robot {
         // Does turn
         runUnit();
         
-        //rc.setIndicatorString("SymDist " + distanceToSymmetryLine);
+        rc.setIndicatorString("SymDist " + distanceToSymmetryLine);
 
         // After unit runs
         if (rc.getRoundNum() < 150 && Clock.getBytecodesLeft() > 1000) {
-            // //System.out.println\("Bytecodes left before symmetry: " + Clock.getBytecodesLeft());
+            // System.out.println("Bytecodes left before symmetry: " + Clock.getBytecodesLeft());
             updateSymmetry();
-            // //System.out.println\("Bytecodes left after symmetry: " + Clock.getBytecodesLeft());
+            // System.out.println("Bytecodes left after symmetry: " + Clock.getBytecodesLeft());
         }
     }
 
@@ -193,8 +193,8 @@ public class Robot {
                 // check some rubble points to see if we can eliminate the symmetry axis
                 MapLocation test1 = new MapLocation(mapWidth/2 - 1, myLocation.y);
                 MapLocation test2 = new MapLocation(mapWidth - mapWidth/2, myLocation.y);
-                //rc.setIndicatorDot(test1, 0, 255, 0);
-                //rc.setIndicatorDot(test2, 0, 255, 0);
+                rc.setIndicatorDot(test1, 0, 255, 0);
+                rc.setIndicatorDot(test2, 0, 255, 0);
                 if (rc.canSenseLocation(test1)) {
                     if (rc.canSenseLocation(test2)) {
                         if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
@@ -210,8 +210,8 @@ public class Robot {
             if (myLocation.y * 2 < mapHeight + 5 && myLocation.y * 2 > mapHeight - 5) {
                 MapLocation test1 = new MapLocation(myLocation.x, mapHeight/2 - 1);
                 MapLocation test2 = new MapLocation(myLocation.x, mapHeight - mapHeight/2);
-                //rc.setIndicatorDot(test1, 0, 255, 0);
-                //rc.setIndicatorDot(test2, 0, 255, 0);
+                rc.setIndicatorDot(test1, 0, 255, 0);
+                rc.setIndicatorDot(test2, 0, 255, 0);
                 if (rc.canSenseLocation(test1)) {
                     if (rc.canSenseLocation(test2)) {
                         if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
@@ -248,7 +248,7 @@ public class Robot {
         }
 
         // int bytecodeUsed2 = Clock.getBytecodeNum();
-        // //rc.setIndicatorString("Cluster States: "+(bytecodeUsed2 - bytecodeUsed));
+        // rc.setIndicatorString("Cluster States: "+(bytecodeUsed2 - bytecodeUsed));
     }
 
     /**
@@ -433,7 +433,7 @@ public class Robot {
         }
         // MapLocation nearestArchonLocation = baseLocation;
         if (isDying && nearestArchonLocation != null && myLocation.distanceSquaredTo(nearestArchonLocation) > RobotType.ARCHON.actionRadiusSquared) {
-            //rc.setIndicatorString("Retreating to base!");
+            rc.setIndicatorString("Retreating to base!");
             pathing.updateDestination(nearestArchonLocation);
             pathing.pathToDestination();
             return true;
