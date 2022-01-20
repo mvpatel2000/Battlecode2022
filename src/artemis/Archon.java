@@ -58,7 +58,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 150) {
+        // if (currentRound > 450) {
         //     System.out.println("Symmetry: " + commsHandler.readMapSymmetry());
         //     rc.resign();
         // }
@@ -378,9 +378,13 @@ public class Archon extends Robot {
         // System.out.println("Explore"+status);
         // String status = "";
         // for (int i = 0; i < commsHandler.MINE_CLUSTER_SLOTS; i++) {
-        // int cluster = commsHandler.readMineClusterIndex(i);
-        // status += " " + cluster + "(" + commsHandler.readMineClusterClaimStatus(i) +
-        // "," + commsHandler.readClusterResourceCount(cluster) + ")";
+        //     int cluster = commsHandler.readMineClusterIndex(i);
+        //     if (cluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+        //         rc.setIndicatorDot(clusterToCenter(cluster), 255, 0, 0);
+        //     }
+        //     MapLocation center = cluster != commsHandler.UNDEFINED_CLUSTER_INDEX ? clusterToCenter(cluster) : new MapLocation(-1, -1);
+        //     status += " " + cluster + "|" + center + "(" + commsHandler.readMineClusterClaimStatus(i) +
+        //     "," + commsHandler.readClusterResourceCount(cluster) + ")";
         // }
         // System.out.println("Mine"+status);
 

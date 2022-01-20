@@ -353,7 +353,9 @@ public class Robot {
             if (rc.canSenseLocation(shiftedLocation)) {
                 // int clusterIdx = whichCluster(shiftedLocation); Note: Inlined to save bytecode
                 int clusterIdx = whichXLoc[shiftedLocation.x] + whichYLoc[shiftedLocation.y];
-                if ((clusterResources[clusterIdx] & 32767) == 0) {
+                MapLocation clusterCenter = new MapLocation(clusterCentersX[clusterIdx % clusterWidthsLength], 
+                                                clusterCentersY[clusterIdx / clusterWidthsLength]);
+                if (rc.canSenseLocation(clusterCenter) && (clusterResources[clusterIdx] & 32767) == 0) {
                     markedClustersBuffer[markedClustersCount] = clusterIdx;
                     markedClustersCount++;
                 }
@@ -501,6 +503,10 @@ public class Robot {
      * @throws GameActionException
      */
     public double distanceAcrossSymmetry(MapLocation loc) throws GameActionException {
+        if (numOurArchonsAlive == 0) {
+            System.out.println("No archons alive, we lost :(");
+            return 0.0;
+        }
         int symmetry = commsHandler.readMapSymmetry();
         int archonXSum = 0;
         int archonYSum = 0;
@@ -762,6 +768,18 @@ public class Robot {
      */
     public int whichCluster(MapLocation loc) {
         return whichXLoc[loc.x] + whichYLoc[loc.y];
+    }
+
+    /**
+     * Returns center MapLocation given a cluster.
+     * 
+     * NOTE: THIS FUNCTION IS ONLY FOR REFERENCE. IF CALLED FREQUENTLY, INLINE THIS FUNCTION!!
+     * @param clusterIdx
+     * @return
+     */
+    public MapLocation clusterToCenter(int clusterIdx) {
+        return new MapLocation(clusterCentersX[clusterIdx % clusterWidthsLength], 
+                                                clusterCentersY[clusterIdx / clusterWidthsLength]);
     }
 
     public void initClusterPermutation() {
