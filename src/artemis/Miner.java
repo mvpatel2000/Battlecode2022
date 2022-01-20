@@ -11,16 +11,20 @@ public class Miner extends Robot {
     MapLocation startLocation;
     MapLocation[] nearbyActionLead;
     MapLocation[] nearbyActionGold;
+
+    int claimedCluster;
     
     public Miner(RobotController rc) throws GameActionException {
         super(rc);
         fleeingCounter = 0;
         lastEnemyLocation = null;
         requiredLead = 2;
+        claimedCluster = commsHandler.UNDEFINED_CLUSTER_INDEX;
     }
 
     @Override
     public void runUnit() throws GameActionException { 
+        claimedCluster = commsHandler.UNDEFINED_CLUSTER_INDEX;
         announceAlive();
 
         startLocation = myLocation;
@@ -186,6 +190,7 @@ public class Miner extends Robot {
         if (pathing.destination != null && rc.canSenseLocation(pathing.destination)
              && (rc.senseLead(pathing.destination) > requiredLead || rc.senseGold(pathing.destination) > 0)) {
             // rc.setIndicatorString("Destination still has lead or gold: " + destination);
+            considerFreeClusterClaim(nearestCluster);
             return;
         }
         
@@ -209,8 +214,14 @@ public class Miner extends Robot {
         if (nearestResource != null) {
             resetControlStatus(pathing.destination);
             pathing.updateDestination(nearestResource);
+            considerFreeClusterClaim(nearestCluster);
             return;
         }
+
+        // // for debug
+        // if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+        //     rc.setIndicatorLine(myLocation, clusterToCenter(nearestCluster), 0, 255, 0);
+        // }   
 
         // Navigate to nearest resources found 
         if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
@@ -233,6 +244,24 @@ public class Miner extends Robot {
                 pathing.updateDestination(new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                                 clusterCentersY[nearestCluster / clusterWidthsLength]));
                 return;
+            }
+        }
+    }
+
+    /**
+     * If we're moving to a cluster different from the one we claimed, unclaim it. When this function is
+     * called, the destination is already in sight, so if the tile center is not in sight, we unclaim
+     * the cluster
+     * @param nearestCluster
+     * @throws GameActionException
+     */
+    public void considerFreeClusterClaim(int nearestCluster) throws GameActionException {
+        if (pathing.destination != null && claimedCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+            MapLocation clusterCenter = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
+                                         clusterCentersY[nearestCluster / clusterWidthsLength]);
+            if (myLocation.distanceSquaredTo(clusterCenter) > RobotType.MINER.visionRadiusSquared) {
+                int clusterStatus = commsHandler.readMineClusterClaimStatus(claimedCluster);
+                commsHandler.writeMineClusterClaimStatus(claimedCluster, clusterStatus+1);
             }
         }
     }
@@ -275,6 +304,7 @@ public class Miner extends Robot {
         // Claim cluster
         if (closestClusterIndex != commsHandler.UNDEFINED_CLUSTER_INDEX) {
             commsHandler.writeMineClusterClaimStatus(closestClusterIndex, closestClusterStatus-1);
+            claimedCluster = closestClusterIndex;
         }
         return closestCluster;
     }
