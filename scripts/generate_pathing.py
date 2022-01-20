@@ -4,7 +4,7 @@ from pathlib import Path
 def encode(x, y):
     return (x+7) + 15*(y+7)
 
-VISION_RADII = {'Miner': 20, 'Builder': 20, 'Soldier': 20, 'Sage': 34, 'Archon': 34, 'Watchtower': 34, 'Laboratory': 34}
+RADII = {'Miner': 20, 'Builder': 20, 'Soldier': 20, 'Sage': 34, 'Archon': 34, 'Watchtower': 34, 'Laboratory': 34}
 SMALLER_RADII = {'Miner': 10, 'Builder': 10, 'Soldier': 10, 'Sage': 20, 'Archon': 20, 'Watchtower': 20, 'Laboratory': 20}
 
 DIRECTIONS = {
@@ -21,11 +21,11 @@ DIRECTIONS = {
 def dist(x, y):
     return x*x + y*y
 
-def gen_constants(vision):
+def gen_constants(radius):
     out = f""""""
     for x in range(-7, 8):
         for y in range(-7, 8):
-            if dist(x, y) <= vision:
+            if dist(x, y) <= radius:
                 out += f"""
     static MapLocation l{encode(x,y)}; // location representing relative coordinate ({x}, {y})
     static int d{encode(x,y)}; // shortest distance to location from current location
@@ -40,13 +40,13 @@ def sign(x):
         return -1
     return 0
 
-def gen_init(vision):
+def gen_init(radius):
     out = f"""
         l{encode(0,0)} = rc.getLocation();
         d{encode(0,0)} = 0;
         dir{encode(0,0)} = Direction.CENTER;
 """
-    for r2 in range(1, vision+1):
+    for r2 in range(1, radius+1):
         for x in range(-7, 8):
             for y in range(-7, 8):
                 if dist(x, y) == r2:
@@ -57,11 +57,11 @@ def gen_init(vision):
 """
     return out
 
-def gen_bfs(vision):
+def gen_bfs(radius):
     visited = set([encode(0,0)])
     out = f"""
 """
-    for r2 in range(1, vision+1):
+    for r2 in range(1, radius+1):
         for x in range(-7, 8):
             for y in range(-7, 8):
                 if dist(x, y) == r2:
@@ -72,7 +72,7 @@ def gen_bfs(vision):
                         out += f"""
             if (!rc.isLocationOccupied(l{encode(x,y)})) {{ """
                         indent = "    "
-                    dxdy = [(dx, dy) for dx in range(-1, 2) for dy in range(-1, 2) if (dx, dy) != (0, 0) and dist(x+dx,y+dy) <= vision]
+                    dxdy = [(dx, dy) for dx in range(-1, 2) for dy in range(-1, 2) if (dx, dy) != (0, 0) and dist(x+dx,y+dy) <= radius]
                     dxdy = sorted(dxdy, key=lambda dd: dist(x+dd[0], y+dd[1]))
                     for dx, dy in dxdy:
                         if encode(x+dx, y+dy) in visited:
@@ -92,18 +92,18 @@ def gen_bfs(vision):
 """
     return out
 
-def gen_selection(vision, smaller_radius):
+def gen_selection(radius, smaller_radius):
     out = f"""
         int target_dx = target.x - l{encode(0,0)}.x;
         int target_dy = target.y - l{encode(0,0)}.y;
         switch (target_dx) {{"""
     for tdx in range(-7, 8):
-        if tdx**2 <= vision:
+        if tdx**2 <= radius:
             out += f"""
                 case {tdx}:
                     switch (target_dy) {{"""
             for tdy in range(-7, 8):
-                if dist(tdx, tdy) <= vision:
+                if dist(tdx, tdy) <= radius:
                     out += f"""
                         case {tdy}:
                             return dir{encode(tdx, tdy)}; // destination is at relative location ({tdx}, {tdy})"""
@@ -119,7 +119,7 @@ def gen_selection(vision, smaller_radius):
         """
     for x in range(-7, 8):
         for y in range(-7, 8):
-            if smaller_radius < dist(x, y) <= vision: # on the edge of the vision radius
+            if smaller_radius < dist(x, y) <= radius: # on the edge of the radius radius
                 out += f"""
         double score{encode(x,y)} = (currDist - Math.sqrt(l{encode(x,y)}.distanceSquaredTo(target))) / d{encode(x,y)};
         if (score{encode(x,y)} > bestScore) {{
@@ -129,15 +129,15 @@ def gen_selection(vision, smaller_radius):
 """
     return out
 
-def gen_print(vision):
+def gen_print(radius):
     out = f"""
         // System.out.println("LOCAL DISTANCES:");"""
     for y in range(7, -8, -1):
-        if y**2 <= vision:
+        if y**2 <= radius:
             out += f"""
         // System.out.println("""
             for x in range(-7, 8):
-                if dist(x, y) <= vision:
+                if dist(x, y) <= radius:
                     out += f""""\\t" + d{encode(x,y)} + """
                 else:
                     out += f""""\\t" + """
@@ -145,11 +145,11 @@ def gen_print(vision):
     out += f"""
         // System.out.println("DIRECTIONS:");"""
     for y in range(7, -8, -1):
-        if y**2 <= vision:
+        if y**2 <= radius:
             out += f"""
         // System.out.println("""
             for x in range(-7, 8):
-                if dist(x, y) <= vision:
+                if dist(x, y) <= radius:
                     out += f""""\\t" + dir{encode(x,y)} + """
                 else:
                     out += f""""\\t" + """
@@ -157,7 +157,7 @@ def gen_print(vision):
     return out
 
 def gen_full(bot, unit):
-    vision = VISION_RADII[unit]
+    radius = RADII[unit]
     smaller_radius = SMALLER_RADII[unit]
     out_file = Path('./src/') / bot / f'{unit}Pathing.java'
     with open(out_file, 'w') as f:
@@ -169,17 +169,17 @@ import battlecode.common.*;
 public class {unit}Pathing implements UnitPathing {{
     
     RobotController rc;
-{gen_constants(vision)}
+{gen_constants(radius)}
 
     public {unit}Pathing(RobotController rc) {{
         this.rc = rc;
     }}
 
     public Direction bestDir(MapLocation target) throws GameActionException {{
-{gen_init(vision)}
-{gen_bfs(vision)}
-{gen_print(vision)}
-{gen_selection(vision, smaller_radius)}
+{gen_init(radius)}
+{gen_bfs(radius)}
+{gen_print(radius)}
+{gen_selection(radius, smaller_radius)}
         
         return ans;
     }}

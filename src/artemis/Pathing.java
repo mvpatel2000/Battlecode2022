@@ -55,11 +55,11 @@ public class Pathing {
     public void pathToDestination() throws GameActionException {
         if (destination != null) {
             pathTo(destination);
-            if (myType == RobotType.SOLDIER && destination.distanceSquaredTo(r.baseLocation) > 0) {
+            if ((myType == RobotType.SOLDIER || myType == RobotType.SAGE) && destination.distanceSquaredTo(r.baseLocation) > 0) {
                 rc.setIndicatorLine(r.myLocation, destination, 100 - rc.getTeam().ordinal() * 100, 50, rc.getTeam().ordinal() * 100);
-            } else if (myType == RobotType.MINER && destination.distanceSquaredTo(r.baseLocation) > 0) {
+            } else if ((myType == RobotType.MINER || myType == RobotType.BUILDER) && destination.distanceSquaredTo(r.baseLocation) > 0) {
                 rc.setIndicatorLine(r.myLocation, destination, 150 + 100 - rc.getTeam().ordinal() * 100, 150, 150 + rc.getTeam().ordinal() * 100);
-            } else if (myType == RobotType.ARCHON) {
+            } else if (myType == RobotType.ARCHON || myType == RobotType.WATCHTOWER || myType == RobotType.LABORATORY) {
                 rc.setIndicatorLine(r.myLocation, destination, 250 - 250 * rc.getTeam().ordinal(), 0, 250 * rc.getTeam().ordinal());
             } else if (destination.distanceSquaredTo(r.baseLocation) == 0) {
                 rc.setIndicatorLine(r.myLocation, destination, 200, 200, 200);
