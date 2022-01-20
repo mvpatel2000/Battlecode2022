@@ -288,13 +288,13 @@ public class Robot {
             // int clusterIdx = whichCluster(enemy.location); Note: Inlined to save bytecode
             int clusterIdx = whichXLoc[enemy.location.x] + whichYLoc[enemy.location.y];
             // Write new status to buffer if we haven't marked as enemy controlled yet
-            if (clusterControls[clusterIdx] < 16) {
+            if ((clusterControls[clusterIdx] & 32) == 0) {
                 // Only add to modified list if we haven't marked this cluster yet
                 if (clusterControls[clusterIdx] < 8) {
                     markedClustersBuffer[markedClustersCount] = clusterIdx;
                     markedClustersCount++;
                 }
-                clusterControls[clusterIdx] = 16 + (clusterControls[clusterIdx] & 7); // 010xxx
+                clusterControls[clusterIdx] = 32 + (clusterControls[clusterIdx] & 7); // 010xxx
             }
         }
 

@@ -26,8 +26,8 @@ public class CommsHandler {
     public class ControlStatus {
         public static final int UNKNOWN = 0;
         public static final int OURS = 1;
-        public static final int THEIRS = 2;
-        public static final int EXPLORING = 3;
+        public static final int EXPLORING = 2;
+        public static final int THEIRS = 4;
     }
     public class ClaimStatus {
         public static final int UNCLAIMED = 0;
@@ -57,6 +57,8 @@ public class CommsHandler {
     }
     
     // PRIORITY CLUSTER INIT
+    
+    // CLUSTER CONTROL STATUS RESET
 
-    // TO BE GENERATED
+    // MAIN READ AND WRITE METHODS
 }

@@ -438,13 +438,14 @@ public class Archon extends Robot {
         if (turnsWithNoExploring >= 5) {
             turnsWithNoExploring = 0;
             System.out.println("RESETTING EXPLORE");
-            int length = clusterPermutation.length;
-            for (int prePermuteIdx = 0; prePermuteIdx < length; prePermuteIdx++) {
-                int i = clusterPermutation[prePermuteIdx];
-                if (commsHandler.readClusterControlStatus(i) == CommsHandler.ControlStatus.OURS) {
-                    commsHandler.writeClusterControlStatus(i, CommsHandler.ControlStatus.UNKNOWN);
-                }
-            }
+            // int length = clusterPermutation.length;
+            // for (int prePermuteIdx = 0; prePermuteIdx < length; prePermuteIdx++) {
+            //     int i = clusterPermutation[prePermuteIdx];
+            //     if (commsHandler.readClusterControlStatus(i) == CommsHandler.ControlStatus.OURS) {
+            //         commsHandler.writeClusterControlStatus(i, CommsHandler.ControlStatus.UNKNOWN);
+            //     }
+            // }
+            commsHandler.resetAllClusterControlStatus();
         }
 
         // Preserve combat clusters which still have enemies
@@ -480,6 +481,25 @@ public class Archon extends Robot {
             int i = clusterPermutation[prePermuteIdx];
             int controlStatus = commsHandler.readClusterControlStatus(i);
             int resourceCount = commsHandler.readClusterResourceCount(i);
+
+            // below for debugging
+            // if (!lastArchon) {
+            //     MapLocation clusterCenter = new MapLocation(clusterCentersX[i % clusterWidthsLength], 
+            //                                         clusterCentersY[i / clusterWidthsLength]);
+            //     switch (controlStatus) {
+            //         case CommsHandler.ControlStatus.THEIRS:
+            //             rc.setIndicatorDot(clusterCenter, rc.getTeam().ordinal() * 255, 0, 255 - 255 * rc.getTeam().ordinal());
+            //             break;
+            //         case CommsHandler.ControlStatus.OURS:
+            //             rc.setIndicatorDot(clusterCenter, 255 - rc.getTeam().ordinal() * 255, 0, 255 * rc.getTeam().ordinal());
+            //             break;
+            //         case CommsHandler.ControlStatus.EXPLORING:
+            //             rc.setIndicatorDot(clusterCenter, 0, 255, 0);
+            //             break;
+            //         default:
+            //             rc.setIndicatorDot(clusterCenter, 255, 255, 0);
+            //     }
+            // }
             if (controlStatus != CommsHandler.ControlStatus.THEIRS) {
                 resourcesOnMap += resourceCount * LEAD_RESOLUTION;
             }
