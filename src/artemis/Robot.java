@@ -163,7 +163,7 @@ public class Robot {
         // Does turn
         runUnit();
         
-        rc.setIndicatorString("SymDist " + distanceToSymmetryLine);
+        // rc.setIndicatorString("SymDist " + distanceToSymmetryLine);
 
         // After unit runs
         if (rc.getRoundNum() < 150 && Clock.getBytecodesLeft() > 1000) {
@@ -432,10 +432,11 @@ public class Robot {
             }
         }
         // MapLocation nearestArchonLocation = baseLocation;
-        if (isDying && nearestArchonLocation != null && myLocation.distanceSquaredTo(nearestArchonLocation) > RobotType.ARCHON.actionRadiusSquared) {
-            rc.setIndicatorString("Retreating to base!");
-            pathing.updateDestination(nearestArchonLocation);
-            pathing.pathToDestination();
+        if (isDying && nearestArchonLocation != null) {
+            if (myLocation.distanceSquaredTo(nearestArchonLocation) > RobotType.ARCHON.actionRadiusSquared) {
+                pathing.updateDestination(nearestArchonLocation);
+                pathing.pathToDestination();
+            }
             return true;
         }
         return false;
