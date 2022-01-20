@@ -6,12 +6,8 @@ public class Pathing {
 
     Robot r;
     RobotController rc;
-    SoldierPathing sp;
-    MinerPathing mp;
-    ArchonPathing ap;
-    boolean isSoldier = false;
-    boolean isMiner = false;
-    boolean isArchon = false;
+    UnitPathing up;
+    RobotType myType;
     MapLocation destination;
 
     int[] tracker = new int[113];
@@ -22,15 +18,29 @@ public class Pathing {
     public Pathing(Robot r) {
         this.r = r;
         this.rc = r.rc;
-        if (rc.getType() == RobotType.SOLDIER) {
-            isSoldier = true;
-            sp = new SoldierPathing(rc);
-        } else if (rc.getType() == RobotType.MINER) {
-            isMiner = true;
-            mp = new MinerPathing(rc);
-        } else if (rc.getType() == RobotType.ARCHON) {
-            isArchon = true;
-            ap = new ArchonPathing(rc);
+        myType = rc.getType();
+        switch (myType) { // cases for soldier, miner, builder, sage, archon
+            case SOLDIER:
+                up = new SoldierPathing(rc);
+                break;
+            case MINER:
+                up = new MinerPathing(rc);
+                break;
+            case BUILDER:
+                up = new BuilderPathing(rc);
+                break;
+            case SAGE:
+                up = new SagePathing(rc);
+                break;
+            case ARCHON:
+                up = new ArchonPathing(rc);
+                break;
+            case WATCHTOWER:
+                up = new WatchtowerPathing(rc);
+                break;
+            case LABORATORY:
+                up = new LaboratoryPathing(rc);
+                break;
         }
     }
 
@@ -45,10 +55,12 @@ public class Pathing {
     public void pathToDestination() throws GameActionException {
         if (destination != null) {
             pathTo(destination);
-            if (isSoldier && destination.distanceSquaredTo(r.baseLocation) > 0) {
+            if (myType == RobotType.SOLDIER && destination.distanceSquaredTo(r.baseLocation) > 0) {
                 rc.setIndicatorLine(r.myLocation, destination, 100 - rc.getTeam().ordinal() * 100, 50, rc.getTeam().ordinal() * 100);
-            } else if (isMiner && destination.distanceSquaredTo(r.baseLocation) > 0) {
+            } else if (myType == RobotType.MINER && destination.distanceSquaredTo(r.baseLocation) > 0) {
                 rc.setIndicatorLine(r.myLocation, destination, 150 + 100 - rc.getTeam().ordinal() * 100, 150, 150 + rc.getTeam().ordinal() * 100);
+            } else if (myType == RobotType.ARCHON) {
+                rc.setIndicatorLine(r.myLocation, destination, 250 - 250 * rc.getTeam().ordinal(), 0, 250 * rc.getTeam().ordinal());
             } else if (destination.distanceSquaredTo(r.baseLocation) == 0) {
                 rc.setIndicatorLine(r.myLocation, destination, 200, 200, 200);
             }
@@ -59,8 +71,9 @@ public class Pathing {
         if (!rc.isMovementReady()) return;
 
         // if i'm not a special pather or if i still have fuzzy moves left, fuzzy move
-        if ((!isSoldier && !isMiner & !isArchon) || fuzzyMovesLeft > 0) {
+        if (fuzzyMovesLeft > 0) {
             fuzzyMove(target);
+            rc.setIndicatorDot(rc.getLocation(), 0, 0, 0);
             return;
         }
 
@@ -75,14 +88,7 @@ public class Pathing {
         }
 
         // get bfs best direction
-        Direction dir = null;
-        if (isSoldier) {
-            dir = sp.bestDir(target);
-        } else if (isMiner) {
-            dir = mp.bestDir(target);
-        } else if (isArchon) {
-            dir = ap.bestDir(target);
-        }
+        Direction dir = up.bestDir(target);
 
         if (dir == null || !rc.canMove(dir)) return;
         
@@ -92,6 +98,7 @@ public class Pathing {
             pathTo(target);
         } else {
             move(dir);
+            rc.setIndicatorDot(rc.getLocation(), 255, 255, 255);
         }
     }
 

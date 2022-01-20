@@ -3,7 +3,7 @@ package artemis;
 
 import battlecode.common.*;
 
-public class SoldierPathing {
+public class SoldierPathing implements UnitPathing {
     
     RobotController rc;
 
