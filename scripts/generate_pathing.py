@@ -4,8 +4,8 @@ from pathlib import Path
 def encode(x, y):
     return (x+7) + 15*(y+7)
 
-VISION_RADIUS = {'Miner': 17, 'Builder': 20, 'Soldier': 20, 'Sage': 34, 'Archon': 34}[sys.argv[2]]
-SMALLER_RADIUS = {'Miner': 9, 'Builder': 10, 'Soldier': 10, 'Sage': 20, 'Archon': 20}[sys.argv[2]]
+VISION_RADIUS = {'Miner': 20, 'Builder': 20, 'Soldier': 20, 'Sage': 34, 'Archon': 34}[sys.argv[2]]
+SMALLER_RADIUS = {'Miner': 10, 'Builder': 10, 'Soldier': 10, 'Sage': 20, 'Archon': 20}[sys.argv[2]]
 
 DIRECTIONS = {
     (1, 0): 'Direction.EAST',

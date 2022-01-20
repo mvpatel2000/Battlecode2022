@@ -7,6 +7,10 @@ public class MinerPathing {
     
     RobotController rc;
 
+    static MapLocation l78; // location representing relative coordinate (-4, -2)
+    static int d78; // shortest distance to location from current location
+    static Direction dir78; // best direction to take now to optimally get to location
+
     static MapLocation l93; // location representing relative coordinate (-4, -1)
     static int d93; // shortest distance to location from current location
     static Direction dir93; // best direction to take now to optimally get to location
@@ -18,6 +22,14 @@ public class MinerPathing {
     static MapLocation l123; // location representing relative coordinate (-4, 1)
     static int d123; // shortest distance to location from current location
     static Direction dir123; // best direction to take now to optimally get to location
+
+    static MapLocation l138; // location representing relative coordinate (-4, 2)
+    static int d138; // shortest distance to location from current location
+    static Direction dir138; // best direction to take now to optimally get to location
+
+    static MapLocation l64; // location representing relative coordinate (-3, -3)
+    static int d64; // shortest distance to location from current location
+    static Direction dir64; // best direction to take now to optimally get to location
 
     static MapLocation l79; // location representing relative coordinate (-3, -2)
     static int d79; // shortest distance to location from current location
@@ -38,6 +50,14 @@ public class MinerPathing {
     static MapLocation l139; // location representing relative coordinate (-3, 2)
     static int d139; // shortest distance to location from current location
     static Direction dir139; // best direction to take now to optimally get to location
+
+    static MapLocation l154; // location representing relative coordinate (-3, 3)
+    static int d154; // shortest distance to location from current location
+    static Direction dir154; // best direction to take now to optimally get to location
+
+    static MapLocation l50; // location representing relative coordinate (-2, -4)
+    static int d50; // shortest distance to location from current location
+    static Direction dir50; // best direction to take now to optimally get to location
 
     static MapLocation l65; // location representing relative coordinate (-2, -3)
     static int d65; // shortest distance to location from current location
@@ -66,6 +86,10 @@ public class MinerPathing {
     static MapLocation l155; // location representing relative coordinate (-2, 3)
     static int d155; // shortest distance to location from current location
     static Direction dir155; // best direction to take now to optimally get to location
+
+    static MapLocation l170; // location representing relative coordinate (-2, 4)
+    static int d170; // shortest distance to location from current location
+    static Direction dir170; // best direction to take now to optimally get to location
 
     static MapLocation l51; // location representing relative coordinate (-1, -4)
     static int d51; // shortest distance to location from current location
@@ -175,6 +199,10 @@ public class MinerPathing {
     static int d173; // shortest distance to location from current location
     static Direction dir173; // best direction to take now to optimally get to location
 
+    static MapLocation l54; // location representing relative coordinate (2, -4)
+    static int d54; // shortest distance to location from current location
+    static Direction dir54; // best direction to take now to optimally get to location
+
     static MapLocation l69; // location representing relative coordinate (2, -3)
     static int d69; // shortest distance to location from current location
     static Direction dir69; // best direction to take now to optimally get to location
@@ -203,6 +231,14 @@ public class MinerPathing {
     static int d159; // shortest distance to location from current location
     static Direction dir159; // best direction to take now to optimally get to location
 
+    static MapLocation l174; // location representing relative coordinate (2, 4)
+    static int d174; // shortest distance to location from current location
+    static Direction dir174; // best direction to take now to optimally get to location
+
+    static MapLocation l70; // location representing relative coordinate (3, -3)
+    static int d70; // shortest distance to location from current location
+    static Direction dir70; // best direction to take now to optimally get to location
+
     static MapLocation l85; // location representing relative coordinate (3, -2)
     static int d85; // shortest distance to location from current location
     static Direction dir85; // best direction to take now to optimally get to location
@@ -223,6 +259,14 @@ public class MinerPathing {
     static int d145; // shortest distance to location from current location
     static Direction dir145; // best direction to take now to optimally get to location
 
+    static MapLocation l160; // location representing relative coordinate (3, 3)
+    static int d160; // shortest distance to location from current location
+    static Direction dir160; // best direction to take now to optimally get to location
+
+    static MapLocation l86; // location representing relative coordinate (4, -2)
+    static int d86; // shortest distance to location from current location
+    static Direction dir86; // best direction to take now to optimally get to location
+
     static MapLocation l101; // location representing relative coordinate (4, -1)
     static int d101; // shortest distance to location from current location
     static Direction dir101; // best direction to take now to optimally get to location
@@ -234,6 +278,10 @@ public class MinerPathing {
     static MapLocation l131; // location representing relative coordinate (4, 1)
     static int d131; // shortest distance to location from current location
     static Direction dir131; // best direction to take now to optimally get to location
+
+    static MapLocation l146; // location representing relative coordinate (4, 2)
+    static int d146; // shortest distance to location from current location
+    static Direction dir146; // best direction to take now to optimally get to location
 
 
     public MinerPathing(RobotController rc) {
@@ -469,6 +517,54 @@ public class MinerPathing {
         l131 = l115.add(Direction.NORTHEAST); // (4, 1) from (3, 0)
         d131 = 99999;
         dir131 = null;
+
+        l64 = l80.add(Direction.SOUTHWEST); // (-3, -3) from (-2, -2)
+        d64 = 99999;
+        dir64 = null;
+
+        l154 = l140.add(Direction.NORTHWEST); // (-3, 3) from (-2, 2)
+        d154 = 99999;
+        dir154 = null;
+
+        l70 = l84.add(Direction.SOUTHEAST); // (3, -3) from (2, -2)
+        d70 = 99999;
+        dir70 = null;
+
+        l160 = l144.add(Direction.NORTHEAST); // (3, 3) from (2, 2)
+        d160 = 99999;
+        dir160 = null;
+
+        l78 = l94.add(Direction.SOUTHWEST); // (-4, -2) from (-3, -1)
+        d78 = 99999;
+        dir78 = null;
+
+        l138 = l124.add(Direction.NORTHWEST); // (-4, 2) from (-3, 1)
+        d138 = 99999;
+        dir138 = null;
+
+        l50 = l66.add(Direction.SOUTHWEST); // (-2, -4) from (-1, -3)
+        d50 = 99999;
+        dir50 = null;
+
+        l170 = l156.add(Direction.NORTHWEST); // (-2, 4) from (-1, 3)
+        d170 = 99999;
+        dir170 = null;
+
+        l54 = l68.add(Direction.SOUTHEAST); // (2, -4) from (1, -3)
+        d54 = 99999;
+        dir54 = null;
+
+        l174 = l158.add(Direction.NORTHEAST); // (2, 4) from (1, 3)
+        d174 = 99999;
+        dir174 = null;
+
+        l86 = l100.add(Direction.SOUTHEAST); // (4, -2) from (3, -1)
+        d86 = 99999;
+        dir86 = null;
+
+        l146 = l130.add(Direction.NORTHEAST); // (4, 2) from (3, 1)
+        d146 = 99999;
+        dir146 = null;
 
 
 
@@ -1464,43 +1560,273 @@ public class MinerPathing {
             d131 += rc.senseRubble(l131) + 10;
         }
 
+        if (rc.onTheMap(l64)) { // check (-3, -3)
+            if (d64 > d80) { // from (-2, -2)
+                d64 = d80;
+                dir64 = dir80;
+            }
+            if (d64 > d79) { // from (-3, -2)
+                d64 = d79;
+                dir64 = dir79;
+            }
+            if (d64 > d65) { // from (-2, -3)
+                d64 = d65;
+                dir64 = dir65;
+            }
+            d64 += rc.senseRubble(l64) + 10;
+        }
+
+        if (rc.onTheMap(l154)) { // check (-3, 3)
+            if (d154 > d140) { // from (-2, 2)
+                d154 = d140;
+                dir154 = dir140;
+            }
+            if (d154 > d139) { // from (-3, 2)
+                d154 = d139;
+                dir154 = dir139;
+            }
+            if (d154 > d155) { // from (-2, 3)
+                d154 = d155;
+                dir154 = dir155;
+            }
+            d154 += rc.senseRubble(l154) + 10;
+        }
+
+        if (rc.onTheMap(l70)) { // check (3, -3)
+            if (d70 > d84) { // from (2, -2)
+                d70 = d84;
+                dir70 = dir84;
+            }
+            if (d70 > d69) { // from (2, -3)
+                d70 = d69;
+                dir70 = dir69;
+            }
+            if (d70 > d85) { // from (3, -2)
+                d70 = d85;
+                dir70 = dir85;
+            }
+            d70 += rc.senseRubble(l70) + 10;
+        }
+
+        if (rc.onTheMap(l160)) { // check (3, 3)
+            if (d160 > d144) { // from (2, 2)
+                d160 = d144;
+                dir160 = dir144;
+            }
+            if (d160 > d159) { // from (2, 3)
+                d160 = d159;
+                dir160 = dir159;
+            }
+            if (d160 > d145) { // from (3, 2)
+                d160 = d145;
+                dir160 = dir145;
+            }
+            d160 += rc.senseRubble(l160) + 10;
+        }
+
+        if (rc.onTheMap(l78)) { // check (-4, -2)
+            if (d78 > d94) { // from (-3, -1)
+                d78 = d94;
+                dir78 = dir94;
+            }
+            if (d78 > d79) { // from (-3, -2)
+                d78 = d79;
+                dir78 = dir79;
+            }
+            if (d78 > d93) { // from (-4, -1)
+                d78 = d93;
+                dir78 = dir93;
+            }
+            if (d78 > d64) { // from (-3, -3)
+                d78 = d64;
+                dir78 = dir64;
+            }
+            d78 += rc.senseRubble(l78) + 10;
+        }
+
+        if (rc.onTheMap(l138)) { // check (-4, 2)
+            if (d138 > d124) { // from (-3, 1)
+                d138 = d124;
+                dir138 = dir124;
+            }
+            if (d138 > d139) { // from (-3, 2)
+                d138 = d139;
+                dir138 = dir139;
+            }
+            if (d138 > d123) { // from (-4, 1)
+                d138 = d123;
+                dir138 = dir123;
+            }
+            if (d138 > d154) { // from (-3, 3)
+                d138 = d154;
+                dir138 = dir154;
+            }
+            d138 += rc.senseRubble(l138) + 10;
+        }
+
+        if (rc.onTheMap(l50)) { // check (-2, -4)
+            if (d50 > d66) { // from (-1, -3)
+                d50 = d66;
+                dir50 = dir66;
+            }
+            if (d50 > d65) { // from (-2, -3)
+                d50 = d65;
+                dir50 = dir65;
+            }
+            if (d50 > d51) { // from (-1, -4)
+                d50 = d51;
+                dir50 = dir51;
+            }
+            if (d50 > d64) { // from (-3, -3)
+                d50 = d64;
+                dir50 = dir64;
+            }
+            d50 += rc.senseRubble(l50) + 10;
+        }
+
+        if (rc.onTheMap(l170)) { // check (-2, 4)
+            if (d170 > d156) { // from (-1, 3)
+                d170 = d156;
+                dir170 = dir156;
+            }
+            if (d170 > d155) { // from (-2, 3)
+                d170 = d155;
+                dir170 = dir155;
+            }
+            if (d170 > d171) { // from (-1, 4)
+                d170 = d171;
+                dir170 = dir171;
+            }
+            if (d170 > d154) { // from (-3, 3)
+                d170 = d154;
+                dir170 = dir154;
+            }
+            d170 += rc.senseRubble(l170) + 10;
+        }
+
+        if (rc.onTheMap(l54)) { // check (2, -4)
+            if (d54 > d68) { // from (1, -3)
+                d54 = d68;
+                dir54 = dir68;
+            }
+            if (d54 > d69) { // from (2, -3)
+                d54 = d69;
+                dir54 = dir69;
+            }
+            if (d54 > d53) { // from (1, -4)
+                d54 = d53;
+                dir54 = dir53;
+            }
+            if (d54 > d70) { // from (3, -3)
+                d54 = d70;
+                dir54 = dir70;
+            }
+            d54 += rc.senseRubble(l54) + 10;
+        }
+
+        if (rc.onTheMap(l174)) { // check (2, 4)
+            if (d174 > d158) { // from (1, 3)
+                d174 = d158;
+                dir174 = dir158;
+            }
+            if (d174 > d159) { // from (2, 3)
+                d174 = d159;
+                dir174 = dir159;
+            }
+            if (d174 > d173) { // from (1, 4)
+                d174 = d173;
+                dir174 = dir173;
+            }
+            if (d174 > d160) { // from (3, 3)
+                d174 = d160;
+                dir174 = dir160;
+            }
+            d174 += rc.senseRubble(l174) + 10;
+        }
+
+        if (rc.onTheMap(l86)) { // check (4, -2)
+            if (d86 > d100) { // from (3, -1)
+                d86 = d100;
+                dir86 = dir100;
+            }
+            if (d86 > d85) { // from (3, -2)
+                d86 = d85;
+                dir86 = dir85;
+            }
+            if (d86 > d101) { // from (4, -1)
+                d86 = d101;
+                dir86 = dir101;
+            }
+            if (d86 > d70) { // from (3, -3)
+                d86 = d70;
+                dir86 = dir70;
+            }
+            d86 += rc.senseRubble(l86) + 10;
+        }
+
+        if (rc.onTheMap(l146)) { // check (4, 2)
+            if (d146 > d130) { // from (3, 1)
+                d146 = d130;
+                dir146 = dir130;
+            }
+            if (d146 > d145) { // from (3, 2)
+                d146 = d145;
+                dir146 = dir145;
+            }
+            if (d146 > d131) { // from (4, 1)
+                d146 = d131;
+                dir146 = dir131;
+            }
+            if (d146 > d160) { // from (3, 3)
+                d146 = d160;
+                dir146 = dir160;
+            }
+            d146 += rc.senseRubble(l146) + 10;
+        }
+
 
         // System.out.println("LOCAL DISTANCES:");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + "\t" + d171 + "\t" + d172 + "\t" + d173 + "\t" + "\t" + "\t" + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + d155 + "\t" + d156 + "\t" + d157 + "\t" + d158 + "\t" + d159 + "\t" + "\t" + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + d139 + "\t" + d140 + "\t" + d141 + "\t" + d142 + "\t" + d143 + "\t" + d144 + "\t" + d145 + "\t" + "\t" + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + d170 + "\t" + d171 + "\t" + d172 + "\t" + d173 + "\t" + d174 + "\t" + "\t" + "\t" + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + d154 + "\t" + d155 + "\t" + d156 + "\t" + d157 + "\t" + d158 + "\t" + d159 + "\t" + d160 + "\t" + "\t" + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + "\t" + d138 + "\t" + d139 + "\t" + d140 + "\t" + d141 + "\t" + d142 + "\t" + d143 + "\t" + d144 + "\t" + d145 + "\t" + d146 + "\t" + "\t" + "\t");
         // System.out.println("\t" + "\t" + "\t" + "\t" + d123 + "\t" + d124 + "\t" + d125 + "\t" + d126 + "\t" + d127 + "\t" + d128 + "\t" + d129 + "\t" + d130 + "\t" + d131 + "\t" + "\t" + "\t");
         // System.out.println("\t" + "\t" + "\t" + "\t" + d108 + "\t" + d109 + "\t" + d110 + "\t" + d111 + "\t" + d112 + "\t" + d113 + "\t" + d114 + "\t" + d115 + "\t" + d116 + "\t" + "\t" + "\t");
         // System.out.println("\t" + "\t" + "\t" + "\t" + d93 + "\t" + d94 + "\t" + d95 + "\t" + d96 + "\t" + d97 + "\t" + d98 + "\t" + d99 + "\t" + d100 + "\t" + d101 + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + d79 + "\t" + d80 + "\t" + d81 + "\t" + d82 + "\t" + d83 + "\t" + d84 + "\t" + d85 + "\t" + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + d65 + "\t" + d66 + "\t" + d67 + "\t" + d68 + "\t" + d69 + "\t" + "\t" + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + "\t" + d51 + "\t" + d52 + "\t" + d53 + "\t" + "\t" + "\t" + "\t" + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + "\t" + d78 + "\t" + d79 + "\t" + d80 + "\t" + d81 + "\t" + d82 + "\t" + d83 + "\t" + d84 + "\t" + d85 + "\t" + d86 + "\t" + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + d64 + "\t" + d65 + "\t" + d66 + "\t" + d67 + "\t" + d68 + "\t" + d69 + "\t" + d70 + "\t" + "\t" + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + d50 + "\t" + d51 + "\t" + d52 + "\t" + d53 + "\t" + d54 + "\t" + "\t" + "\t" + "\t" + "\t");
         // System.out.println("DIRECTIONS:");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + "\t" + dir171 + "\t" + dir172 + "\t" + dir173 + "\t" + "\t" + "\t" + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + dir155 + "\t" + dir156 + "\t" + dir157 + "\t" + dir158 + "\t" + dir159 + "\t" + "\t" + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + dir139 + "\t" + dir140 + "\t" + dir141 + "\t" + dir142 + "\t" + dir143 + "\t" + dir144 + "\t" + dir145 + "\t" + "\t" + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + dir170 + "\t" + dir171 + "\t" + dir172 + "\t" + dir173 + "\t" + dir174 + "\t" + "\t" + "\t" + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + dir154 + "\t" + dir155 + "\t" + dir156 + "\t" + dir157 + "\t" + dir158 + "\t" + dir159 + "\t" + dir160 + "\t" + "\t" + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + "\t" + dir138 + "\t" + dir139 + "\t" + dir140 + "\t" + dir141 + "\t" + dir142 + "\t" + dir143 + "\t" + dir144 + "\t" + dir145 + "\t" + dir146 + "\t" + "\t" + "\t");
         // System.out.println("\t" + "\t" + "\t" + "\t" + dir123 + "\t" + dir124 + "\t" + dir125 + "\t" + dir126 + "\t" + dir127 + "\t" + dir128 + "\t" + dir129 + "\t" + dir130 + "\t" + dir131 + "\t" + "\t" + "\t");
         // System.out.println("\t" + "\t" + "\t" + "\t" + dir108 + "\t" + dir109 + "\t" + dir110 + "\t" + dir111 + "\t" + dir112 + "\t" + dir113 + "\t" + dir114 + "\t" + dir115 + "\t" + dir116 + "\t" + "\t" + "\t");
         // System.out.println("\t" + "\t" + "\t" + "\t" + dir93 + "\t" + dir94 + "\t" + dir95 + "\t" + dir96 + "\t" + dir97 + "\t" + dir98 + "\t" + dir99 + "\t" + dir100 + "\t" + dir101 + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + dir79 + "\t" + dir80 + "\t" + dir81 + "\t" + dir82 + "\t" + dir83 + "\t" + dir84 + "\t" + dir85 + "\t" + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + dir65 + "\t" + dir66 + "\t" + dir67 + "\t" + dir68 + "\t" + dir69 + "\t" + "\t" + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + "\t" + dir51 + "\t" + dir52 + "\t" + dir53 + "\t" + "\t" + "\t" + "\t" + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + "\t" + dir78 + "\t" + dir79 + "\t" + dir80 + "\t" + dir81 + "\t" + dir82 + "\t" + dir83 + "\t" + dir84 + "\t" + dir85 + "\t" + dir86 + "\t" + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + dir64 + "\t" + dir65 + "\t" + dir66 + "\t" + dir67 + "\t" + dir68 + "\t" + dir69 + "\t" + dir70 + "\t" + "\t" + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + dir50 + "\t" + dir51 + "\t" + dir52 + "\t" + dir53 + "\t" + dir54 + "\t" + "\t" + "\t" + "\t" + "\t");
 
         int target_dx = target.x - l112.x;
         int target_dy = target.y - l112.y;
         switch (target_dx) {
                 case -4:
                     switch (target_dy) {
+                        case -2:
+                            return dir78; // destination is at relative location (-4, -2)
                         case -1:
                             return dir93; // destination is at relative location (-4, -1)
                         case 0:
                             return dir108; // destination is at relative location (-4, 0)
                         case 1:
                             return dir123; // destination is at relative location (-4, 1)
+                        case 2:
+                            return dir138; // destination is at relative location (-4, 2)
                     }
                     break;
                 case -3:
                     switch (target_dy) {
+                        case -3:
+                            return dir64; // destination is at relative location (-3, -3)
                         case -2:
                             return dir79; // destination is at relative location (-3, -2)
                         case -1:
@@ -1511,10 +1837,14 @@ public class MinerPathing {
                             return dir124; // destination is at relative location (-3, 1)
                         case 2:
                             return dir139; // destination is at relative location (-3, 2)
+                        case 3:
+                            return dir154; // destination is at relative location (-3, 3)
                     }
                     break;
                 case -2:
                     switch (target_dy) {
+                        case -4:
+                            return dir50; // destination is at relative location (-2, -4)
                         case -3:
                             return dir65; // destination is at relative location (-2, -3)
                         case -2:
@@ -1529,6 +1859,8 @@ public class MinerPathing {
                             return dir140; // destination is at relative location (-2, 2)
                         case 3:
                             return dir155; // destination is at relative location (-2, 3)
+                        case 4:
+                            return dir170; // destination is at relative location (-2, 4)
                     }
                     break;
                 case -1:
@@ -1599,6 +1931,8 @@ public class MinerPathing {
                     break;
                 case 2:
                     switch (target_dy) {
+                        case -4:
+                            return dir54; // destination is at relative location (2, -4)
                         case -3:
                             return dir69; // destination is at relative location (2, -3)
                         case -2:
@@ -1613,10 +1947,14 @@ public class MinerPathing {
                             return dir144; // destination is at relative location (2, 2)
                         case 3:
                             return dir159; // destination is at relative location (2, 3)
+                        case 4:
+                            return dir174; // destination is at relative location (2, 4)
                     }
                     break;
                 case 3:
                     switch (target_dy) {
+                        case -3:
+                            return dir70; // destination is at relative location (3, -3)
                         case -2:
                             return dir85; // destination is at relative location (3, -2)
                         case -1:
@@ -1627,16 +1965,22 @@ public class MinerPathing {
                             return dir130; // destination is at relative location (3, 1)
                         case 2:
                             return dir145; // destination is at relative location (3, 2)
+                        case 3:
+                            return dir160; // destination is at relative location (3, 3)
                     }
                     break;
                 case 4:
                     switch (target_dy) {
+                        case -2:
+                            return dir86; // destination is at relative location (4, -2)
                         case -1:
                             return dir101; // destination is at relative location (4, -1)
                         case 0:
                             return dir116; // destination is at relative location (4, 0)
                         case 1:
                             return dir131; // destination is at relative location (4, 1)
+                        case 2:
+                            return dir146; // destination is at relative location (4, 2)
                     }
                     break;
         }
@@ -1645,6 +1989,12 @@ public class MinerPathing {
         double bestScore = 0;
         double currDist = Math.sqrt(l112.distanceSquaredTo(target));
         
+        double score78 = (currDist - Math.sqrt(l78.distanceSquaredTo(target))) / d78;
+        if (score78 > bestScore) {
+            bestScore = score78;
+            ans = dir78;
+        }
+
         double score93 = (currDist - Math.sqrt(l93.distanceSquaredTo(target))) / d93;
         if (score93 > bestScore) {
             bestScore = score93;
@@ -1663,28 +2013,40 @@ public class MinerPathing {
             ans = dir123;
         }
 
+        double score138 = (currDist - Math.sqrt(l138.distanceSquaredTo(target))) / d138;
+        if (score138 > bestScore) {
+            bestScore = score138;
+            ans = dir138;
+        }
+
+        double score64 = (currDist - Math.sqrt(l64.distanceSquaredTo(target))) / d64;
+        if (score64 > bestScore) {
+            bestScore = score64;
+            ans = dir64;
+        }
+
         double score79 = (currDist - Math.sqrt(l79.distanceSquaredTo(target))) / d79;
         if (score79 > bestScore) {
             bestScore = score79;
             ans = dir79;
         }
 
-        double score94 = (currDist - Math.sqrt(l94.distanceSquaredTo(target))) / d94;
-        if (score94 > bestScore) {
-            bestScore = score94;
-            ans = dir94;
-        }
-
-        double score124 = (currDist - Math.sqrt(l124.distanceSquaredTo(target))) / d124;
-        if (score124 > bestScore) {
-            bestScore = score124;
-            ans = dir124;
-        }
-
         double score139 = (currDist - Math.sqrt(l139.distanceSquaredTo(target))) / d139;
         if (score139 > bestScore) {
             bestScore = score139;
             ans = dir139;
+        }
+
+        double score154 = (currDist - Math.sqrt(l154.distanceSquaredTo(target))) / d154;
+        if (score154 > bestScore) {
+            bestScore = score154;
+            ans = dir154;
+        }
+
+        double score50 = (currDist - Math.sqrt(l50.distanceSquaredTo(target))) / d50;
+        if (score50 > bestScore) {
+            bestScore = score50;
+            ans = dir50;
         }
 
         double score65 = (currDist - Math.sqrt(l65.distanceSquaredTo(target))) / d65;
@@ -1699,22 +2061,16 @@ public class MinerPathing {
             ans = dir155;
         }
 
+        double score170 = (currDist - Math.sqrt(l170.distanceSquaredTo(target))) / d170;
+        if (score170 > bestScore) {
+            bestScore = score170;
+            ans = dir170;
+        }
+
         double score51 = (currDist - Math.sqrt(l51.distanceSquaredTo(target))) / d51;
         if (score51 > bestScore) {
             bestScore = score51;
             ans = dir51;
-        }
-
-        double score66 = (currDist - Math.sqrt(l66.distanceSquaredTo(target))) / d66;
-        if (score66 > bestScore) {
-            bestScore = score66;
-            ans = dir66;
-        }
-
-        double score156 = (currDist - Math.sqrt(l156.distanceSquaredTo(target))) / d156;
-        if (score156 > bestScore) {
-            bestScore = score156;
-            ans = dir156;
         }
 
         double score171 = (currDist - Math.sqrt(l171.distanceSquaredTo(target))) / d171;
@@ -1741,22 +2097,16 @@ public class MinerPathing {
             ans = dir53;
         }
 
-        double score68 = (currDist - Math.sqrt(l68.distanceSquaredTo(target))) / d68;
-        if (score68 > bestScore) {
-            bestScore = score68;
-            ans = dir68;
-        }
-
-        double score158 = (currDist - Math.sqrt(l158.distanceSquaredTo(target))) / d158;
-        if (score158 > bestScore) {
-            bestScore = score158;
-            ans = dir158;
-        }
-
         double score173 = (currDist - Math.sqrt(l173.distanceSquaredTo(target))) / d173;
         if (score173 > bestScore) {
             bestScore = score173;
             ans = dir173;
+        }
+
+        double score54 = (currDist - Math.sqrt(l54.distanceSquaredTo(target))) / d54;
+        if (score54 > bestScore) {
+            bestScore = score54;
+            ans = dir54;
         }
 
         double score69 = (currDist - Math.sqrt(l69.distanceSquaredTo(target))) / d69;
@@ -1771,28 +2121,40 @@ public class MinerPathing {
             ans = dir159;
         }
 
+        double score174 = (currDist - Math.sqrt(l174.distanceSquaredTo(target))) / d174;
+        if (score174 > bestScore) {
+            bestScore = score174;
+            ans = dir174;
+        }
+
+        double score70 = (currDist - Math.sqrt(l70.distanceSquaredTo(target))) / d70;
+        if (score70 > bestScore) {
+            bestScore = score70;
+            ans = dir70;
+        }
+
         double score85 = (currDist - Math.sqrt(l85.distanceSquaredTo(target))) / d85;
         if (score85 > bestScore) {
             bestScore = score85;
             ans = dir85;
         }
 
-        double score100 = (currDist - Math.sqrt(l100.distanceSquaredTo(target))) / d100;
-        if (score100 > bestScore) {
-            bestScore = score100;
-            ans = dir100;
-        }
-
-        double score130 = (currDist - Math.sqrt(l130.distanceSquaredTo(target))) / d130;
-        if (score130 > bestScore) {
-            bestScore = score130;
-            ans = dir130;
-        }
-
         double score145 = (currDist - Math.sqrt(l145.distanceSquaredTo(target))) / d145;
         if (score145 > bestScore) {
             bestScore = score145;
             ans = dir145;
+        }
+
+        double score160 = (currDist - Math.sqrt(l160.distanceSquaredTo(target))) / d160;
+        if (score160 > bestScore) {
+            bestScore = score160;
+            ans = dir160;
+        }
+
+        double score86 = (currDist - Math.sqrt(l86.distanceSquaredTo(target))) / d86;
+        if (score86 > bestScore) {
+            bestScore = score86;
+            ans = dir86;
         }
 
         double score101 = (currDist - Math.sqrt(l101.distanceSquaredTo(target))) / d101;
@@ -1811,6 +2173,12 @@ public class MinerPathing {
         if (score131 > bestScore) {
             bestScore = score131;
             ans = dir131;
+        }
+
+        double score146 = (currDist - Math.sqrt(l146.distanceSquaredTo(target))) / d146;
+        if (score146 > bestScore) {
+            bestScore = score146;
+            ans = dir146;
         }
 
         
