@@ -438,10 +438,9 @@ public class Archon extends Robot {
             turnsWithNoExploring = 0;
         }
         // Reset explore bits
-        // TODO: Convert this into a generated comms handler fn which resets all of them
         if (turnsWithNoExploring >= 5) {
             turnsWithNoExploring = 0;
-            System.out.println("RESETTING EXPLORE");
+            // System.out.println("RESETTING EXPLORE");
             // int length = clusterPermutation.length;
             // for (int prePermuteIdx = 0; prePermuteIdx < length; prePermuteIdx++) {
             //     int i = clusterPermutation[prePermuteIdx];
