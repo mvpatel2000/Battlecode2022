@@ -90,8 +90,21 @@ public class Archon extends Robot {
             portableMove(nearestCluster);
         }
 
+        checkTLE();
         build();
+        checkTLE();
         repair();
+        checkTLE();
+    }
+
+    public void checkTLE() throws GameActionException {
+        if (rc.getRoundNum() > currentRound) { // if we TLEd into the next round
+            System.out.println("I TLE'd");
+            currentRound = rc.getRoundNum();
+            updateUnitCounts();
+            updateResourceRate();
+            archonStatusCheck();
+        }
     }
 
     /**
@@ -837,7 +850,7 @@ public class Archon extends Robot {
 
     @Override
     public void archonStatusCheck() throws GameActionException {
-        boolean odd = currentRound % 2 == 1;
+        boolean odd = rc.getRoundNum() % 2 == 1;
         if (currentRound > 1) {
             switch (myArchonNum) {
                 case 0:

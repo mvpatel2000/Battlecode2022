@@ -705,7 +705,7 @@ public class Robot {
     }
     
     public void archonStatusCheck() throws GameActionException {
-        boolean odd = currentRound % 2 == 1;
+        boolean odd = rc.getRoundNum() % 2 == 1;
         // update each of archons zero through three
         if (archonZeroAlive) {
             if (commsHandler.readOurArchonStatus(0) != (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN)) {
