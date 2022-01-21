@@ -1,4 +1,4 @@
-package smite;
+package hephaestus;
 
 import battlecode.common.*;
 

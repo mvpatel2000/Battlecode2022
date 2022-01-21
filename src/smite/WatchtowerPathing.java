@@ -3,7 +3,7 @@ package smite;
 
 import battlecode.common.*;
 
-public class ArchonPathing implements UnitPathing {
+public class WatchtowerPathing implements UnitPathing {
     
     RobotController rc;
 
@@ -444,7 +444,7 @@ public class ArchonPathing implements UnitPathing {
     static Direction dir162; // best direction to take now to optimally get to location
 
 
-    public ArchonPathing(RobotController rc) {
+    public WatchtowerPathing(RobotController rc) {
         this.rc = rc;
     }
 

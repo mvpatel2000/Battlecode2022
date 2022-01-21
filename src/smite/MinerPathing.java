@@ -3,7 +3,7 @@ package smite;
 
 import battlecode.common.*;
 
-public class MinerPathing {
+public class MinerPathing implements UnitPathing {
     
     RobotController rc;
 

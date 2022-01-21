@@ -1,4 +1,4 @@
-package smite;
+package hephaestus;
 
 import battlecode.common.*;
 
@@ -144,7 +144,7 @@ public class Miner extends Robot {
             Direction away = myLocation.directionTo(lastEnemyLocation).opposite();
             MapLocation fleeDirection = myLocation.add(away).add(away).add(away).add(away).add(away);
             pathing.fuzzyMove(fleeDirection);
-            // //rc.setIndicatorLine(myLocation, fleeDirection, 255, 0, 0);
+            // rc.setIndicatorLine(myLocation, fleeDirection, 255, 0, 0);
             fleeingCounter--;
         }
         // Next to mining destination, pick lowest rubble tile adjacent to mine
@@ -192,7 +192,7 @@ public class Miner extends Robot {
         // Don't scan if destination still has lead or gold
         if (pathing.destination != null && rc.canSenseLocation(pathing.destination)
              && (rc.senseLead(pathing.destination) > requiredLead || rc.senseGold(pathing.destination) > 0)) {
-            // //rc.setIndicatorString("Destination still has lead or gold: " + destination);
+            // rc.setIndicatorString("Destination still has lead or gold: " + destination);
             considerFreeClusterClaim(nearestCluster);
             return;
         }
@@ -223,7 +223,7 @@ public class Miner extends Robot {
 
         // // for debug
         // if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
-        //     //rc.setIndicatorLine(myLocation, clusterToCenter(nearestCluster), 0, 255, 0);
+        //     rc.setIndicatorLine(myLocation, clusterToCenter(nearestCluster), 0, 255, 0);
         // }   
 
         // Navigate to nearest resources found 

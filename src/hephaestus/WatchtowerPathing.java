@@ -1,9 +1,9 @@
 // Inspired by https://github.com/IvanGeffner/battlecode2021/blob/master/thirtyone/BFSMuckraker.java.
-package smite;
+package hephaestus;
 
 import battlecode.common.*;
 
-public class ArchonPathing implements UnitPathing {
+public class WatchtowerPathing implements UnitPathing {
     
     RobotController rc;
 
@@ -444,7 +444,7 @@ public class ArchonPathing implements UnitPathing {
     static Direction dir162; // best direction to take now to optimally get to location
 
 
-    public ArchonPathing(RobotController rc) {
+    public WatchtowerPathing(RobotController rc) {
         this.rc = rc;
     }
 
@@ -2857,30 +2857,30 @@ public class ArchonPathing implements UnitPathing {
         }
 
 
-        // //System.out.println\("LOCAL DISTANCES:");
-        // //System.out.println\("\t" + "\t" + "\t" + "\t" + "\t" + d184 + "\t" + d185 + "\t" + d186 + "\t" + d187 + "\t" + d188 + "\t" + d189 + "\t" + d190 + "\t" + "\t" + "\t" + "\t");
-        // //System.out.println\("\t" + "\t" + "\t" + "\t" + d168 + "\t" + d169 + "\t" + d170 + "\t" + d171 + "\t" + d172 + "\t" + d173 + "\t" + d174 + "\t" + d175 + "\t" + d176 + "\t" + "\t" + "\t");
-        // //System.out.println\("\t" + "\t" + "\t" + d152 + "\t" + d153 + "\t" + d154 + "\t" + d155 + "\t" + d156 + "\t" + d157 + "\t" + d158 + "\t" + d159 + "\t" + d160 + "\t" + d161 + "\t" + d162 + "\t" + "\t");
-        // //System.out.println\("\t" + "\t" + "\t" + d137 + "\t" + d138 + "\t" + d139 + "\t" + d140 + "\t" + d141 + "\t" + d142 + "\t" + d143 + "\t" + d144 + "\t" + d145 + "\t" + d146 + "\t" + d147 + "\t" + "\t");
-        // //System.out.println\("\t" + "\t" + "\t" + d122 + "\t" + d123 + "\t" + d124 + "\t" + d125 + "\t" + d126 + "\t" + d127 + "\t" + d128 + "\t" + d129 + "\t" + d130 + "\t" + d131 + "\t" + d132 + "\t" + "\t");
-        // //System.out.println\("\t" + "\t" + "\t" + d107 + "\t" + d108 + "\t" + d109 + "\t" + d110 + "\t" + d111 + "\t" + d112 + "\t" + d113 + "\t" + d114 + "\t" + d115 + "\t" + d116 + "\t" + d117 + "\t" + "\t");
-        // //System.out.println\("\t" + "\t" + "\t" + d92 + "\t" + d93 + "\t" + d94 + "\t" + d95 + "\t" + d96 + "\t" + d97 + "\t" + d98 + "\t" + d99 + "\t" + d100 + "\t" + d101 + "\t" + d102 + "\t" + "\t");
-        // //System.out.println\("\t" + "\t" + "\t" + d77 + "\t" + d78 + "\t" + d79 + "\t" + d80 + "\t" + d81 + "\t" + d82 + "\t" + d83 + "\t" + d84 + "\t" + d85 + "\t" + d86 + "\t" + d87 + "\t" + "\t");
-        // //System.out.println\("\t" + "\t" + "\t" + d62 + "\t" + d63 + "\t" + d64 + "\t" + d65 + "\t" + d66 + "\t" + d67 + "\t" + d68 + "\t" + d69 + "\t" + d70 + "\t" + d71 + "\t" + d72 + "\t" + "\t");
-        // //System.out.println\("\t" + "\t" + "\t" + "\t" + d48 + "\t" + d49 + "\t" + d50 + "\t" + d51 + "\t" + d52 + "\t" + d53 + "\t" + d54 + "\t" + d55 + "\t" + d56 + "\t" + "\t" + "\t");
-        // //System.out.println\("\t" + "\t" + "\t" + "\t" + "\t" + d34 + "\t" + d35 + "\t" + d36 + "\t" + d37 + "\t" + d38 + "\t" + d39 + "\t" + d40 + "\t" + "\t" + "\t" + "\t");
-        // //System.out.println\("DIRECTIONS:");
-        // //System.out.println\("\t" + "\t" + "\t" + "\t" + "\t" + dir184 + "\t" + dir185 + "\t" + dir186 + "\t" + dir187 + "\t" + dir188 + "\t" + dir189 + "\t" + dir190 + "\t" + "\t" + "\t" + "\t");
-        // //System.out.println\("\t" + "\t" + "\t" + "\t" + dir168 + "\t" + dir169 + "\t" + dir170 + "\t" + dir171 + "\t" + dir172 + "\t" + dir173 + "\t" + dir174 + "\t" + dir175 + "\t" + dir176 + "\t" + "\t" + "\t");
-        // //System.out.println\("\t" + "\t" + "\t" + dir152 + "\t" + dir153 + "\t" + dir154 + "\t" + dir155 + "\t" + dir156 + "\t" + dir157 + "\t" + dir158 + "\t" + dir159 + "\t" + dir160 + "\t" + dir161 + "\t" + dir162 + "\t" + "\t");
-        // //System.out.println\("\t" + "\t" + "\t" + dir137 + "\t" + dir138 + "\t" + dir139 + "\t" + dir140 + "\t" + dir141 + "\t" + dir142 + "\t" + dir143 + "\t" + dir144 + "\t" + dir145 + "\t" + dir146 + "\t" + dir147 + "\t" + "\t");
-        // //System.out.println\("\t" + "\t" + "\t" + dir122 + "\t" + dir123 + "\t" + dir124 + "\t" + dir125 + "\t" + dir126 + "\t" + dir127 + "\t" + dir128 + "\t" + dir129 + "\t" + dir130 + "\t" + dir131 + "\t" + dir132 + "\t" + "\t");
-        // //System.out.println\("\t" + "\t" + "\t" + dir107 + "\t" + dir108 + "\t" + dir109 + "\t" + dir110 + "\t" + dir111 + "\t" + dir112 + "\t" + dir113 + "\t" + dir114 + "\t" + dir115 + "\t" + dir116 + "\t" + dir117 + "\t" + "\t");
-        // //System.out.println\("\t" + "\t" + "\t" + dir92 + "\t" + dir93 + "\t" + dir94 + "\t" + dir95 + "\t" + dir96 + "\t" + dir97 + "\t" + dir98 + "\t" + dir99 + "\t" + dir100 + "\t" + dir101 + "\t" + dir102 + "\t" + "\t");
-        // //System.out.println\("\t" + "\t" + "\t" + dir77 + "\t" + dir78 + "\t" + dir79 + "\t" + dir80 + "\t" + dir81 + "\t" + dir82 + "\t" + dir83 + "\t" + dir84 + "\t" + dir85 + "\t" + dir86 + "\t" + dir87 + "\t" + "\t");
-        // //System.out.println\("\t" + "\t" + "\t" + dir62 + "\t" + dir63 + "\t" + dir64 + "\t" + dir65 + "\t" + dir66 + "\t" + dir67 + "\t" + dir68 + "\t" + dir69 + "\t" + dir70 + "\t" + dir71 + "\t" + dir72 + "\t" + "\t");
-        // //System.out.println\("\t" + "\t" + "\t" + "\t" + dir48 + "\t" + dir49 + "\t" + dir50 + "\t" + dir51 + "\t" + dir52 + "\t" + dir53 + "\t" + dir54 + "\t" + dir55 + "\t" + dir56 + "\t" + "\t" + "\t");
-        // //System.out.println\("\t" + "\t" + "\t" + "\t" + "\t" + dir34 + "\t" + dir35 + "\t" + dir36 + "\t" + dir37 + "\t" + dir38 + "\t" + dir39 + "\t" + dir40 + "\t" + "\t" + "\t" + "\t");
+        // System.out.println("LOCAL DISTANCES:");
+        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + d184 + "\t" + d185 + "\t" + d186 + "\t" + d187 + "\t" + d188 + "\t" + d189 + "\t" + d190 + "\t" + "\t" + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + "\t" + d168 + "\t" + d169 + "\t" + d170 + "\t" + d171 + "\t" + d172 + "\t" + d173 + "\t" + d174 + "\t" + d175 + "\t" + d176 + "\t" + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + d152 + "\t" + d153 + "\t" + d154 + "\t" + d155 + "\t" + d156 + "\t" + d157 + "\t" + d158 + "\t" + d159 + "\t" + d160 + "\t" + d161 + "\t" + d162 + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + d137 + "\t" + d138 + "\t" + d139 + "\t" + d140 + "\t" + d141 + "\t" + d142 + "\t" + d143 + "\t" + d144 + "\t" + d145 + "\t" + d146 + "\t" + d147 + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + d122 + "\t" + d123 + "\t" + d124 + "\t" + d125 + "\t" + d126 + "\t" + d127 + "\t" + d128 + "\t" + d129 + "\t" + d130 + "\t" + d131 + "\t" + d132 + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + d107 + "\t" + d108 + "\t" + d109 + "\t" + d110 + "\t" + d111 + "\t" + d112 + "\t" + d113 + "\t" + d114 + "\t" + d115 + "\t" + d116 + "\t" + d117 + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + d92 + "\t" + d93 + "\t" + d94 + "\t" + d95 + "\t" + d96 + "\t" + d97 + "\t" + d98 + "\t" + d99 + "\t" + d100 + "\t" + d101 + "\t" + d102 + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + d77 + "\t" + d78 + "\t" + d79 + "\t" + d80 + "\t" + d81 + "\t" + d82 + "\t" + d83 + "\t" + d84 + "\t" + d85 + "\t" + d86 + "\t" + d87 + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + d62 + "\t" + d63 + "\t" + d64 + "\t" + d65 + "\t" + d66 + "\t" + d67 + "\t" + d68 + "\t" + d69 + "\t" + d70 + "\t" + d71 + "\t" + d72 + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + "\t" + d48 + "\t" + d49 + "\t" + d50 + "\t" + d51 + "\t" + d52 + "\t" + d53 + "\t" + d54 + "\t" + d55 + "\t" + d56 + "\t" + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + d34 + "\t" + d35 + "\t" + d36 + "\t" + d37 + "\t" + d38 + "\t" + d39 + "\t" + d40 + "\t" + "\t" + "\t" + "\t");
+        // System.out.println("DIRECTIONS:");
+        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + dir184 + "\t" + dir185 + "\t" + dir186 + "\t" + dir187 + "\t" + dir188 + "\t" + dir189 + "\t" + dir190 + "\t" + "\t" + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + "\t" + dir168 + "\t" + dir169 + "\t" + dir170 + "\t" + dir171 + "\t" + dir172 + "\t" + dir173 + "\t" + dir174 + "\t" + dir175 + "\t" + dir176 + "\t" + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + dir152 + "\t" + dir153 + "\t" + dir154 + "\t" + dir155 + "\t" + dir156 + "\t" + dir157 + "\t" + dir158 + "\t" + dir159 + "\t" + dir160 + "\t" + dir161 + "\t" + dir162 + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + dir137 + "\t" + dir138 + "\t" + dir139 + "\t" + dir140 + "\t" + dir141 + "\t" + dir142 + "\t" + dir143 + "\t" + dir144 + "\t" + dir145 + "\t" + dir146 + "\t" + dir147 + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + dir122 + "\t" + dir123 + "\t" + dir124 + "\t" + dir125 + "\t" + dir126 + "\t" + dir127 + "\t" + dir128 + "\t" + dir129 + "\t" + dir130 + "\t" + dir131 + "\t" + dir132 + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + dir107 + "\t" + dir108 + "\t" + dir109 + "\t" + dir110 + "\t" + dir111 + "\t" + dir112 + "\t" + dir113 + "\t" + dir114 + "\t" + dir115 + "\t" + dir116 + "\t" + dir117 + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + dir92 + "\t" + dir93 + "\t" + dir94 + "\t" + dir95 + "\t" + dir96 + "\t" + dir97 + "\t" + dir98 + "\t" + dir99 + "\t" + dir100 + "\t" + dir101 + "\t" + dir102 + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + dir77 + "\t" + dir78 + "\t" + dir79 + "\t" + dir80 + "\t" + dir81 + "\t" + dir82 + "\t" + dir83 + "\t" + dir84 + "\t" + dir85 + "\t" + dir86 + "\t" + dir87 + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + dir62 + "\t" + dir63 + "\t" + dir64 + "\t" + dir65 + "\t" + dir66 + "\t" + dir67 + "\t" + dir68 + "\t" + dir69 + "\t" + dir70 + "\t" + dir71 + "\t" + dir72 + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + "\t" + dir48 + "\t" + dir49 + "\t" + dir50 + "\t" + dir51 + "\t" + dir52 + "\t" + dir53 + "\t" + dir54 + "\t" + dir55 + "\t" + dir56 + "\t" + "\t" + "\t");
+        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + dir34 + "\t" + dir35 + "\t" + dir36 + "\t" + dir37 + "\t" + dir38 + "\t" + dir39 + "\t" + dir40 + "\t" + "\t" + "\t" + "\t");
 
         int target_dx = target.x - l112.x;
         int target_dy = target.y - l112.y;

@@ -1,4 +1,4 @@
-package smite;
+package hephaestus;
 
 import battlecode.common.*;
 
@@ -56,13 +56,13 @@ public class Pathing {
         if (destination != null) {
             pathTo(destination);
             if ((myType == RobotType.SOLDIER || myType == RobotType.SAGE) && destination.distanceSquaredTo(r.baseLocation) > 0) {
-                //rc.setIndicatorLine(r.myLocation, destination, 100 - rc.getTeam().ordinal() * 100, 50, rc.getTeam().ordinal() * 100);
+                rc.setIndicatorLine(r.myLocation, destination, 100 - rc.getTeam().ordinal() * 100, 50, rc.getTeam().ordinal() * 100);
             } else if ((myType == RobotType.MINER || myType == RobotType.BUILDER) && destination.distanceSquaredTo(r.baseLocation) > 0) {
-                //rc.setIndicatorLine(r.myLocation, destination, 150 + 100 - rc.getTeam().ordinal() * 100, 150, 150 + rc.getTeam().ordinal() * 100);
+                rc.setIndicatorLine(r.myLocation, destination, 150 + 100 - rc.getTeam().ordinal() * 100, 150, 150 + rc.getTeam().ordinal() * 100);
             } else if (myType == RobotType.ARCHON || myType == RobotType.WATCHTOWER || myType == RobotType.LABORATORY) {
-                //rc.setIndicatorLine(r.myLocation, destination, 250 - 250 * rc.getTeam().ordinal(), 0, 250 * rc.getTeam().ordinal());
+                rc.setIndicatorLine(r.myLocation, destination, 250 - 250 * rc.getTeam().ordinal(), 0, 250 * rc.getTeam().ordinal());
             } else if (destination.distanceSquaredTo(r.baseLocation) == 0) {
-                //rc.setIndicatorLine(r.myLocation, destination, 200, 200, 200);
+                rc.setIndicatorLine(r.myLocation, destination, 200, 200, 200);
             }
         }
     }
@@ -73,7 +73,7 @@ public class Pathing {
         // if i'm not a special pather or if i still have fuzzy moves left, fuzzy move
         if (fuzzyMovesLeft > 0) {
             fuzzyMove(target);
-            //rc.setIndicatorDot(rc.getLocation(), 0, 0, 0);
+            rc.setIndicatorDot(rc.getLocation(), 0, 0, 0);
             return;
         }
 
@@ -93,12 +93,12 @@ public class Pathing {
         if (dir == null || !rc.canMove(dir)) return;
         
         if (isVisited(r.myLocation.add(dir))) {
-            // //System.out.println\("Switching to fuzzy move for " + MAX_FUZZY_MOVES + " moves");
+            // System.out.println("Switching to fuzzy move for " + MAX_FUZZY_MOVES + " moves");
             fuzzyMovesLeft = MAX_FUZZY_MOVES;
             pathTo(target);
         } else {
             move(dir);
-            //rc.setIndicatorDot(rc.getLocation(), 255, 255, 255);
+            rc.setIndicatorDot(rc.getLocation(), 255, 255, 255);
         }
     }
 
