@@ -11,6 +11,12 @@ public class Sage extends Robot {
     @Override
     public void runUnit() throws GameActionException { 
         announceAlive();
+
+        attack();
+
+        combatMove();
+
+        attack();
     }
 
     public void announceAlive() throws GameActionException {

@@ -4,6 +4,12 @@ import battlecode.common.*;
 
 public class Builder extends Robot {
 
+    int fleeingCounter;
+    MapLocation lastEnemyLocation;
+    
+    int reservedLead = 0;
+    int reservedGold = 0;
+
     public Builder(RobotController rc) throws GameActionException {
         super(rc);
     }
@@ -36,6 +42,10 @@ public class Builder extends Robot {
         if (!rc.isActionReady()) {
             return;
         }
+        if (reservedLead > 0) {
+            commsHandler.writeReservedResourcesLead(commsHandler.readReservedResourcesLead() - reservedLead);
+            reservedLead = 0;
+        }
         // Heal nearby buildings
         RobotInfo[] allies = rc.senseNearbyRobots(RobotType.BUILDER.actionRadiusSquared, allyTeam);
         MapLocation repairLocation = null;
@@ -51,25 +61,37 @@ public class Builder extends Robot {
         if (repairLocation != null && rc.canRepair(repairLocation)) {
             rc.repair(repairLocation);
         }
-        // Build watchtower if in danger and didn't heal
-        // if (rc.isActionReady()) {
-        //     if (nearbyEnemies.length > 0 && rc.getTeamLeadAmount(allyTeam) >= RobotType.WATCHTOWER.buildCostLead) {
-        //         Direction optimalDir = null;
-        //         int optimalRubble = Integer.MAX_VALUE;
-        //         for (Direction dir : directionsWithoutCenter) {
-        //             if (rc.canBuildRobot(RobotType.WATCHTOWER, dir)) {
-        //                 int rubble = rc.senseRubble(myLocation.add(dir));
-        //                 if (rubble < optimalRubble) {
-        //                     optimalDir = dir;
-        //                     optimalRubble = rubble;
-        //                 }
-        //             }
-        //         }
-        //         if (optimalDir != null && rc.canBuildRobot(RobotType.WATCHTOWER, optimalDir)) {
-        //             rc.buildRobot(RobotType.WATCHTOWER, optimalDir);
-        //         }
-        //     }
-        // }
+        // priority build watchtower if in danger and didn't heal
+        if (rc.isActionReady()) {
+            if (nearbyEnemies.length > 0) {
+                reservedLead = RobotType.WATCHTOWER.buildCostLead / LEAD_RESERVE_SCALE;
+                Direction optimalDir = null;
+                int optimalRubble = Integer.MAX_VALUE;
+                for (Direction dir : directionsWithoutCenter) {
+                    if (rc.canBuildRobot(RobotType.WATCHTOWER, dir)) {
+                        int rubble = rc.senseRubble(myLocation.add(dir));
+                        if (rubble < optimalRubble) {
+                            optimalDir = dir;
+                            optimalRubble = rubble;
+                        }
+                    }
+                }
+                if (optimalDir != null
+                    && rc.getTeamLeadAmount(allyTeam) >= RobotType.WATCHTOWER.buildCostLead + commsHandler.readReservedResourcesLead() * LEAD_RESERVE_SCALE
+                    && rc.canBuildRobot(RobotType.WATCHTOWER, optimalDir)) {
+                    rc.buildRobot(RobotType.WATCHTOWER, optimalDir);
+                    reservedLead = 0;
+                } else {
+                    if (reservedLead > 0) { // can't build now, reserve resources for it
+                        if (commsHandler.readReservedResourcesLead() + reservedLead < 1024) {
+                            commsHandler.writeReservedResourcesLead(commsHandler.readReservedResourcesLead() + reservedLead);
+                        } else {
+                            reservedLead = 0;
+                        }
+                    }
+                }
+            }
+        }
         // Upgrade watchtower or archon if lots of resources
         if (rc.isActionReady() && rc.getTeamLeadAmount(allyTeam) - rc.getTeamLeadAmount(enemyTeam) > 1000) {
             allies = rc.senseNearbyRobots(2, allyTeam); // Can only mutate adjacent buildings
@@ -106,6 +128,34 @@ public class Builder extends Robot {
         // Flee back to archon to heal
         if (baseRetreat()) {
             return;
+        }
+
+        MapLocation nearestCombatEnemy = null;
+        int distanceToEnemy = Integer.MAX_VALUE;
+        int maxScan = Math.min(nearbyEnemies.length, 10);
+        for (int i = 0; i < maxScan; i++) {
+            RobotInfo enemy = nearbyEnemies[i];
+            if (enemy.getType() == RobotType.SOLDIER || enemy.getType() == RobotType.SAGE 
+                    || enemy.getType() == RobotType.WATCHTOWER) {
+                int dist = myLocation.distanceSquaredTo(enemy.location);
+                if (dist < distanceToEnemy) {
+                    nearestCombatEnemy = enemy.location;
+                    distanceToEnemy = dist;
+                }
+            }
+        }
+        if (nearestCombatEnemy != null) { 
+            lastEnemyLocation = nearestCombatEnemy;
+            fleeingCounter = 2;
+        }
+
+        // Kite enemy unit
+        if (fleeingCounter > 0) {
+            Direction away = myLocation.directionTo(lastEnemyLocation).opposite();
+            MapLocation fleeDirection = myLocation.add(away).add(away).add(away).add(away).add(away);
+            pathing.fuzzyMove(fleeDirection);
+            // //rc.setIndicatorLine(myLocation, fleeDirection, 255, 0, 0);
+            fleeingCounter--;
         }
 
         // Don't move if you're finishing building a watchtower
