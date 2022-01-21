@@ -645,7 +645,8 @@ public class Robot {
 
         double combatAllyHealth = 0.0;
         int allyCount = 0;
-        MapLocation archonLocation = null;
+        boolean isArchonVisible = false;
+        // MapLocation archonLocation = null;
         // double repairPerTurn = 0;
         RobotInfo[] allies = rc.senseNearbyRobots(RobotType.SOLDIER.visionRadiusSquared, allyTeam);
         for (RobotInfo ally : allies) {
@@ -656,13 +657,14 @@ public class Robot {
                 }
             }
             else if (ally.type == RobotType.ARCHON && ally.mode == RobotMode.TURRET) {
-                archonLocation = ally.location;
+                // archonLocation = ally.location;
                 // Repair normalized to per turn by rubble
                 // repairPerTurn = (2*ally.level) * 10 / (10.0 + rc.senseRubble(archonLocation));
+                isArchonVisible = true;
             }
         }
         // boolean isPositionReinforced = rc.getHealth() > 30 && ((archonLocation != null) || (combatAllies - nearbyEnemies.length >= 2));
-        boolean isPositionReinforced = archonLocation != null && rc.getHealth() > 10;
+        boolean isPositionReinforced = isArchonVisible && rc.getHealth() > 10;
 
         int enemySoldiers = 0;
         for (RobotInfo enemy : nearbyEnemies) {
