@@ -63,7 +63,6 @@ public class Robot {
     MapLocation archonThreeLocation = null;
 
     int numOurArchonsAlive = 0;
-    MapLocation[] archonLocations;
 
     /** Array containing all the possible movement directions. */
     final Direction[] directionsWithoutCenter = {
@@ -399,7 +398,6 @@ public class Robot {
         MapLocation nearestArchonLocation = null;
         int nearestArchonDistance = Integer.MAX_VALUE;
         if (archonZeroAlive) {
-            MapLocation archonZeroLocation = commsHandler.readOurArchonLocation(0);
             int dist = myLocation.distanceSquaredTo(archonZeroLocation);
             if (dist < nearestArchonDistance 
                 && (dist < RobotType.ARCHON.actionRadiusSquared 
@@ -409,7 +407,6 @@ public class Robot {
             }
         }
         if (archonOneAlive) {
-            MapLocation archonOneLocation = commsHandler.readOurArchonLocation(1);
             int dist = myLocation.distanceSquaredTo(archonOneLocation);
             if (dist < nearestArchonDistance 
                 && (dist < RobotType.ARCHON.actionRadiusSquared 
@@ -419,7 +416,6 @@ public class Robot {
             }
         }
         if (archonTwoAlive) {
-            MapLocation archonTwoLocation = commsHandler.readOurArchonLocation(2);
             int dist = myLocation.distanceSquaredTo(archonTwoLocation);
             if (dist < nearestArchonDistance 
                 && (dist < RobotType.ARCHON.actionRadiusSquared 
@@ -429,7 +425,6 @@ public class Robot {
             }
         }
         if (archonThreeAlive) {
-            MapLocation archonThreeLocation = commsHandler.readOurArchonLocation(3);
             int dist = myLocation.distanceSquaredTo(archonThreeLocation);
             if (dist < nearestArchonDistance 
                 && (dist < RobotType.ARCHON.actionRadiusSquared 
@@ -508,6 +503,7 @@ public class Robot {
      * @throws GameActionException
      */
     public double distanceAcrossSymmetry(MapLocation loc) throws GameActionException {
+        if (currentRound == 1) return myLocation.distanceSquaredTo(new MapLocation((mapWidth-1)/2, (mapHeight-1)/2));
         if (numOurArchonsAlive == 0) {
             System.out.println("No archons alive, we lost :(");
             return 0.0;
@@ -516,22 +512,18 @@ public class Robot {
         int archonXSum = 0;
         int archonYSum = 0;
         if (archonZeroAlive) {
-            archonZeroLocation = commsHandler.readOurArchonLocation(0);
             archonXSum += archonZeroLocation.x;
             archonYSum += archonZeroLocation.y;
         }
         if (archonOneAlive) {
-            archonOneLocation = commsHandler.readOurArchonLocation(1);
             archonXSum += archonOneLocation.x;
             archonYSum += archonOneLocation.y;
         }
         if (archonTwoAlive) {
-            archonTwoLocation = commsHandler.readOurArchonLocation(2);
             archonXSum += archonTwoLocation.x;
             archonYSum += archonTwoLocation.y;
         }
         if (archonThreeAlive) {
-            archonThreeLocation = commsHandler.readOurArchonLocation(3);
             archonXSum += archonThreeLocation.x;
             archonYSum += archonThreeLocation.y;
         }
@@ -693,19 +685,19 @@ public class Robot {
                 if (!rc.onTheMap(moveLocation)) {
                     continue;
                 }
-                // Include archon repair benefit
+                // Include archon repair benefit, including from archons we know exist that we can't see yet
                 double score = 0;
-                for (int i = 0; i < numOurArchonsAlive; i++) {
-                    // System.out.println(myLocation + " " + moveLocation.distanceSquaredTo(archonLocations[i]) + " " + RobotType.ARCHON.actionRadiusSquared);
-                    if (moveLocation.distanceSquaredTo(archonLocations[i]) <= RobotType.ARCHON.actionRadiusSquared) {
-                        double archonRepairPerTurn = 2.0;
-                        // Repair normalized to per turn by rubble if you can sense
-                        if (rc.canSenseLocation(archonLocations[i])) {
-                            archonRepairPerTurn = (2*rc.senseRobotAtLocation(archonLocations[i]).level) 
-                                                    * 10 / (10.0 + rc.senseRubble(archonLocation));
-                        }
-                        score += archonRepairPerTurn;
-                    }
+                if (archonZeroAlive && moveLocation.distanceSquaredTo(archonZeroLocation) <= RobotType.ARCHON.actionRadiusSquared) {
+                    score += rc.canSenseLocation(archonZeroLocation) ? (2*rc.senseRobotAtLocation(archonZeroLocation).level) * 10 / (10.0 + rc.senseRubble(archonZeroLocation)) : 2.0;
+                }
+                if (archonOneAlive && moveLocation.distanceSquaredTo(archonOneLocation) <= RobotType.ARCHON.actionRadiusSquared) {
+                    score += rc.canSenseLocation(archonOneLocation) ? (2*rc.senseRobotAtLocation(archonOneLocation).level) * 10 / (10.0 + rc.senseRubble(archonOneLocation)) : 2.0;
+                }
+                if (archonTwoAlive && moveLocation.distanceSquaredTo(archonTwoLocation) <= RobotType.ARCHON.actionRadiusSquared) {
+                    score += rc.canSenseLocation(archonTwoLocation) ? (2*rc.senseRobotAtLocation(archonTwoLocation).level) * 10 / (10.0 + rc.senseRubble(archonTwoLocation)) : 2.0;
+                }
+                if (archonThreeAlive && moveLocation.distanceSquaredTo(archonThreeLocation) <= RobotType.ARCHON.actionRadiusSquared) {
+                    score += rc.canSenseLocation(archonThreeLocation) ? (2*rc.senseRobotAtLocation(archonThreeLocation).level) * 10 / (10.0 + rc.senseRubble(archonThreeLocation)) : 2.0;
                 }
                 double enemyCombatHealth = 0.0;
                 double distToNearestEnemy = 1000000.1;
@@ -902,7 +894,6 @@ public class Robot {
     
     public void archonStatusCheck() throws GameActionException {
         numOurArchonsAlive = rc.getArchonCount();
-        archonLocations = new MapLocation[numOurArchonsAlive];
         int idx = 0;
         boolean odd = rc.getRoundNum() % 2 == 1;
         // update each of archons zero through three
@@ -910,40 +901,32 @@ public class Robot {
             if (commsHandler.readOurArchonStatus(0) != (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN)) {
                 archonZeroAlive = false;
                 archonZeroLocation = null;
-            }
-            else {
-                archonLocations[idx] = new MapLocation(commsHandler.readOurArchonXCoord(0), commsHandler.readOurArchonYCoord(0));
-                idx++;
+            } else {
+                archonZeroLocation = commsHandler.readOurArchonLocation(0);
             }
         }
         if (archonOneAlive) {
             if (commsHandler.readOurArchonStatus(1) != (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN)) {
                 archonOneAlive = false;
                 archonOneLocation = null;
-            }
-            else {
-                archonLocations[idx] = new MapLocation(commsHandler.readOurArchonXCoord(1), commsHandler.readOurArchonYCoord(1));
-                idx++;
+            } else {
+                archonOneLocation = commsHandler.readOurArchonLocation(1);
             }
         }
         if (archonTwoAlive) {
             if (commsHandler.readOurArchonStatus(2) != (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN)) {
                 archonTwoAlive = false;
                 archonTwoLocation = null;
-            }
-            else {
-                archonLocations[idx] = new MapLocation(commsHandler.readOurArchonXCoord(2), commsHandler.readOurArchonYCoord(2));
-                idx++;
+            } else {
+                archonTwoLocation = commsHandler.readOurArchonLocation(2);
             }
         }
         if (archonThreeAlive) {
             if (commsHandler.readOurArchonStatus(3) != (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN)) {
                 archonThreeAlive = false;
                 archonThreeLocation = null;
-            }
-            else {
-                archonLocations[idx] = new MapLocation(commsHandler.readOurArchonXCoord(3), commsHandler.readOurArchonYCoord(3));
-                idx++;
+            } else {
+                archonThreeLocation = commsHandler.readOurArchonLocation(3);
             }
         }
     }

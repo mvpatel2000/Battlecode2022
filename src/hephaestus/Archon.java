@@ -62,8 +62,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 94) {
-        //     System.out.println("Symmetry: " + commsHandler.readMapSymmetry());
+        // if (currentRound > 133) {
         //     rc.resign();
         // }
 
@@ -113,6 +112,7 @@ public class Archon extends Robot {
      * @throws GameActionException
      */
     public void portableMove(int nearestCluster) throws GameActionException {
+        MapLocation prevLoc = rc.getLocation();
         // Transform back to turret
         if (turnsUntilLand >= 0) {
             // Move if we can find a lower terrain tile near us
@@ -151,6 +151,9 @@ public class Archon extends Robot {
                                             clusterCentersY[nearestCluster / clusterWidthsLength]);
             pathing.updateDestination(newDest);
             pathing.pathToDestination();
+        }
+        if (prevLoc.distanceSquaredTo(rc.getLocation()) > 0) { // I've moved, update my location
+            commsHandler.writeOurArchonLocation(myArchonNum, myLocation);
         }
     }
 
@@ -931,6 +934,12 @@ public class Archon extends Robot {
                 default:
                     break;
             }
+
+            if (archonZeroAlive) archonZeroLocation = commsHandler.readOurArchonLocation(0);
+            if (archonOneAlive) archonOneLocation = commsHandler.readOurArchonLocation(1);
+            if (archonTwoAlive) archonTwoLocation = commsHandler.readOurArchonLocation(2);
+            if (archonThreeAlive) archonThreeLocation = commsHandler.readOurArchonLocation(3);
+
             lastArchon = false;
             if (myArchonNum == 3)
                 lastArchon = true;
