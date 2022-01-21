@@ -14,14 +14,17 @@ public class Builder extends Robot {
 
         buildOrHealOrUpgrade();
 
-        // move();
+        move();
         
         // Try to act again if we didn't before moving
         buildOrHealOrUpgrade();
     }
 
     public void announceAlive() throws GameActionException {
-        commsHandler.writeWorkerCountBuilders(commsHandler.readWorkerCountBuilders() + 1);
+        int currBuilders = commsHandler.readWorkerCountBuilders();
+        if (currBuilders < 254) {
+            commsHandler.writeWorkerCountBuilders(currBuilders + 1);
+        }
     }
 
     /**

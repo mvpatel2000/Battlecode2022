@@ -10,5 +10,13 @@ public class Laboratory extends Robot {
 
     @Override
     public void runUnit() throws GameActionException { 
+        announceAlive();
+    }
+
+    public void announceAlive() throws GameActionException {
+        int currLaboratories = commsHandler.readBuildingCountLaboratories();
+        if (currLaboratories < 254) {
+            commsHandler.writeBuildingCountLaboratories(currLaboratories + 1);
+        }
     }
 }

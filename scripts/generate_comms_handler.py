@@ -26,6 +26,13 @@ SCHEMA = {
             'sages': 8,
         }
     },
+    'building_count': { # make sure this is in a single int
+        'slots': 1,
+        'bits': {
+            'laboratories': 8,
+            'watchtowers': 8,
+        }
+    },
     'cluster': {
         'slots': 100,
         'bits': {

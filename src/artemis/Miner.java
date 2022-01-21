@@ -54,7 +54,10 @@ public class Miner extends Robot {
     }
 
     public void announceAlive() throws GameActionException {
-        commsHandler.writeWorkerCountMiners(commsHandler.readWorkerCountMiners() + 1);
+        int currMiners = commsHandler.readWorkerCountMiners();
+        if (currMiners < 254) {
+            commsHandler.writeWorkerCountMiners(currMiners + 1);
+        }
     }
 
     /**

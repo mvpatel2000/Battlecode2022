@@ -25,7 +25,10 @@ public class Soldier extends Robot {
     }
 
     public void announceAlive() throws GameActionException {
-        commsHandler.writeFighterCountSoldiers(commsHandler.readFighterCountSoldiers() + 1);
+        int currSoldiers = commsHandler.readFighterCountSoldiers();
+        if (currSoldiers < 254) {
+            commsHandler.writeFighterCountSoldiers(currSoldiers + 1);
+        }
     }
 
     /**

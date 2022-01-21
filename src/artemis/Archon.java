@@ -662,6 +662,8 @@ public class Archon extends Robot {
 
         if (minerCount < initialMiners) {
             toBuild = RobotType.MINER;
+        // } else if (numBuildersBuilt == 0 && soldierCount >= (numOurArchons * 2)) {
+            // toBuild = RobotType.BUILDER;
         } else if (minerCount < rc.getRobotCount() / (Math.max(2.5, (4.5 - resourcesOnMap / 600)))) {
             toBuild = RobotType.MINER;
         }
@@ -694,6 +696,12 @@ public class Archon extends Robot {
                     // System.out.println("Would like to priority build a soldier");
                 }
             }
+        }
+
+        // Highest priority override: if we have gold, just make a sage
+        if (rc.getTeamGoldAmount(allyTeam) >= RobotType.SAGE.buildCostGold) {
+            toBuild = RobotType.SAGE;
+            reservedLead = 0;
         }
 
         // Prioritize building towards resources on low rubble
