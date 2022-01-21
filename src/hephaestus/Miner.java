@@ -28,14 +28,9 @@ public class Miner extends Robot {
         announceAlive();
 
         startLocation = myLocation;
-        requiredLead = distanceToSymmetryLine > 0 ? 1 : 2;
-        int maxScan = Math.min(nearbyEnemies.length, 10);
-        for (int i = 0; i < maxScan; i++) {
-            RobotInfo enemy = nearbyEnemies[i];
-            if (enemy.type == RobotType.ARCHON) {
-                requiredLead = 1;
-            }
-        }
+        
+        determineRequiredLead();
+
         nearbyActionLead = rc.senseNearbyLocationsWithLead(RobotType.MINER.actionRadiusSquared, requiredLead);
         nearbyActionGold = rc.senseNearbyLocationsWithGold(RobotType.MINER.actionRadiusSquared);
         
@@ -57,6 +52,31 @@ public class Miner extends Robot {
         int currMiners = commsHandler.readWorkerCountMiners();
         if (currMiners < 254) {
             commsHandler.writeWorkerCountMiners(currMiners + 1);
+        }
+    }
+
+    public void determineRequiredLead() throws GameActionException {
+        // mine out lead on other side of the map
+        requiredLead = distanceToSymmetryLine > 0 ? 1 : 2;
+        
+        // if we're near an enemy archon, mine out the lead
+        int maxScan = Math.min(nearbyEnemies.length, 10);
+        for (int i = 0; i < maxScan; i++) {
+            RobotInfo enemy = nearbyEnemies[i];
+            if (enemy.type == RobotType.ARCHON) {
+                requiredLead = 1;
+            }
+        }
+
+        // if we're near a friendly archon, don't mine out lead
+        // avoid 100-bytecode call to rc.senseNearbyRobots
+        int nearestFriendlyArchonDist = 0;
+        if (archonZeroAlive) nearestFriendlyArchonDist = Math.max(myLocation.distanceSquaredTo(archonZeroLocation), nearestFriendlyArchonDist);
+        if (archonOneAlive) nearestFriendlyArchonDist = Math.max(myLocation.distanceSquaredTo(archonOneLocation), nearestFriendlyArchonDist);
+        if (archonTwoAlive) nearestFriendlyArchonDist = Math.max(myLocation.distanceSquaredTo(archonTwoLocation), nearestFriendlyArchonDist);
+        if (archonThreeAlive) nearestFriendlyArchonDist = Math.max(myLocation.distanceSquaredTo(archonThreeLocation), nearestFriendlyArchonDist);
+        if (nearestFriendlyArchonDist <= RobotType.MINER.visionRadiusSquared) { // I can see a friendly archon, don't mine
+            requiredLead = 2;
         }
     }
 

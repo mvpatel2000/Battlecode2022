@@ -57,6 +57,11 @@ public class Robot {
     boolean archonOneAlive = true;
     boolean archonTwoAlive = true;
     boolean archonThreeAlive = true;
+    MapLocation archonZeroLocation = null;
+    MapLocation archonOneLocation = null;
+    MapLocation archonTwoLocation = null;
+    MapLocation archonThreeLocation = null;
+
     int numOurArchonsAlive = 0;
 
     /** Array containing all the possible movement directions. */
@@ -510,20 +515,24 @@ public class Robot {
         int archonXSum = 0;
         int archonYSum = 0;
         if (archonZeroAlive) {
-            archonXSum += commsHandler.readOurArchonXCoord(0);
-            archonYSum += commsHandler.readOurArchonYCoord(0);
+            archonZeroLocation = commsHandler.readOurArchonLocation(0);
+            archonXSum += archonZeroLocation.x;
+            archonYSum += archonZeroLocation.y;
         }
         if (archonOneAlive) {
-            archonXSum += commsHandler.readOurArchonXCoord(1);
-            archonYSum += commsHandler.readOurArchonYCoord(1);
+            archonOneLocation = commsHandler.readOurArchonLocation(1);
+            archonXSum += archonOneLocation.x;
+            archonYSum += archonOneLocation.y;
         }
         if (archonTwoAlive) {
-            archonXSum += commsHandler.readOurArchonXCoord(2);
-            archonYSum += commsHandler.readOurArchonYCoord(2);
+            archonTwoLocation = commsHandler.readOurArchonLocation(2);
+            archonXSum += archonTwoLocation.x;
+            archonYSum += archonTwoLocation.y;
         }
         if (archonThreeAlive) {
-            archonXSum += commsHandler.readOurArchonXCoord(3);
-            archonYSum += commsHandler.readOurArchonYCoord(3);
+            archonThreeLocation = commsHandler.readOurArchonLocation(3);
+            archonXSum += archonThreeLocation.x;
+            archonYSum += archonThreeLocation.y;
         }
         MapLocation ourArchonCentroid = new MapLocation(archonXSum/numOurArchonsAlive, archonYSum/numOurArchonsAlive);
         if (symmetry == CommsHandler.MapSymmetry.UNKNOWN || symmetry == CommsHandler.MapSymmetry.ROTATIONAL) {
@@ -884,21 +893,25 @@ public class Robot {
         if (archonZeroAlive) {
             if (commsHandler.readOurArchonStatus(0) != (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN)) {
                 archonZeroAlive = false;
+                archonZeroLocation = null;
             }
         }
         if (archonOneAlive) {
             if (commsHandler.readOurArchonStatus(1) != (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN)) {
                 archonOneAlive = false;
+                archonOneLocation = null;
             }
         }
         if (archonTwoAlive) {
             if (commsHandler.readOurArchonStatus(2) != (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN)) {
                 archonTwoAlive = false;
+                archonTwoLocation = null;
             }
         }
         if (archonThreeAlive) {
             if (commsHandler.readOurArchonStatus(3) != (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN)) {
                 archonThreeAlive = false;
+                archonThreeLocation = null;
             }
         }
         numOurArchonsAlive = rc.getArchonCount();
