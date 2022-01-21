@@ -62,7 +62,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 133) {
+        // if (currentRound > 1129) {
         //     rc.resign();
         // }
 
@@ -380,6 +380,12 @@ public class Archon extends Robot {
         int mineClusterIndex = 0;
         int exploreClusterIndex = 0;
         int emptyExploreClusters = 0;
+        int[] existingCombatSlots = new int[commsHandler.COMBAT_CLUSTER_SLOTS];
+        int[] existingMineSlots = new int[commsHandler.MINE_CLUSTER_SLOTS];
+        int[] existingExploreSlots = new int[commsHandler.EXPLORE_CLUSTER_SLOTS];
+        int existingCombatSlotsIdx = 0;
+        int existingMineSlotsIdx = 0;
+        int existingExploreSlotsIdx = 0;
 
         // String status = "";
         // for (int i = 0; i < commsHandler.COMBAT_CLUSTER_SLOTS; i++) {
@@ -413,6 +419,8 @@ public class Archon extends Robot {
             // Clear combat clusters
             for (int i = 0; i < commsHandler.COMBAT_CLUSTER_SLOTS; i++) {
                 int cluster = commsHandler.readCombatClusterIndex(i);
+                existingCombatSlots[existingCombatSlotsIdx] = cluster;
+                existingCombatSlotsIdx++;
                 if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
                     continue;
                 }
@@ -423,11 +431,14 @@ public class Archon extends Robot {
             // Clear mine slots
             for (int i = 0; i < commsHandler.MINE_CLUSTER_SLOTS; i++) {
                 int cluster = commsHandler.readMineClusterIndex(i);
+                existingMineSlots[existingMineSlotsIdx] = cluster;
+                existingMineSlotsIdx++;
                 if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
                     continue;
                 }
-                int resourceCount = commsHandler.readClusterResourceCount(cluster);
-                int controlStatus = commsHandler.readClusterControlStatus(cluster);
+                int clusterStatus = commsHandler.readClusterAll(cluster);
+                int resourceCount = clusterStatus & 7;
+                int controlStatus = (clusterStatus >> 3) & 7;
                 if (resourceCount == 0 || controlStatus == CommsHandler.ControlStatus.THEIRS) {
                     commsHandler.writeMineClusterIndex(i, commsHandler.UNDEFINED_CLUSTER_INDEX);
                 } else {
@@ -438,6 +449,8 @@ public class Archon extends Robot {
             for (int i = 0; i < commsHandler.EXPLORE_CLUSTER_SLOTS; i++) {
                 int nearestClusterAll = commsHandler.readExploreClusterAll(i);
                 int nearestCluster = nearestClusterAll & 127; // 7 lowest order bits
+                existingExploreSlots[existingExploreSlotsIdx] = nearestCluster;
+                existingExploreSlotsIdx++;
                 if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
                     emptyExploreClusters++;
                     continue;
@@ -474,27 +487,18 @@ public class Archon extends Robot {
             }
 
             // Preserve combat clusters which still have enemies
-            while (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS) {
-                int cluster = commsHandler.readCombatClusterIndex(combatClusterIndex);
-                if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                    break;
-                }
+            while (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS
+                    && existingCombatSlots[combatClusterIndex] != commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 combatClusterIndex++;
             }
             // Preserve mining clusters which still have resources
-            while (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
-                int cluster = commsHandler.readMineClusterIndex(mineClusterIndex);
-                if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                    break;
-                }
+            while (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS 
+                    && existingMineSlots[mineClusterIndex] != commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 mineClusterIndex++;
             }
             // Preserve explore clusters which still have not been claimed
-            while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS) {
-                int nearestCluster = commsHandler.readExploreClusterIndex(exploreClusterIndex);
-                if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                    break;
-                }
+            while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS 
+                    && existingExploreSlots[exploreClusterIndex] != commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 exploreClusterIndex++;
             }
         }
@@ -508,8 +512,9 @@ public class Archon extends Robot {
 
         for (int prePermuteIdx = startIdx; prePermuteIdx < endIdx; prePermuteIdx++) {
             int i = clusterPermutation[prePermuteIdx];
-            int controlStatus = commsHandler.readClusterControlStatus(i);
-            int resourceCount = commsHandler.readClusterResourceCount(i);
+            int clusterStatus = commsHandler.readClusterAll(i);
+            int resourceCount = clusterStatus & 7;
+            int controlStatus = (clusterStatus >> 3) & 7;
 
             // Note: This will cause ghost pings on areas that are cleared out. We need
             // 1 additional bit to indicate empty to avoid ghost pings
@@ -564,7 +569,7 @@ public class Archon extends Robot {
                     // Verify cluster is not already in comms list
                     boolean isValid = true;
                     for (int j = 0; j < commsHandler.COMBAT_CLUSTER_SLOTS; j++) {
-                        if (commsHandler.readCombatClusterIndex(j) == i) {
+                        if (existingCombatSlots[j] == i) {
                             isValid = false;
                             break;
                         }
@@ -574,11 +579,8 @@ public class Archon extends Robot {
                         combatClusterIndex++;
 
                         // Preserve combat clusters which still have enemies
-                        while (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS) {
-                            int cluster = commsHandler.readCombatClusterIndex(combatClusterIndex);
-                            if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                                break;
-                            }
+                        while (combatClusterIndex < commsHandler.COMBAT_CLUSTER_SLOTS
+                                && existingCombatSlots[combatClusterIndex] != commsHandler.UNDEFINED_CLUSTER_INDEX) {
                             combatClusterIndex++;
                         }
                     }
@@ -589,7 +591,7 @@ public class Archon extends Robot {
                     // Verify cluster is not already in comms list
                     boolean isValid = true;
                     for (int j = 0; j < commsHandler.MINE_CLUSTER_SLOTS; j++) {
-                        if (commsHandler.readMineClusterIndex(j) == i) {
+                        if (existingMineSlots[j] == i) {
                             isValid = false;
                             break;
                         }
@@ -599,11 +601,8 @@ public class Archon extends Robot {
                         mineClusterIndex++;
 
                         // Preserve mining clusters which still have resources
-                        while (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS) {
-                            int cluster = commsHandler.readMineClusterIndex(mineClusterIndex);
-                            if (cluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                                break;
-                            }
+                        while (mineClusterIndex < commsHandler.MINE_CLUSTER_SLOTS 
+                                && existingMineSlots[mineClusterIndex] != commsHandler.UNDEFINED_CLUSTER_INDEX) {
                             mineClusterIndex++;
                         }
                     }
@@ -614,7 +613,7 @@ public class Archon extends Robot {
                     // Verify cluster is not already in comms list
                     boolean isValid = true;
                     for (int j = 0; j < commsHandler.EXPLORE_CLUSTER_SLOTS; j++) {
-                        if (commsHandler.readExploreClusterIndex(j) == i) {
+                        if (existingExploreSlots[j] == i) {
                             isValid = false;
                             break;
                         }
@@ -625,11 +624,8 @@ public class Archon extends Robot {
                         exploreClusterIndex++;
 
                         // Preserve explore clusters which still have not been claimed
-                        while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS) {
-                            int nearestCluster = commsHandler.readExploreClusterIndex(exploreClusterIndex);
-                            if (nearestCluster == commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                                break;
-                            }
+                        while (exploreClusterIndex < commsHandler.EXPLORE_CLUSTER_SLOTS 
+                                && existingExploreSlots[exploreClusterIndex] != commsHandler.UNDEFINED_CLUSTER_INDEX) {
                             exploreClusterIndex++;
                         }
                     }
@@ -804,7 +800,9 @@ public class Archon extends Robot {
         MapLocation optimalRepair = null;
         int remainingHealth = existEnemies ? Integer.MAX_VALUE : Integer.MIN_VALUE;
         boolean optimalPriority = false;
-        for (RobotInfo ally : nearbyAllies) {
+        int length = Math.min(nearbyAllies.length, 15);
+        for (int i = 0; i < length; i++) {
+            RobotInfo ally = nearbyAllies[i];
             if (ally.type == RobotType.ARCHON) {
                 numFriendlyArchons++;
             }

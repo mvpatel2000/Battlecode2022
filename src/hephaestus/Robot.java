@@ -896,7 +896,6 @@ public class Robot {
     
     public void archonStatusCheck() throws GameActionException {
         numOurArchonsAlive = rc.getArchonCount();
-        int idx = 0;
         boolean odd = rc.getRoundNum() % 2 == 1;
         // update each of archons zero through three
         if (archonZeroAlive) {
