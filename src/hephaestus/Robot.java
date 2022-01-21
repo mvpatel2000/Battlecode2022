@@ -58,6 +58,7 @@ public class Robot {
     boolean archonTwoAlive = true;
     boolean archonThreeAlive = true;
     int numOurArchonsAlive = 0;
+    MapLocation[] archonLocations;
 
     /** Array containing all the possible movement directions. */
     final Direction[] directionsWithoutCenter = {
@@ -644,17 +645,19 @@ public class Robot {
         double combatAllyHealth = 0.0;
         int allyCount = 0;
         MapLocation archonLocation = null;
-        double repairPerTurn = 0;
+        // double repairPerTurn = 0;
         RobotInfo[] allies = rc.senseNearbyRobots(RobotType.SOLDIER.visionRadiusSquared, allyTeam);
         for (RobotInfo ally : allies) {
             if (ally.type == RobotType.WATCHTOWER || (ally.type == RobotType.SOLDIER && ally.health > FLEE_HEALTH)) { // && ally.health > FLEE_HEALTH
                 combatAllyHealth += ally.health;
-                allyCount++;
+                if (myLocation.distanceSquaredTo(ally.location) <= 5) {
+                    allyCount++;
+                }
             }
             else if (ally.type == RobotType.ARCHON && ally.mode == RobotMode.TURRET) {
                 archonLocation = ally.location;
                 // Repair normalized to per turn by rubble
-                repairPerTurn = (2*ally.level) * 10 / (10.0 + rc.senseRubble(archonLocation));
+                // repairPerTurn = (2*ally.level) * 10 / (10.0 + rc.senseRubble(archonLocation));
             }
         }
         // boolean isPositionReinforced = rc.getHealth() > 30 && ((archonLocation != null) || (combatAllies - nearbyEnemies.length >= 2));
@@ -667,6 +670,9 @@ public class Robot {
             }
         }
 
+        // TODO: Add in archon locations, theyre always communicated
+
+        // Note that allies must be r^2 <= 5 to be counted here
         boolean oneVersusOne = allyCount == 0 && enemySoldiers == 1;
         // System.out.println(myLocation + " " + oneVersusOne + " " + allyCount + " " + enemySoldiers);
 
@@ -680,9 +686,17 @@ public class Robot {
                 }
                 // Include archon repair benefit
                 double score = 0;
-                if (archonLocation != null 
-                    && myLocation.distanceSquaredTo(archonLocation) <= RobotType.ARCHON.actionRadiusSquared) {
-                    score += repairPerTurn;
+                for (int i = 0; i < numOurArchonsAlive; i++) {
+                    // System.out.println(myLocation + " " + moveLocation.distanceSquaredTo(archonLocations[i]) + " " + RobotType.ARCHON.actionRadiusSquared);
+                    if (moveLocation.distanceSquaredTo(archonLocations[i]) <= RobotType.ARCHON.actionRadiusSquared) {
+                        double archonRepairPerTurn = 2.0;
+                        // Repair normalized to per turn by rubble if you can sense
+                        if (rc.canSenseLocation(archonLocations[i])) {
+                            archonRepairPerTurn = (2*rc.senseRobotAtLocation(archonLocations[i]).level) 
+                                                    * 10 / (10.0 + rc.senseRubble(archonLocation));
+                        }
+                        score += archonRepairPerTurn;
+                    }
                 }
                 double enemyCombatHealth = 0.0;
                 double distToNearestEnemy = 1000000.1;
@@ -697,7 +711,7 @@ public class Robot {
                             || enemy.type == RobotType.SAGE)) {
                         double enemyRubbleFactor = 10 / (10.0 + (rc.senseRubble(enemy.location)));
                         enemyCombatHealth += enemy.getHealth() * enemyRubbleFactor;
-                        double enemyDist = myLocation.distanceSquaredTo(enemy.location);
+                        double enemyDist = moveLocation.distanceSquaredTo(enemy.location);
                         if (enemyDist < distToNearestEnemy) {
                             distToNearestEnemy = enemyDist;
                             nearestEnemyLoc = enemy.location;
@@ -740,17 +754,16 @@ public class Robot {
                     double viewOnlyMultiplier = canAttack ? 1.0 : GAMMA;
                     score += RobotType.SOLDIER.damage * myRubbleFactor * viewOnlyMultiplier;
                     // System.out.println(myLocation + " " + oneVersusOne + " " + distToNearestEnemy);
-                    // 1v1: Pursue if higher health, otherwise flee
-                    if (oneVersusOne && distToNearestEnemy < 1000000.0) {
-                        rc.setIndicatorString(oneVersusOne + " " + ((rc.getHealth() * myRubbleFactor - enemyCombatHealth) * distToNearestEnemy / 10000.0));
-                        // System.out.println("Chase: " + ((rc.getHealth() * myRubbleFactor - enemyCombatHealth) * distToNearestEnemy /10000.0));
-                        score += (rc.getHealth() * myRubbleFactor - enemyCombatHealth) * distToNearestEnemy / 10000.0;
-                    }
                     score -= enemyHeal;
+                }
+                // 1v1: Pursue if higher health, otherwise flee. Tiebreak in favor of aggression since striking first wins
+                if (oneVersusOne && distToNearestEnemy < 1000000.0) {
+                    // System.out.println("Chase: " + (((rc.getHealth()+0.01) * myRubbleFactor - enemyCombatHealth) * distToNearestEnemy /10000.0));
+                    score += ((rc.getHealth() + 0.01) * myRubbleFactor - enemyCombatHealth) * (-distToNearestEnemy) / 10000.0;
                 }
                 // Tiebreaker
                 if (dir == Direction.CENTER) {
-                    score += 0.00001;
+                    score += 0.000000001;
                 }
                 // System.out.println(myLocation + " " + dir + " " + score);
                 // Add rubble movement factor, often serves as a tiebreak for flee
@@ -879,29 +892,47 @@ public class Robot {
     }
     
     public void archonStatusCheck() throws GameActionException {
+        numOurArchonsAlive = rc.getArchonCount();
+        archonLocations = new MapLocation[numOurArchonsAlive];
+        int idx = 0;
         boolean odd = rc.getRoundNum() % 2 == 1;
         // update each of archons zero through three
         if (archonZeroAlive) {
             if (commsHandler.readOurArchonStatus(0) != (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN)) {
                 archonZeroAlive = false;
             }
+            else {
+                archonLocations[idx] = new MapLocation(commsHandler.readOurArchonXCoord(0), commsHandler.readOurArchonYCoord(0));
+                idx++;
+            }
         }
         if (archonOneAlive) {
             if (commsHandler.readOurArchonStatus(1) != (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN)) {
                 archonOneAlive = false;
+            }
+            else {
+                archonLocations[idx] = new MapLocation(commsHandler.readOurArchonXCoord(1), commsHandler.readOurArchonYCoord(1));
+                idx++;
             }
         }
         if (archonTwoAlive) {
             if (commsHandler.readOurArchonStatus(2) != (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN)) {
                 archonTwoAlive = false;
             }
+            else {
+                archonLocations[idx] = new MapLocation(commsHandler.readOurArchonXCoord(2), commsHandler.readOurArchonYCoord(2));
+                idx++;
+            }
         }
         if (archonThreeAlive) {
             if (commsHandler.readOurArchonStatus(3) != (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN)) {
                 archonThreeAlive = false;
             }
+            else {
+                archonLocations[idx] = new MapLocation(commsHandler.readOurArchonXCoord(3), commsHandler.readOurArchonYCoord(3));
+                idx++;
+            }
         }
-        numOurArchonsAlive = rc.getArchonCount();
     }
 
     public void setupClusters() {
