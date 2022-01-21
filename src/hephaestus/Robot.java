@@ -694,8 +694,14 @@ public class Robot {
                         double archonRepairPerTurn = 2.0;
                         // Repair normalized to per turn by rubble if you can sense
                         if (rc.canSenseLocation(archonLocations[i])) {
-                            archonRepairPerTurn = (2*rc.senseRobotAtLocation(archonLocations[i]).level) 
+                            RobotInfo archon = rc.senseRobotAtLocation(archonLocations[i]);
+                            if (archon != null) {
+                                archonRepairPerTurn = (2*archon.level) 
                                                     * 10 / (10.0 + rc.senseRubble(archonLocations[i]));
+                            }
+                            else {
+                                System.out.println(archonLocations[i] + " " + archon);
+                            }
                         }
                         score += archonRepairPerTurn;
                     }
