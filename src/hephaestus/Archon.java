@@ -62,7 +62,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 450) {
+        // if (currentRound > 100) {
         //     System.out.println("Symmetry: " + commsHandler.readMapSymmetry());
         //     rc.resign();
         // }
@@ -669,7 +669,7 @@ public class Archon extends Robot {
             reservedGold = 0;
         }
 
-        RobotType toBuild = rng.nextDouble() < 0.5 ? RobotType.SOLDIER : RobotType.BUILDER;
+        RobotType toBuild = rng.nextDouble() < 0.5 ? RobotType.SOLDIER : RobotType.SOLDIER;
         int initialMiners = Math.max(4, (int) ((mapHeight * mapWidth / 240) + 3)); // 4-18
         // int initialMiners = (mapHeight * mapWidth / 200) + 2;
 
@@ -813,8 +813,8 @@ public class Archon extends Robot {
                                 && (ally.type == RobotType.SOLDIER || (ally.type == RobotType.MINER && ally.health <= 9));
                 // Either ally is priority or both current priority and ally priority are false
                 boolean isHigherPriority = allyPriority || optimalPriority == allyPriority;
-                if (rc.canRepair(ally.location) && isHigherPriority
-                        && ((existEnemies && ally.health < remainingHealth)
+                if (rc.canRepair(ally.location)
+                        && (isHigherPriority || (existEnemies && ally.health < remainingHealth)
                         || (!existEnemies && ally.health > remainingHealth))) {
                     optimalPriority = allyPriority;
                     optimalRepair = ally.location;
@@ -824,7 +824,6 @@ public class Archon extends Robot {
         }
         if (optimalRepair != null && rc.canRepair(optimalRepair)) {
             rc.repair(optimalRepair);
-            // System.out.println("Repairing " + optimalRepair);
         }
         double myRubbleFactor = 10 / (10.0 + rc.senseRubble(myLocation));
         boolean shouldAcceptPatients = amountToRepair >= HOSPITAL_SIZE * myRubbleFactor * (numFriendlyArchons + 1);

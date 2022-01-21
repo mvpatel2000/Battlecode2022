@@ -641,13 +641,15 @@ public class Robot {
     public void combatKiteMove() throws GameActionException {
         boolean isNotSageOrIsActionReady = rc.getType() != RobotType.SAGE || rc.isActionReady();
 
-        int combatAllies = 0;
+        double combatAllyHealth = 0.0;
+        int allyCount = 0;
         MapLocation archonLocation = null;
         double repairPerTurn = 0;
         RobotInfo[] allies = rc.senseNearbyRobots(RobotType.SOLDIER.visionRadiusSquared, allyTeam);
         for (RobotInfo ally : allies) {
             if (ally.type == RobotType.WATCHTOWER || (ally.type == RobotType.SOLDIER && ally.health > FLEE_HEALTH)) { // && ally.health > FLEE_HEALTH
-                combatAllies++;
+                combatAllyHealth += ally.health;
+                allyCount++;
             }
             else if (ally.type == RobotType.ARCHON && ally.mode == RobotMode.TURRET) {
                 archonLocation = ally.location;
@@ -657,6 +659,16 @@ public class Robot {
         }
         // boolean isPositionReinforced = rc.getHealth() > 30 && ((archonLocation != null) || (combatAllies - nearbyEnemies.length >= 2));
         boolean isPositionReinforced = archonLocation != null && rc.getHealth() > 10;
+
+        int enemySoldiers = 0;
+        for (RobotInfo enemy : nearbyEnemies) {
+            if (enemy.type == RobotType.SOLDIER) {
+                enemySoldiers++;
+            }
+        }
+
+        boolean oneVersusOne = allyCount == 0 && enemySoldiers == 1;
+        // System.out.println(myLocation + " " + oneVersusOne + " " + allyCount + " " + enemySoldiers);
 
         Direction optimalDirection = null;
         double optimalScore = -999.0;
@@ -677,10 +689,10 @@ public class Robot {
                 MapLocation nearestEnemyLoc = null;
                 boolean canAttack = false;
                 boolean canView = false;
+                double enemyHeal = 0.0;
                 for (RobotInfo enemy : nearbyEnemies) {
                     // Penalize by their damage per turn times how long I will be there
-                    if (!isPositionReinforced &&
-                            (enemy.type == RobotType.WATCHTOWER && enemy.mode == RobotMode.TURRET 
+                    if ((enemy.type == RobotType.WATCHTOWER && enemy.mode == RobotMode.TURRET 
                             || enemy.type == RobotType.SOLDIER
                             || enemy.type == RobotType.SAGE)) {
                         double enemyRubbleFactor = 10 / (10.0 + (rc.senseRubble(enemy.location)));
@@ -690,22 +702,24 @@ public class Robot {
                             distToNearestEnemy = enemyDist;
                             nearestEnemyLoc = enemy.location;
                         }
-                        // They can hit me, full points off
-                        if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared) {
-                            score -= enemy.type.getDamage(enemy.level) * enemyRubbleFactor;
-                            // System.out.println("  hit: " + (-enemy.type.getDamage(enemy.level) * enemyRubbleFactor));
-                        }
-                        // They can see me. If they step in, I can start shooting but they can too, so normalize by rubble
-                        else if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.visionRadiusSquared) {
-                            score -= GAMMA * enemy.type.getDamage(enemy.level) * enemyRubbleFactor;
-                            // System.out.println("  view: " + (-enemy.type.getDamage(enemy.level) * enemyRubbleFactor) + " " + enemy.location);
-                            canView = true;
+                        if (!isPositionReinforced) {
+                            // They can hit me, full points off
+                            if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared) {
+                                score -= enemy.type.getDamage(enemy.level) * enemyRubbleFactor;
+                                // System.out.println("  hit: " + (-enemy.type.getDamage(enemy.level) * enemyRubbleFactor));
+                            }
+                            // They can see me. If they step in, I can start shooting but they can too, so normalize by rubble
+                            else if (moveLocation.distanceSquaredTo(enemy.location) <= enemy.type.visionRadiusSquared) {
+                                score -= GAMMA * enemy.type.getDamage(enemy.level) * enemyRubbleFactor;
+                                // System.out.println("  view: " + (-enemy.type.getDamage(enemy.level) * enemyRubbleFactor) + " " + enemy.location);
+                                canView = true;
+                            }
                         }
                     }
                     // Factor in enemy archon repair
                     if (!isPositionReinforced && enemy.type == RobotType.ARCHON && nearbyEnemies.length > 1) {
                         double enemyRubbleFactor = 10 / (10.0 + rc.senseRubble(enemy.location));
-                        score -= enemy.level * 2 * enemyRubbleFactor;
+                        enemyHeal += enemy.level * 2 * enemyRubbleFactor;
                     }
                     // See if you can attack anyone
                     if (moveLocation.distanceSquaredTo(enemy.location) <= RobotType.SOLDIER.actionRadiusSquared) {
@@ -724,12 +738,15 @@ public class Robot {
                 if (isNotSageOrIsActionReady && (canAttack || canView)) {
                     // System.out.println("  Shoot: " + (RobotType.SOLDIER.damage * myRubbleFactor));
                     double viewOnlyMultiplier = canAttack ? 1.0 : GAMMA;
-                    score += RobotType.SOLDIER.damage * myRubbleFactor  * viewOnlyMultiplier;
-                    // Pursue if higher health, otherwise flee
-                    // if (distToNearestEnemy < 1000000.0) {
-                    //     // System.out.println("Chase: " + ((rc.getHealth() * myRubbleFactor - enemyCombatHealth) * distToNearestEnemy /10000.0));
-                    //     score += (rc.getHealth() * myRubbleFactor - enemyCombatHealth) * distToNearestEnemy /10000.0;
-                    // }
+                    score += RobotType.SOLDIER.damage * myRubbleFactor * viewOnlyMultiplier;
+                    // System.out.println(myLocation + " " + oneVersusOne + " " + distToNearestEnemy);
+                    // 1v1: Pursue if higher health, otherwise flee
+                    if (oneVersusOne && distToNearestEnemy < 1000000.0) {
+                        rc.setIndicatorString(oneVersusOne + " " + ((rc.getHealth() * myRubbleFactor - enemyCombatHealth) * distToNearestEnemy / 10000.0));
+                        // System.out.println("Chase: " + ((rc.getHealth() * myRubbleFactor - enemyCombatHealth) * distToNearestEnemy /10000.0));
+                        score += (rc.getHealth() * myRubbleFactor - enemyCombatHealth) * distToNearestEnemy / 10000.0;
+                    }
+                    score -= enemyHeal;
                 }
                 // Tiebreaker
                 if (dir == Direction.CENTER) {
