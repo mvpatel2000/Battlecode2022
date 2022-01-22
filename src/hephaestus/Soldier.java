@@ -22,6 +22,7 @@ public class Soldier extends Robot {
         // disintegrate();
     }
 
+    @Override
     public void announceAlive() throws GameActionException {
         int currSoldiers = commsHandler.readFighterCountSoldiers();
         if (currSoldiers < 254) {

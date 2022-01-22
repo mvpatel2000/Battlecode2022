@@ -10,6 +10,8 @@ public class Builder extends Robot {
     int reservedLead = 0;
     int reservedGold = 0;
 
+    boolean shouldMakeLaboratory = false;
+
     public Builder(RobotController rc) throws GameActionException {
         super(rc);
     }
@@ -18,14 +20,17 @@ public class Builder extends Robot {
     public void runUnit() throws GameActionException { 
         announceAlive();
 
-        buildOrHealOrUpgrade();
+        if (commsHandler.readBuilderQueueLaboratory() == CommsHandler.BuilderQueue.REQUESTED) {
+            shouldMakeLaboratory = true;
+        }
 
-        move();
+        buildOrHealOrUpgrade();
         
         // Try to act again if we didn't before moving
         buildOrHealOrUpgrade();
     }
 
+    @Override
     public void announceAlive() throws GameActionException {
         int currBuilders = commsHandler.readWorkerCountBuilders();
         if (currBuilders < 254) {
@@ -42,9 +47,25 @@ public class Builder extends Robot {
         if (!rc.isActionReady()) {
             return;
         }
-        if (reservedLead > 0) {
-            commsHandler.writeReservedResourcesLead(commsHandler.readReservedResourcesLead() - reservedLead);
-            reservedLead = 0;
+        // if a laboratory has been requested, make one
+        if (shouldMakeLaboratory) {
+            // TODO: route to edge of map and place laboratory on a 0-rubble tile
+            Direction optimalDir = null;
+            int optimalRubble = Integer.MAX_VALUE;
+            for (Direction dir : directionsWithoutCenter) {
+                if (rc.canBuildRobot(RobotType.LABORATORY, dir)) {
+                    int rubble = rc.senseRubble(myLocation.add(dir));
+                    if (rubble < optimalRubble) {
+                        optimalDir = dir;
+                        optimalRubble = rubble;
+                    }
+                }
+            }
+            if (optimalDir != null && rc.getTeamLeadAmount(allyTeam) >= RobotType.LABORATORY.buildCostLead) {
+                rc.buildRobot(RobotType.LABORATORY, optimalDir);
+                commsHandler.writeBuilderQueueLaboratory(CommsHandler.BuilderQueue.NONE);
+                shouldMakeLaboratory = false;
+            }
         }
         // Heal nearby buildings
         RobotInfo[] allies = rc.senseNearbyRobots(RobotType.BUILDER.actionRadiusSquared, allyTeam);
@@ -61,10 +82,9 @@ public class Builder extends Robot {
         if (repairLocation != null && rc.canRepair(repairLocation)) {
             rc.repair(repairLocation);
         }
-        // priority build watchtower if in danger and didn't heal
+        // build watchtower if in danger and didn't heal
         if (rc.isActionReady()) {
             if (nearbyEnemies.length > 0) {
-                reservedLead = RobotType.WATCHTOWER.buildCostLead / LEAD_RESERVE_SCALE;
                 Direction optimalDir = null;
                 int optimalRubble = Integer.MAX_VALUE;
                 for (Direction dir : directionsWithoutCenter) {
@@ -80,15 +100,6 @@ public class Builder extends Robot {
                     && rc.getTeamLeadAmount(allyTeam) >= RobotType.WATCHTOWER.buildCostLead + commsHandler.readReservedResourcesLead() * LEAD_RESERVE_SCALE
                     && rc.canBuildRobot(RobotType.WATCHTOWER, optimalDir)) {
                     rc.buildRobot(RobotType.WATCHTOWER, optimalDir);
-                    reservedLead = 0;
-                } else {
-                    if (reservedLead > 0) { // can't build now, reserve resources for it
-                        if (commsHandler.readReservedResourcesLead() + reservedLead < 1024) {
-                            commsHandler.writeReservedResourcesLead(commsHandler.readReservedResourcesLead() + reservedLead);
-                        } else {
-                            reservedLead = 0;
-                        }
-                    }
                 }
             }
         }
@@ -166,9 +177,20 @@ public class Builder extends Robot {
             }
         }
 
-        // Navigate to nearest found enemy
         int nearestCluster = getNearestCombatCluster();
-        if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+        // Run away from nearest enemy if we're tasked to make a lab
+        if (shouldMakeLaboratory) {
+            resetControlStatus(pathing.destination);
+            if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                pathing.updateDestination(new MapLocation(20 * myLocation.x - 19 * clusterCentersX[nearestCluster % clusterWidthsLength],
+                                                20 * myLocation.y - 19 * clusterCentersY[nearestCluster / clusterWidthsLength]));
+            } else {
+                pathing.updateDestination(new MapLocation(20 * myLocation.x - 19 * ((mapWidth - 1)/2),
+                                                20 * myLocation.y - 19 * ((mapHeight - 1)/2)));
+            }
+        }
+        // Navigate to nearest found enemy
+        else if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
             resetControlStatus(pathing.destination);
             pathing.updateDestination(new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                             clusterCentersY[nearestCluster / clusterWidthsLength]));

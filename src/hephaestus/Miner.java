@@ -44,10 +44,9 @@ public class Miner extends Robot {
             nearbyActionGold = rc.senseNearbyLocationsWithGold(RobotType.MINER.actionRadiusSquared);
             mineNearbySquares();
         }
-
-        // disintegrate();
     }
 
+    @Override
     public void announceAlive() throws GameActionException {
         int currMiners = commsHandler.readWorkerCountMiners();
         if (currMiners < 254) {

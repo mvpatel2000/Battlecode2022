@@ -18,6 +18,7 @@ public class CommsHandler {
     final int LAST_ARCHON_SLOTS = 1;
     final int RESERVED_RESOURCES_SLOTS = 1;
     final int MAP_SLOTS = 1;
+    final int BUILDER_QUEUE_SLOTS = 1;
 
     public class ArchonStatus {
         public static final int DEAD = 0;
@@ -44,12 +45,9 @@ public class CommsHandler {
         public static final int UNCLAIMED = 0;
         public static final int CLAIMED = 1;
     }
-    public class ReserveUnit {
+    public class BuilderQueue {
         public static final int NONE = 0;
-        public static final int MINER = 1;
-        public static final int SOLDIER = 2;
-        public static final int SAGE = 3;
-        public static final int BUILDER = 4;
+        public static final int REQUESTED = 1;
     }
 
     final int UNDEFINED_CLUSTER_INDEX = 127;
@@ -2559,5 +2557,29 @@ public class CommsHandler {
 
     public void writeMapAll(int value) throws GameActionException {
         rc.writeSharedArray(61, (rc.readSharedArray(61) & 62463) | (value << 10));
+    }
+
+    public int readBuilderQueueLaboratory() throws GameActionException {
+        return (rc.readSharedArray(61) & 512) >>> 9;
+    }
+
+    public void writeBuilderQueueLaboratory(int value) throws GameActionException {
+        rc.writeSharedArray(61, (rc.readSharedArray(61) & 65023) | (value << 9));
+    }
+
+    public int readBuilderQueueWatchtower() throws GameActionException {
+        return (rc.readSharedArray(61) & 256) >>> 8;
+    }
+
+    public void writeBuilderQueueWatchtower(int value) throws GameActionException {
+        rc.writeSharedArray(61, (rc.readSharedArray(61) & 65279) | (value << 8));
+    }
+
+    public int readBuilderQueueAll() throws GameActionException {
+        return (rc.readSharedArray(61) & 768) >>> 8;
+    }
+
+    public void writeBuilderQueueAll(int value) throws GameActionException {
+        rc.writeSharedArray(61, (rc.readSharedArray(61) & 64767) | (value << 8));
     }
 }

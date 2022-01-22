@@ -78,6 +78,13 @@ SCHEMA = {
         'bits': {
             'symmetry': 2
         }
+    },
+    'builder_queue': {
+        'slots': 1,
+        'bits': {
+            'laboratory': 1,
+            'watchtower': 1,
+        }
     }
 }
 

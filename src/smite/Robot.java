@@ -19,6 +19,7 @@ public class Robot {
     int mapWidth;
     int numOurArchons;
     double distanceToSymmetryLine;
+    MapLocation ourArchonCentroid;
 
     // Cache sensing
     RobotInfo[] nearbyEnemies;
@@ -175,6 +176,8 @@ public class Robot {
             updateSymmetry();
             // //System.out.println\("Bytecodes left after symmetry: " + Clock.getBytecodesLeft());
         }
+
+        checkTLE();
     }
 
     /**
@@ -182,6 +185,18 @@ public class Robot {
      * all unit-specific run stuff happens.
      */
     public void runUnit() throws GameActionException {
+    }
+
+    public void checkTLE() throws GameActionException {
+        if (rc.getRoundNum() > currentRound) {
+            //System.out.println\("I TLE'd");
+            currentRound = rc.getRoundNum();
+            announceAlive();
+        }
+    }
+
+    // To be overridden by children
+    public void announceAlive() throws GameActionException {
     }
 
     /**
@@ -527,7 +542,7 @@ public class Robot {
             archonXSum += archonThreeLocation.x;
             archonYSum += archonThreeLocation.y;
         }
-        MapLocation ourArchonCentroid = new MapLocation(archonXSum/numOurArchonsAlive, archonYSum/numOurArchonsAlive);
+        ourArchonCentroid = new MapLocation(archonXSum/numOurArchonsAlive, archonYSum/numOurArchonsAlive);
         if (symmetry == CommsHandler.MapSymmetry.UNKNOWN || symmetry == CommsHandler.MapSymmetry.ROTATIONAL) {
             double orthoVecX = ourArchonCentroid.x - ((mapWidth - 1) / 2.0);
             double orthoVecY = ourArchonCentroid.y - ((mapHeight - 1) / 2.0);
@@ -642,13 +657,14 @@ public class Robot {
      */
     public void combatKiteMove() throws GameActionException {
         boolean isNotSageOrIsActionReady = rc.getType() != RobotType.SAGE || rc.isActionReady();
+        boolean atMaxHealth = rc.getHealth() == rc.getType().getMaxHealth(rc.getLevel());
 
         double combatAllyHealth = 0.0;
         int allyCount = 0;
         boolean isArchonVisible = false;
         // MapLocation archonLocation = null;
         // double repairPerTurn = 0;
-        RobotInfo[] allies = rc.senseNearbyRobots(RobotType.SOLDIER.visionRadiusSquared, allyTeam);
+        RobotInfo[] allies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, allyTeam);
         int alliesLength = Math.min(allies.length, 10);
         for (int i = 0; i < alliesLength; i++) {
             RobotInfo ally = allies[i];
@@ -691,17 +707,19 @@ public class Robot {
                 }
                 // Include archon repair benefit, including from archons we know exist that we can't see yet
                 double score = 0;
-                if (archonZeroAlive && moveLocation.distanceSquaredTo(archonZeroLocation) <= RobotType.ARCHON.actionRadiusSquared) {
-                    score += rc.canSenseLocation(archonZeroLocation) ? (2*rc.senseRobotAtLocation(archonZeroLocation).level) * 10 / (10.0 + rc.senseRubble(archonZeroLocation)) : 2.0;
-                }
-                if (archonOneAlive && moveLocation.distanceSquaredTo(archonOneLocation) <= RobotType.ARCHON.actionRadiusSquared) {
-                    score += rc.canSenseLocation(archonOneLocation) ? (2*rc.senseRobotAtLocation(archonOneLocation).level) * 10 / (10.0 + rc.senseRubble(archonOneLocation)) : 2.0;
-                }
-                if (archonTwoAlive && moveLocation.distanceSquaredTo(archonTwoLocation) <= RobotType.ARCHON.actionRadiusSquared) {
-                    score += rc.canSenseLocation(archonTwoLocation) ? (2*rc.senseRobotAtLocation(archonTwoLocation).level) * 10 / (10.0 + rc.senseRubble(archonTwoLocation)) : 2.0;
-                }
-                if (archonThreeAlive && moveLocation.distanceSquaredTo(archonThreeLocation) <= RobotType.ARCHON.actionRadiusSquared) {
-                    score += rc.canSenseLocation(archonThreeLocation) ? (2*rc.senseRobotAtLocation(archonThreeLocation).level) * 10 / (10.0 + rc.senseRubble(archonThreeLocation)) : 2.0;
+                if (!atMaxHealth) {
+                    if (archonZeroAlive && moveLocation.distanceSquaredTo(archonZeroLocation) <= RobotType.ARCHON.actionRadiusSquared) {
+                        score += rc.canSenseLocation(archonZeroLocation) ? (2*rc.senseRobotAtLocation(archonZeroLocation).level) * 10 / (10.0 + rc.senseRubble(archonZeroLocation)) : 2.0;
+                    }
+                    if (archonOneAlive && moveLocation.distanceSquaredTo(archonOneLocation) <= RobotType.ARCHON.actionRadiusSquared) {
+                        score += rc.canSenseLocation(archonOneLocation) ? (2*rc.senseRobotAtLocation(archonOneLocation).level) * 10 / (10.0 + rc.senseRubble(archonOneLocation)) : 2.0;
+                    }
+                    if (archonTwoAlive && moveLocation.distanceSquaredTo(archonTwoLocation) <= RobotType.ARCHON.actionRadiusSquared) {
+                        score += rc.canSenseLocation(archonTwoLocation) ? (2*rc.senseRobotAtLocation(archonTwoLocation).level) * 10 / (10.0 + rc.senseRubble(archonTwoLocation)) : 2.0;
+                    }
+                    if (archonThreeAlive && moveLocation.distanceSquaredTo(archonThreeLocation) <= RobotType.ARCHON.actionRadiusSquared) {
+                        score += rc.canSenseLocation(archonThreeLocation) ? (2*rc.senseRobotAtLocation(archonThreeLocation).level) * 10 / (10.0 + rc.senseRubble(archonThreeLocation)) : 2.0;
+                    }
                 }
                 double enemyCombatHealth = 0.0;
                 double distToNearestEnemy = 1000000.1;
@@ -777,7 +795,9 @@ public class Robot {
                 if (dir == Direction.CENTER) {
                     score += 0.000000001;
                 }
-                // //System.out.println\(myLocation + " " + dir + " " + score);
+                // if (rc.getType() == RobotType.SAGE) {
+                //     //System.out.println\(myLocation + " " + dir + " " + score);
+                // }
                 // Add rubble movement factor, often serves as a tiebreak for flee
                 score += myRubbleFactor;
                 if (score > optimalScore) {
@@ -869,7 +889,7 @@ public class Robot {
      * @throws GameActionException
      */
     public void resetControlStatus(MapLocation loc) throws GameActionException {
-        if (exploreMode) {
+        if (exploreMode && loc.x >= 0 && loc.x < mapWidth && loc.y >= 0 && loc.y < mapHeight) {
             int cluster = whichXLoc[loc.x] + whichYLoc[loc.y]; 
             if (commsHandler.readClusterControlStatus(cluster) == CommsHandler.ControlStatus.EXPLORING) {
                 commsHandler.writeClusterControlStatus(cluster, CommsHandler.ControlStatus.UNKNOWN);

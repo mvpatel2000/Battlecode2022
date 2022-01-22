@@ -14,6 +14,7 @@ public class Watchtower extends Robot {
         attack();
     }
 
+    @Override
     public void announceAlive() throws GameActionException {
         int currWatchtowers = commsHandler.readBuildingCountWatchtowers();
         if (currWatchtowers < 254) {

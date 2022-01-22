@@ -19,6 +19,7 @@ public class Robot {
     int mapWidth;
     int numOurArchons;
     double distanceToSymmetryLine;
+    MapLocation ourArchonCentroid;
 
     // Cache sensing
     RobotInfo[] nearbyEnemies;
@@ -175,6 +176,8 @@ public class Robot {
             updateSymmetry();
             // System.out.println("Bytecodes left after symmetry: " + Clock.getBytecodesLeft());
         }
+
+        checkTLE();
     }
 
     /**
@@ -182,6 +185,18 @@ public class Robot {
      * all unit-specific run stuff happens.
      */
     public void runUnit() throws GameActionException {
+    }
+
+    public void checkTLE() throws GameActionException {
+        if (rc.getRoundNum() > currentRound) {
+            System.out.println("I TLE'd");
+            currentRound = rc.getRoundNum();
+            announceAlive();
+        }
+    }
+
+    // To be overridden by children
+    public void announceAlive() throws GameActionException {
     }
 
     /**
@@ -527,7 +542,7 @@ public class Robot {
             archonXSum += archonThreeLocation.x;
             archonYSum += archonThreeLocation.y;
         }
-        MapLocation ourArchonCentroid = new MapLocation(archonXSum/numOurArchonsAlive, archonYSum/numOurArchonsAlive);
+        ourArchonCentroid = new MapLocation(archonXSum/numOurArchonsAlive, archonYSum/numOurArchonsAlive);
         if (symmetry == CommsHandler.MapSymmetry.UNKNOWN || symmetry == CommsHandler.MapSymmetry.ROTATIONAL) {
             double orthoVecX = ourArchonCentroid.x - ((mapWidth - 1) / 2.0);
             double orthoVecY = ourArchonCentroid.y - ((mapHeight - 1) / 2.0);
@@ -874,7 +889,7 @@ public class Robot {
      * @throws GameActionException
      */
     public void resetControlStatus(MapLocation loc) throws GameActionException {
-        if (exploreMode) {
+        if (exploreMode && loc.x >= 0 && loc.x < mapWidth && loc.y >= 0 && loc.y < mapHeight) {
             int cluster = whichXLoc[loc.x] + whichYLoc[loc.y]; 
             if (commsHandler.readClusterControlStatus(cluster) == CommsHandler.ControlStatus.EXPLORING) {
                 commsHandler.writeClusterControlStatus(cluster, CommsHandler.ControlStatus.UNKNOWN);

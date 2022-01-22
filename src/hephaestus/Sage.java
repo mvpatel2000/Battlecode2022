@@ -34,6 +34,7 @@ public class Sage extends Robot {
         }
     }
 
+    @Override
     public void announceAlive() throws GameActionException {
         int currSages = commsHandler.readFighterCountSages();
         if (currSages < 254) {

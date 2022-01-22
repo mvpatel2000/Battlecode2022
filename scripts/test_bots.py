@@ -24,8 +24,10 @@ def play_game(p1, p2, map):
     return 'No result'
 
 if __name__ == "__main__":
-    all_maps = ['colosseum', 'eckleburg', 'fortress', 'intersection', 'jellyfish', 'maptestsmall', 'nottestsmall',
-                'progress', 'rivers', 'sandwich', 'squer', 'uncomfortable', 'underground', 'valley']
+    all_maps = maps = ["chessboard", "collaboration", "colosseum", "dodgeball", "eckleburg", "equals",
+        "fortress", "highway", "intersection", "jellyfish", "nottestsmall", "nyancat", "panda", "pillars",
+        "progress", "rivers", "sandwich", "snowflake", "spine", "squer", "stronghold", "tower", "uncomfortable",
+        "underground", "valley"]
     parser = argparse.ArgumentParser()
     parser.add_argument("--n", type=int, help="number of threads to spawn", default=8)
     parser.add_argument("--p1", type=str, help="player 1")
@@ -39,7 +41,20 @@ if __name__ == "__main__":
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
         executor.map(lambda m: thread_worker(args.p1, args.p2, results, m), list(enumerate(args.maps)))
     
-    print(results)
     p1_total = sum(1 for r in results if r.split(' ')[0] == args.p1)
     p2_total = sum(1 for r in results if r.split(' ')[0] == args.p2)
     print(f"Overall: {args.p1} won {p1_total} times, {args.p2} won {p2_total} times")
+
+    winners = {m: [] for m in args.maps}
+    for r in results:
+        winners[r.split(' ')[-1]].append(r.split(' ')[0])
+    
+    p1_wins = []
+    p2_wins = []
+    for m in winners:
+        if winners[0] == winners[1] == args.p1:
+            p1_wins.append(m)
+        elif winners[0] == winners[1] == args.p2:
+            p2_wins.append(m)
+    print(f"{args.p1} wins both sides on {p1_wins}")
+    print(f"{args.p2} wins both sides on {p2_wins}")

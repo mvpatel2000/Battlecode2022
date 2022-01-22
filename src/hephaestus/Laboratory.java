@@ -11,8 +11,13 @@ public class Laboratory extends Robot {
     @Override
     public void runUnit() throws GameActionException { 
         announceAlive();
+
+        if (rc.canTransmute()) {
+            rc.transmute();
+        }
     }
 
+    @Override
     public void announceAlive() throws GameActionException {
         int currLaboratories = commsHandler.readBuildingCountLaboratories();
         if (currLaboratories < 254) {

@@ -19,8 +19,11 @@ public class Archon extends Robot {
     int soldierCount = 0;
     int builderCount = 0;
     int sageCount = 0;
+    int laboratoryCount = 0;
+    int watchtowerCout = 0;
 
     boolean lastArchon = false;
+    boolean firstArchon = false;
 
     MapLocation optimalResourceBuildLocation;
     MapLocation optimalCombatBuildLocation;
@@ -62,7 +65,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 713) {
+        // if (currentRound > 20) {
         //     rc.resign();
         // }
 
@@ -305,6 +308,8 @@ public class Archon extends Robot {
         soldierCount = commsHandler.readFighterCountSoldiers();
         builderCount = commsHandler.readWorkerCountBuilders();
         sageCount = commsHandler.readFighterCountSages();
+        laboratoryCount = commsHandler.readBuildingCountLaboratories();
+        watchtowerCout = commsHandler.readBuildingCountWatchtowers();
 
         // System.out.println("We currently have " + minerCount + " miners and " +
         // soldierCount + " soldiers.");
@@ -312,6 +317,12 @@ public class Archon extends Robot {
         if (lastArchon) {
             commsHandler.writeWorkerCountAll(0);
             commsHandler.writeFighterCountAll(0);
+            commsHandler.writeBuildingCountAll(0);
+            commsHandler.writeBuilderQueueWatchtower(CommsHandler.BuilderQueue.NONE);
+        }
+
+        if (firstArchon) {
+            commsHandler.writeBuilderQueueLaboratory(CommsHandler.BuilderQueue.NONE);
         }
     }
 
@@ -646,7 +657,7 @@ public class Archon extends Robot {
      */
     public void build() throws GameActionException {
         // temporary solution to starvation
-        double passThreshold = (1 / (double) (numOurArchons - myArchonNum)) + (rc.getTeamLeadAmount(allyTeam) / 1000.0);
+        double passThreshold = (1 / (double) (numOurArchons - myArchonNum)) + (rc.getTeamLeadAmount(allyTeam) / 600.0);
         boolean pass = rng.nextDouble() > passThreshold;
         if (pass && reservedLead == 0 && reservedGold == 0) { // don't pass if we have already reserved some resources
             return;
@@ -668,14 +679,31 @@ public class Archon extends Robot {
             reservedGold = 0;
         }
 
-        RobotType toBuild = rng.nextDouble() < 0.5 ? RobotType.SOLDIER : RobotType.SOLDIER;
+        RobotType toBuild = RobotType.SOLDIER;
         int initialMiners = Math.max(4, (int) ((mapHeight * mapWidth / 240) + 3)); // 4-18
         // int initialMiners = (mapHeight * mapWidth / 200) + 2;
 
-        if (minerCount < initialMiners) {
+        // System.out.println("Miner count: " + minerCount);
+        if (minerCount < Math.min(2 * numOurArchons, initialMiners)) { // make the first set of initial miners
             toBuild = RobotType.MINER;
-        // } else if (numBuildersBuilt == 0 && soldierCount >= (numOurArchons * 2)) {
-            // toBuild = RobotType.BUILDER;
+            // System.out.println("Build phase 1: first set of initial miners");
+        } else if (builderCount == 0) { // make one builder
+            toBuild = RobotType.BUILDER;
+            // request a lab to be built
+            if (commsHandler.readBuilderQueueLaboratory() == CommsHandler.BuilderQueue.NONE) {
+                commsHandler.writeBuilderQueueLaboratory(CommsHandler.BuilderQueue.REQUESTED);
+            }
+            // System.out.println("Build phase 2: one builder");
+        } else if (laboratoryCount == 0) { // pause building till we have a laboratory (except overrides)
+            toBuild = null;
+            // request a lab to be built
+            if (commsHandler.readBuilderQueueLaboratory() == CommsHandler.BuilderQueue.NONE) {
+                commsHandler.writeBuilderQueueLaboratory(CommsHandler.BuilderQueue.REQUESTED);
+            }
+            // System.out.println("Build phase 3: wait for lab");
+        } else if (minerCount < initialMiners) { // make the rest of the initial miners
+            toBuild = RobotType.MINER;
+            // System.out.println("Build phase 4: rest of initial miners");
         } else if (minerCount < rc.getRobotCount() / (Math.max(2.5, (4.5 - resourcesOnMap / 600)))) {
             toBuild = RobotType.MINER;
         }
@@ -714,6 +742,12 @@ public class Archon extends Robot {
         if (rc.getTeamGoldAmount(allyTeam) >= RobotType.SAGE.buildCostGold) {
             toBuild = RobotType.SAGE;
             reservedLead = 0;
+        }
+
+        if (toBuild == null) {
+            reservedLead = 0;
+            reservedGold = 0;
+            return;
         }
 
         // Prioritize building towards resources on low rubble
@@ -947,6 +981,16 @@ public class Archon extends Robot {
                 lastArchon = true;
             else if (myArchonNum == 0 && !archonOneAlive && !archonTwoAlive && !archonThreeAlive)
                 lastArchon = true;
+
+            firstArchon = false;
+            if (myArchonNum == 0)
+                firstArchon = true;
+            else if (myArchonNum == 1 && !archonZeroAlive)
+                firstArchon = true;
+            else if (myArchonNum == 2 && !archonZeroAlive && !archonOneAlive)
+                firstArchon = true;
+            else if (myArchonNum == 3 && !archonZeroAlive && !archonOneAlive && !archonTwoAlive)
+                firstArchon = true;
         }
 
         numOurArchonsAlive = rc.getArchonCount();
