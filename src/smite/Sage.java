@@ -26,7 +26,10 @@ public class Sage extends Robot {
             int damageDealt = 0;
             int nearbyEnemiesLength = Math.min(nearbyEnemies.length, 15);
             for (int i = 0; i < nearbyEnemiesLength; i++) {
-                damageDealt += nearbyEnemies[i].type.getMaxHealth(nearbyEnemies[i].level) * 22 / 100;
+                RobotInfo enemy = nearbyEnemies[i];
+                if (enemy.mode == RobotMode.DROID) {
+                    damageDealt += enemy.type.getMaxHealth(enemy.level) * 22 / 100;
+                }
             }
             if (damageDealt >= RobotType.SAGE.damage) {
                 rc.envision(AnomalyType.CHARGE);

@@ -143,6 +143,7 @@ public class Robot {
             for (RobotInfo robot : adjacentRobots) {
                 if (robot.type == RobotType.ARCHON) {
                     baseLocation = robot.location;
+                    break;
                 }
             }
         }
@@ -577,7 +578,9 @@ public class Robot {
         MapLocation optimalAttack = null;
         int optimalScore = -1;
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(actionRadius, enemyTeam);
+        boolean isTargetArchon = false;
         for (RobotInfo enemy : nearbyEnemies) {
+            boolean isEnemyArchon = enemy.type == RobotType.ARCHON;
             int score = 0;
             // Tiebreakers across all priority classes
             // Prioritize archons after opening
@@ -605,10 +608,16 @@ public class Robot {
             if (score > optimalScore) {
                 optimalAttack = enemy.location;
                 optimalScore = score;
+                isTargetArchon = isEnemyArchon;
             }
         }
-        if (optimalAttack != null && rc.canAttack(optimalAttack)) {
-            rc.attack(optimalAttack);
+        if (optimalAttack != null) {
+            if (isTargetArchon && rc.getType() == RobotType.SAGE && rc.canEnvision(AnomalyType.FURY)) {
+                rc.envision(AnomalyType.FURY);
+            }
+            if (rc.canAttack(optimalAttack)) {
+                rc.attack(optimalAttack);
+            }
         }
     }
 
@@ -647,7 +656,13 @@ public class Robot {
             }
             
             pathing.updateDestination(newDestination);
-            pathing.pathToDestination();
+            // Fuzzy move on turn 1 to avoid TLE
+            if (turnCount == 1) {
+                pathing.fuzzyMove(pathing.destination);
+            }
+            else {
+                pathing.pathToDestination();
+            }
         }
     }
 

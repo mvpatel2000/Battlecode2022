@@ -65,7 +65,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 6) {
+        // if (currentRound > 40) {
         //     rc.resign();
         // }
 
@@ -452,8 +452,10 @@ public class Archon extends Robot {
                 int controlStatus = (clusterStatus >> 3) & 7;
                 if (resourceCount == 0 || controlStatus == CommsHandler.ControlStatus.THEIRS) {
                     commsHandler.writeMineClusterIndex(i, commsHandler.UNDEFINED_CLUSTER_INDEX);
-                } else {
-                    commsHandler.writeMineClusterClaimStatus(i, resourceCount / 4);
+                } 
+                // Reset claim status
+                else {
+                    commsHandler.writeMineClusterClaimStatus(i, resourceCount / 4 + 1);
                 }
             }
             // Clear explore slots
@@ -608,7 +610,7 @@ public class Archon extends Robot {
                         }
                     }
                     if (isValid) {
-                        commsHandler.writeMineClusterAll(mineClusterIndex, i + ((resourceCount / 4) << 7));
+                        commsHandler.writeMineClusterAll(mineClusterIndex, i + ((resourceCount / 4 + 1) << 7));
                         mineClusterIndex++;
 
                         // Preserve mining clusters which still have resources

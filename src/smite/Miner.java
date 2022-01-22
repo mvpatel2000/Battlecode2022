@@ -66,17 +66,14 @@ public class Miner extends Robot {
                 requiredLead = 1;
             }
         }
-
-        // if we're near a friendly archon, don't mine out lead
-        // avoid 100-bytecode call to rc.senseNearbyRobots
-        int nearestFriendlyArchonDist = 0;
-        if (archonZeroAlive) nearestFriendlyArchonDist = Math.max(myLocation.distanceSquaredTo(archonZeroLocation), nearestFriendlyArchonDist);
-        if (archonOneAlive) nearestFriendlyArchonDist = Math.max(myLocation.distanceSquaredTo(archonOneLocation), nearestFriendlyArchonDist);
-        if (archonTwoAlive) nearestFriendlyArchonDist = Math.max(myLocation.distanceSquaredTo(archonTwoLocation), nearestFriendlyArchonDist);
-        if (archonThreeAlive) nearestFriendlyArchonDist = Math.max(myLocation.distanceSquaredTo(archonThreeLocation), nearestFriendlyArchonDist);
-        if (nearestFriendlyArchonDist <= RobotType.MINER.visionRadiusSquared) { // I can see a friendly archon, don't mine
+        
+        // Don't mine if I can see a friendly archon
+        if (archonZeroAlive && myLocation.distanceSquaredTo(archonZeroLocation) <= RobotType.MINER.visionRadiusSquared
+            || archonOneAlive && myLocation.distanceSquaredTo(archonOneLocation) <= RobotType.MINER.visionRadiusSquared
+            || archonTwoAlive && myLocation.distanceSquaredTo(archonTwoLocation) <= RobotType.MINER.visionRadiusSquared
+            || archonThreeAlive && myLocation.distanceSquaredTo(archonThreeLocation) <= RobotType.MINER.visionRadiusSquared) {
             requiredLead = 2;
-        }
+        } 
     }
 
     /**
@@ -187,6 +184,10 @@ public class Miner extends Robot {
             if (optimalDir != Direction.CENTER && rc.canMove(optimalDir)) {
                 pathing.move(optimalDir);
             }
+        }
+        // Fuzzy move turn 1 to save bytecode
+        else if (turnCount == 1) {
+            pathing.fuzzyMove(pathing.destination);
         }
         // Path
         else {
