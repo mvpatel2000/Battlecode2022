@@ -143,6 +143,7 @@ public class Robot {
             for (RobotInfo robot : adjacentRobots) {
                 if (robot.type == RobotType.ARCHON) {
                     baseLocation = robot.location;
+                    break;
                 }
             }
         }
@@ -647,7 +648,13 @@ public class Robot {
             }
             
             pathing.updateDestination(newDestination);
-            pathing.pathToDestination();
+            // Fuzzy move on turn 1 to avoid TLE
+            if (turnCount == 1) {
+                pathing.fuzzyMove(pathing.destination);
+            }
+            else {
+                pathing.pathToDestination();
+            }
         }
     }
 
