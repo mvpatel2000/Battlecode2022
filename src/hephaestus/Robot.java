@@ -641,7 +641,6 @@ public class Robot {
      * @throws GameActionException
      */
     public void combatKiteMove() throws GameActionException {
-        if (rc.getID() == 11735) {System.out.println(Clock.getBytecodeNum());}
         boolean isNotSageOrIsActionReady = rc.getType() != RobotType.SAGE || rc.isActionReady();
 
         double combatAllyHealth = 0.0;
