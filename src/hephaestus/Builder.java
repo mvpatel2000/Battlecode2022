@@ -21,11 +21,15 @@ public class Builder extends Robot {
         announceAlive();
 
         if (commsHandler.readBuilderQueueLaboratory() == CommsHandler.BuilderQueue.REQUESTED) {
+            System.out.println("I am going to try to make a lab");
             shouldMakeLaboratory = true;
+            commsHandler.writeBuilderQueueLaboratory(CommsHandler.BuilderQueue.NONE);
         }
 
         buildOrHealOrUpgrade();
         
+        move();
+
         // Try to act again if we didn't before moving
         buildOrHealOrUpgrade();
     }
@@ -83,7 +87,7 @@ public class Builder extends Robot {
             rc.repair(repairLocation);
         }
         // build watchtower if in danger and didn't heal
-        if (rc.isActionReady()) {
+        if (rc.isActionReady() && !shouldMakeLaboratory) {
             if (nearbyEnemies.length > 0) {
                 Direction optimalDir = null;
                 int optimalRubble = Integer.MAX_VALUE;

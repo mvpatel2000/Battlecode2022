@@ -65,7 +65,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 20) {
+        // if (currentRound > 6) {
         //     rc.resign();
         // }
 
@@ -684,6 +684,7 @@ public class Archon extends Robot {
         // int initialMiners = (mapHeight * mapWidth / 200) + 2;
 
         // System.out.println("Miner count: " + minerCount);
+        // System.out.println("Builder count: " + builderCount);
         if (minerCount < Math.min(2 * numOurArchons, initialMiners)) { // make the first set of initial miners
             toBuild = RobotType.MINER;
             // System.out.println("Build phase 1: first set of initial miners");
