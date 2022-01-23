@@ -628,7 +628,47 @@ public class Robot {
             if (rc.getType() == RobotType.SAGE) {
                 // Use fury on archons
                 if (isTargetArchon && rc.canEnvision(AnomalyType.FURY)) {
-                    rc.envision(AnomalyType.FURY);
+                    int friendlyKills = 0;
+                    int friendlyDamage = 0;
+                    RobotInfo[] nearbyAllies = rc.senseNearbyRobots(RobotType.SAGE.actionRadiusSquared, allyTeam);
+                    int nearbyAlliesLength = Math.min(nearbyAllies.length, 15);
+                    for (int i = 0; i < nearbyAlliesLength; i++) {
+                        RobotInfo ally = nearbyAllies[i];
+                        int allyChargeDamage = ally.type.getMaxHealth(ally.level) * 22 / 100;
+                        if (ally.type == RobotType.ARCHON) {
+                            if (allyChargeDamage >= ally.health) {
+                                friendlyKills++;
+                                friendlyDamage += ally.health;
+                            }
+                            else {
+                                friendlyDamage += allyChargeDamage;
+                            }
+                        }
+                    }
+                    // Require no friendly kills
+                    if (friendlyKills == 0) {
+                        int enemyKills = 0;
+                        int enemyDamage = 0;
+                        RobotInfo[] attackEnemies = rc.senseNearbyRobots(RobotType.SAGE.actionRadiusSquared, enemyTeam);
+                        int attackEnemiesLength = Math.min(attackEnemies.length, 15);
+                        for (int i = 0; i < attackEnemiesLength; i++) {
+                            RobotInfo enemy = attackEnemies[i];
+                            int enemyChargeDamage = enemy.type.getMaxHealth(enemy.level) * 22 / 100;
+                            if (enemy.type == RobotType.ARCHON) {
+                                if (enemyChargeDamage >= enemy.health) {
+                                    enemyKills++;
+                                    enemyDamage += enemy.health;
+                                }
+                                else {
+                                    enemyDamage += enemyChargeDamage;
+                                }
+                            }
+                        }
+                        // Require either 2 or more kills or more net damage than a sage attack would do
+                        if (enemyKills >= 2 || enemyDamage - friendlyDamage >= RobotType.SAGE.damage) {
+                            rc.envision(AnomalyType.FURY);
+                        }
+                    }
                 }
                 // Consider charge if it does more kills/damage
                 else if (rc.canEnvision(AnomalyType.CHARGE)) {
