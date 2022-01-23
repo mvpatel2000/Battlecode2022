@@ -579,6 +579,8 @@ public class Robot {
         int optimalScore = -1;
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(actionRadius, enemyTeam);
         boolean isTargetArchon = false;
+        int kills = 0;
+        int damageDealt = 0;
         for (RobotInfo enemy : nearbyEnemies) {
             boolean isEnemyArchon = enemy.type == RobotType.ARCHON;
             int score = 0;
@@ -617,11 +619,41 @@ public class Robot {
                 optimalAttack = enemy.location;
                 optimalScore = score;
                 isTargetArchon = isEnemyArchon;
+                kills = enemy.health <= damage ? 1 : 0;
+                damageDealt = kills == 1 ? enemy.health : damage;
             }
         }
         if (optimalAttack != null) {
-            if (isTargetArchon && rc.getType() == RobotType.SAGE && rc.canEnvision(AnomalyType.FURY)) {
-                rc.envision(AnomalyType.FURY);
+            // If sage, consider anomalies
+            if (rc.getType() == RobotType.SAGE) {
+                // Use fury on archons
+                if (isTargetArchon && rc.canEnvision(AnomalyType.FURY)) {
+                    rc.envision(AnomalyType.FURY);
+                }
+                // Consider charge if it does more kills/damage
+                else if (rc.canEnvision(AnomalyType.CHARGE)) {
+                    int chargeKills = 0;
+                    int chargeDamage = 0;
+                    RobotInfo[] attackEnemies = rc.senseNearbyRobots(RobotType.SAGE.actionRadiusSquared, enemyTeam);
+                    int nearbyEnemiesLength = Math.min(attackEnemies.length, 15);
+                    for (int i = 0; i < nearbyEnemiesLength; i++) {
+                        RobotInfo enemy = attackEnemies[i];
+                        if (enemy.mode == RobotMode.DROID) {
+                            int enemyChargeDamage = enemy.type.getMaxHealth(enemy.level) * 22 / 100;
+                            // Charge kills enemy
+                            if (enemyChargeDamage >= enemy.health) {
+                                chargeKills++;
+                                chargeDamage += enemy.health;
+                            }
+                            else {
+                                chargeDamage += enemyChargeDamage;
+                            }
+                        }
+                    }
+                    if (chargeKills > kills || (chargeKills == kills && chargeDamage > damageDealt)) {
+                        rc.envision(AnomalyType.CHARGE);
+                    }
+                }
             }
             if (rc.canAttack(optimalAttack)) {
                 rc.attack(optimalAttack);
