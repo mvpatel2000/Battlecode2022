@@ -48,13 +48,13 @@ if __name__ == "__main__":
     winners = {m: [] for m in args.maps}
     for r in results:
         winners[r.split(' ')[-1]].append(r.split(' ')[0])
-    
+
     p1_wins = []
     p2_wins = []
-    for m in winners:
-        if winners[0] == winners[1] == args.p1:
+    for m, w in winners.items():
+        if w[0] == w[1] and w[0] == args.p1:
             p1_wins.append(m)
-        elif winners[0] == winners[1] == args.p2:
+        elif w[0] == w[1] and w[0] == args.p2:
             p2_wins.append(m)
     print(f"{args.p1} wins both sides on {p1_wins}")
     print(f"{args.p2} wins both sides on {p2_wins}")

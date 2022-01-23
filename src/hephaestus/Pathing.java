@@ -151,6 +151,40 @@ public class Pathing {
         }
     }
 
+    public void cautiousGreedyMove(MapLocation target) throws GameActionException {
+        if (!rc.isMovementReady()) return;
+
+        // Get direction to target; check rubble in that direction, to the left, and to the right,
+        // and move to the direction with the least rubble, as long as that rubble is at most 20.
+        Direction dir = r.myLocation.directionTo(target);
+        int bestRubble = 20;
+        Direction bestDir = null;
+        if (rc.onTheMap(r.myLocation.add(dir))) {
+            int rubble = rc.senseRubble(r.myLocation.add(dir));
+            if (rubble < bestRubble) {
+                bestRubble = rubble;
+                bestDir = dir;
+            }
+        }
+        if (rc.onTheMap(r.myLocation.add(dir.rotateLeft()))) {
+            int rubble = rc.senseRubble(r.myLocation.add(dir.rotateLeft()));
+            if (rubble < bestRubble) {
+                bestRubble = rubble;
+                bestDir = dir.rotateLeft();
+            }
+        }
+        if (rc.onTheMap(r.myLocation.add(dir.rotateRight()))) {
+            int rubble = rc.senseRubble(r.myLocation.add(dir.rotateRight()));
+            if (rubble < bestRubble) {
+                bestRubble = rubble;
+                bestDir = dir.rotateRight();
+            }
+        }
+        if (bestDir != null) {
+            move(bestDir);
+        }
+    }
+
     private void addVisited(MapLocation loc) {
         int bit = loc.x + 60*loc.y;
         tracker[bit >>> 5] |= 1 << (31 - bit & 31);
