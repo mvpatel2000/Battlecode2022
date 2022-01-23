@@ -187,7 +187,9 @@ public class Miner extends Robot {
         }
         // Fuzzy move turn 1 to save bytecode
         else if (turnCount == 1) {
-            pathing.fuzzyMove(pathing.destination);
+            if (pathing.destination != null) {
+                pathing.fuzzyMove(pathing.destination);
+            }
         }
         // Path
         else {

@@ -686,13 +686,17 @@ public class Robot {
                 newDestination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                                 clusterCentersY[nearestCluster / clusterWidthsLength]);
             }
-            // Explore map. Get new cluster if not in explore mode or close to destination
-            else if (!exploreMode || myLocation.distanceSquaredTo(pathing.destination) <= 8) {
+            // Explore map. Get new cluster if not in explore mode or close to destination. Don't make sages explore
+            else if (rc.getType() != RobotType.SAGE && (!exploreMode || myLocation.distanceSquaredTo(pathing.destination) <= 8)) {
                 nearestCluster = getNearestExploreCluster();
                 if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
                     newDestination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                                     clusterCentersY[nearestCluster / clusterWidthsLength]);
                 }
+            }
+            // Instead, send all sages to cluster in middle. Keep them moving like a pack
+            else if (rc.getType() == RobotType.SAGE) {
+                newDestination = new MapLocation(mapWidth / 2, mapHeight / 2);
             }
             
             pathing.updateDestination(newDestination);
