@@ -151,6 +151,13 @@ public class Pathing {
         }
     }
 
+    /**
+     * Move in the directon to the target, either directly or 45 degrees left or right, if there
+     * is an open move with less than 20 rubble.
+     * 
+     * @param target
+     * @throws GameActionException
+     */
     public void cautiousGreedyMove(MapLocation target) throws GameActionException {
         if (!rc.isMovementReady()) return;
 
@@ -159,22 +166,25 @@ public class Pathing {
         Direction dir = r.myLocation.directionTo(target);
         int bestRubble = 20;
         Direction bestDir = null;
-        if (rc.onTheMap(r.myLocation.add(dir))) {
-            int rubble = rc.senseRubble(r.myLocation.add(dir));
+        MapLocation loc = r.myLocation.add(dir);
+        if (rc.onTheMap(loc) && !rc.isLocationOccupied(loc)) {
+            int rubble = rc.senseRubble(loc);
             if (rubble < bestRubble) {
                 bestRubble = rubble;
                 bestDir = dir;
             }
         }
-        if (rc.onTheMap(r.myLocation.add(dir.rotateLeft()))) {
-            int rubble = rc.senseRubble(r.myLocation.add(dir.rotateLeft()));
+        loc = r.myLocation.add(dir.rotateLeft());
+        if (rc.onTheMap(loc) && !rc.isLocationOccupied(loc)) {
+            int rubble = rc.senseRubble(loc);
             if (rubble < bestRubble) {
                 bestRubble = rubble;
                 bestDir = dir.rotateLeft();
             }
         }
-        if (rc.onTheMap(r.myLocation.add(dir.rotateRight()))) {
-            int rubble = rc.senseRubble(r.myLocation.add(dir.rotateRight()));
+        loc = r.myLocation.add(dir.rotateRight());
+        if (rc.onTheMap(loc) && !rc.isLocationOccupied(loc)) {
+            int rubble = rc.senseRubble(loc);
             if (rubble < bestRubble) {
                 bestRubble = rubble;
                 bestDir = dir.rotateRight();
