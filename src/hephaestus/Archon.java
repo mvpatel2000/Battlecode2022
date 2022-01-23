@@ -65,7 +65,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 40) {
+        // if (currentRound > 150) {
         //     rc.resign();
         // }
 
@@ -682,10 +682,12 @@ public class Archon extends Robot {
         }
 
         RobotType toBuild = RobotType.SOLDIER;
+        // RobotType toBuild = null;
         int initialMiners = Math.max(4, (int) ((mapHeight * mapWidth / 240) + 3)); // 4-18
         // int initialMiners = (mapHeight * mapWidth / 200) + 2;
 
         // System.out.println("Miner count: " + minerCount);
+        // System.out.println("Builder count: " + builderCount);
         if (minerCount < Math.min(2 * numOurArchons, initialMiners)) { // make the first set of initial miners
             toBuild = RobotType.MINER;
             // System.out.println("Build phase 1: first set of initial miners");
@@ -696,7 +698,7 @@ public class Archon extends Robot {
                 commsHandler.writeBuilderQueueLaboratory(CommsHandler.BuilderQueue.REQUESTED);
             }
             // System.out.println("Build phase 2: one builder");
-        } else if (laboratoryCount == 0) { // pause building till we have a laboratory (except overrides)
+        } else if (laboratoryCount == 0) { // pause building so builders can make a laboratory (except overrides)
             toBuild = null;
             // request a lab to be built
             if (commsHandler.readBuilderQueueLaboratory() == CommsHandler.BuilderQueue.NONE) {

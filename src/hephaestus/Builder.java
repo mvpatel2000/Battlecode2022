@@ -18,14 +18,16 @@ public class Builder extends Robot {
 
     @Override
     public void runUnit() throws GameActionException { 
+        shouldDisintegrate();
+
         announceAlive();
 
-        if (commsHandler.readBuilderQueueLaboratory() == CommsHandler.BuilderQueue.REQUESTED) {
-            shouldMakeLaboratory = true;
-        }
+        checkLabRequested();
 
         buildOrHealOrUpgrade();
         
+        move();
+
         // Try to act again if we didn't before moving
         buildOrHealOrUpgrade();
     }
@@ -35,6 +37,25 @@ public class Builder extends Robot {
         int currBuilders = commsHandler.readWorkerCountBuilders();
         if (currBuilders < 254) {
             commsHandler.writeWorkerCountBuilders(currBuilders + 1);
+        }
+    }
+
+    public void checkLabRequested() throws GameActionException {
+        shouldMakeLaboratory = true; // temporary
+        if (commsHandler.readBuilderQueueLaboratory() == CommsHandler.BuilderQueue.REQUESTED) {
+            // System.out.println("I am going to try to make a lab");
+            rc.setIndicatorString("Making lab");
+            shouldMakeLaboratory = true;
+            commsHandler.writeBuilderQueueLaboratory(CommsHandler.BuilderQueue.NONE);
+        }
+        if (!shouldMakeLaboratory) {
+            rc.setIndicatorString("Going to battlefront");
+        }
+    }
+
+    public void shouldDisintegrate() throws GameActionException {
+        if (commsHandler.readWorkerCountBuilders() >= 1 && rc.getRoundNum() < 50) {
+            rc.disintegrate();
         }
     }
 
@@ -83,7 +104,7 @@ public class Builder extends Robot {
             rc.repair(repairLocation);
         }
         // build watchtower if in danger and didn't heal
-        if (rc.isActionReady()) {
+        if (rc.isActionReady() && !shouldMakeLaboratory) {
             if (nearbyEnemies.length > 0) {
                 Direction optimalDir = null;
                 int optimalRubble = Integer.MAX_VALUE;
