@@ -658,7 +658,9 @@ public class Robot {
             pathing.updateDestination(newDestination);
             // Fuzzy move on turn 1 to avoid TLE
             if (turnCount == 1) {
-                pathing.fuzzyMove(pathing.destination);
+                if (pathing.destination != null) {
+                    pathing.fuzzyMove(pathing.destination);
+                }
             }
             else {
                 pathing.pathToDestination();
