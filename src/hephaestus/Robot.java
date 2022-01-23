@@ -588,8 +588,16 @@ public class Robot {
                 score += 20000;
             }
             // Prioritize combat units
-            if (enemy.type == RobotType.WATCHTOWER || enemy.type == RobotType.SOLDIER || enemy.type == RobotType.SAGE) {
-                score += 10000;
+            switch (enemy.type) {
+                case SAGE:
+                    score += 19000;
+                    break;
+                case WATCHTOWER:
+                    score += 18000;
+                    break;
+                case SOLDIER:
+                    score += 17000;
+                    break;
             }
 
             // 1) Always prioritize kills, prioritizing highest health unit

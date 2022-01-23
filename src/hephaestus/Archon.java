@@ -142,7 +142,7 @@ public class Archon extends Robot {
                 turnsUntilLand--;
             }
             // Transform if we chose not to move or we're out of turns to find better land position
-            else if (rc.canTransform() && (rc.isMovementReady() || turnsUntilLand == 0)) {
+            if (rc.canTransform() && (rc.isMovementReady() || turnsUntilLand == 0)) {
                 rc.transform();
                 setBestBuildLocations();
                 turnsUntilLand = -1;
