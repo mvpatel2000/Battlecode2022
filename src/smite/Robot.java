@@ -579,6 +579,8 @@ public class Robot {
         int optimalScore = -1;
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(actionRadius, enemyTeam);
         boolean isTargetArchon = false;
+        int kills = 0;
+        int damageDealt = 0;
         for (RobotInfo enemy : nearbyEnemies) {
             boolean isEnemyArchon = enemy.type == RobotType.ARCHON;
             int score = 0;
@@ -588,8 +590,16 @@ public class Robot {
                 score += 20000;
             }
             // Prioritize combat units
-            if (enemy.type == RobotType.WATCHTOWER || enemy.type == RobotType.SOLDIER || enemy.type == RobotType.SAGE) {
-                score += 10000;
+            switch (enemy.type) {
+                case SAGE:
+                    score += 19000;
+                    break;
+                case WATCHTOWER:
+                    score += 18000;
+                    break;
+                case SOLDIER:
+                    score += 17000;
+                    break;
             }
 
             // 1) Always prioritize kills, prioritizing highest health unit
@@ -609,11 +619,41 @@ public class Robot {
                 optimalAttack = enemy.location;
                 optimalScore = score;
                 isTargetArchon = isEnemyArchon;
+                kills = enemy.health <= damage ? 1 : 0;
+                damageDealt = kills == 1 ? enemy.health : damage;
             }
         }
         if (optimalAttack != null) {
-            if (isTargetArchon && rc.getType() == RobotType.SAGE && rc.canEnvision(AnomalyType.FURY)) {
-                rc.envision(AnomalyType.FURY);
+            // If sage, consider anomalies
+            if (rc.getType() == RobotType.SAGE) {
+                // Use fury on archons
+                if (isTargetArchon && rc.canEnvision(AnomalyType.FURY)) {
+                    rc.envision(AnomalyType.FURY);
+                }
+                // Consider charge if it does more kills/damage
+                else if (rc.canEnvision(AnomalyType.CHARGE)) {
+                    int chargeKills = 0;
+                    int chargeDamage = 0;
+                    RobotInfo[] attackEnemies = rc.senseNearbyRobots(RobotType.SAGE.actionRadiusSquared, enemyTeam);
+                    int nearbyEnemiesLength = Math.min(attackEnemies.length, 15);
+                    for (int i = 0; i < nearbyEnemiesLength; i++) {
+                        RobotInfo enemy = attackEnemies[i];
+                        if (enemy.mode == RobotMode.DROID) {
+                            int enemyChargeDamage = enemy.type.getMaxHealth(enemy.level) * 22 / 100;
+                            // Charge kills enemy
+                            if (enemyChargeDamage >= enemy.health) {
+                                chargeKills++;
+                                chargeDamage += enemy.health;
+                            }
+                            else {
+                                chargeDamage += enemyChargeDamage;
+                            }
+                        }
+                    }
+                    if (chargeKills > kills || (chargeKills == kills && chargeDamage > damageDealt)) {
+                        rc.envision(AnomalyType.CHARGE);
+                    }
+                }
             }
             if (rc.canAttack(optimalAttack)) {
                 rc.attack(optimalAttack);
@@ -646,19 +686,25 @@ public class Robot {
                 newDestination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                                 clusterCentersY[nearestCluster / clusterWidthsLength]);
             }
-            // Explore map. Get new cluster if not in explore mode or close to destination
-            else if (!exploreMode || myLocation.distanceSquaredTo(pathing.destination) <= 8) {
+            // Explore map. Get new cluster if not in explore mode or close to destination. Don't make sages explore
+            else if (rc.getType() != RobotType.SAGE && (!exploreMode || myLocation.distanceSquaredTo(pathing.destination) <= 8)) {
                 nearestCluster = getNearestExploreCluster();
                 if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
                     newDestination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                                     clusterCentersY[nearestCluster / clusterWidthsLength]);
                 }
             }
+            // Instead, send all sages to cluster in middle. Keep them moving like a pack
+            else if (rc.getType() == RobotType.SAGE) {
+                newDestination = new MapLocation(mapWidth / 2, mapHeight / 2);
+            }
             
             pathing.updateDestination(newDestination);
             // Fuzzy move on turn 1 to avoid TLE
             if (turnCount == 1) {
-                pathing.fuzzyMove(pathing.destination);
+                if (pathing.destination != null) {
+                    pathing.fuzzyMove(pathing.destination);
+                }
             }
             else {
                 pathing.pathToDestination();
@@ -724,16 +770,56 @@ public class Robot {
                 double score = 0;
                 if (!atMaxHealth) {
                     if (archonZeroAlive && moveLocation.distanceSquaredTo(archonZeroLocation) <= RobotType.ARCHON.actionRadiusSquared) {
-                        score += rc.canSenseLocation(archonZeroLocation) ? (2*rc.senseRobotAtLocation(archonZeroLocation).level) * 10 / (10.0 + rc.senseRubble(archonZeroLocation)) : 2.0;
+                        if (rc.canSenseLocation(archonZeroLocation)) {
+                            RobotInfo archonObj = rc.senseRobotAtLocation(archonZeroLocation);
+                            if (archonObj != null) {
+                                score += (2*archonObj.level) * 10 / (10.0 + rc.senseRubble(archonZeroLocation));
+                            }
+                            else {
+                                score += 2;
+                            }
+                        } else {
+                            score += 2;
+                        }
                     }
                     if (archonOneAlive && moveLocation.distanceSquaredTo(archonOneLocation) <= RobotType.ARCHON.actionRadiusSquared) {
-                        score += rc.canSenseLocation(archonOneLocation) ? (2*rc.senseRobotAtLocation(archonOneLocation).level) * 10 / (10.0 + rc.senseRubble(archonOneLocation)) : 2.0;
+                        if (rc.canSenseLocation(archonOneLocation)) {
+                            RobotInfo archonObj = rc.senseRobotAtLocation(archonOneLocation);
+                            if (archonObj != null) {
+                                score += (2*archonObj.level) * 10 / (10.0 + rc.senseRubble(archonOneLocation));
+                            }
+                            else {
+                                score += 2;
+                            }
+                        } else {
+                            score += 2;
+                        }
                     }
                     if (archonTwoAlive && moveLocation.distanceSquaredTo(archonTwoLocation) <= RobotType.ARCHON.actionRadiusSquared) {
-                        score += rc.canSenseLocation(archonTwoLocation) ? (2*rc.senseRobotAtLocation(archonTwoLocation).level) * 10 / (10.0 + rc.senseRubble(archonTwoLocation)) : 2.0;
+                        if (rc.canSenseLocation(archonTwoLocation)) {
+                            RobotInfo archonObj = rc.senseRobotAtLocation(archonTwoLocation);
+                            if (archonObj != null) {
+                                score += (2*archonObj.level) * 10 / (10.0 + rc.senseRubble(archonTwoLocation));
+                            }
+                            else {
+                                score += 2;
+                            }
+                        } else {
+                            score += 2;
+                        }
                     }
                     if (archonThreeAlive && moveLocation.distanceSquaredTo(archonThreeLocation) <= RobotType.ARCHON.actionRadiusSquared) {
-                        score += rc.canSenseLocation(archonThreeLocation) ? (2*rc.senseRobotAtLocation(archonThreeLocation).level) * 10 / (10.0 + rc.senseRubble(archonThreeLocation)) : 2.0;
+                        if (rc.canSenseLocation(archonThreeLocation)) {
+                            RobotInfo archonObj = rc.senseRobotAtLocation(archonThreeLocation);
+                            if (archonObj != null) {
+                                score += (2*archonObj.level) * 10 / (10.0 + rc.senseRubble(archonThreeLocation));
+                            }
+                            else {
+                                score += 2;
+                            }
+                        } else {
+                            score += 2;
+                        }
                     }
                 }
                 double enemyCombatHealth = 0.0;
