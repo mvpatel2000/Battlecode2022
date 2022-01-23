@@ -743,7 +743,7 @@ public class Robot {
             // Fuzzy move on turn 1 to avoid TLE
             if (turnCount == 1) {
                 if (pathing.destination != null) {
-                    pathing.fuzzyMove(pathing.destination);
+                    pathing.cautiousGreedyMove(pathing.destination);
                 }
             }
             else {

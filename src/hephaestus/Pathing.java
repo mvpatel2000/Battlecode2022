@@ -167,7 +167,7 @@ public class Pathing {
         int bestRubble = 20;
         Direction bestDir = null;
         MapLocation loc = r.myLocation.add(dir);
-        if (rc.onTheMap(loc) && !rc.isLocationOccupied(loc)) {
+        if (rc.onTheMap(loc) && rc.canMove(dir)) {
             int rubble = rc.senseRubble(loc);
             if (rubble < bestRubble) {
                 bestRubble = rubble;
@@ -175,7 +175,7 @@ public class Pathing {
             }
         }
         loc = r.myLocation.add(dir.rotateLeft());
-        if (rc.onTheMap(loc) && !rc.isLocationOccupied(loc)) {
+        if (rc.onTheMap(loc) && rc.canMove(dir.rotateLeft())) {
             int rubble = rc.senseRubble(loc);
             if (rubble < bestRubble) {
                 bestRubble = rubble;
@@ -183,7 +183,7 @@ public class Pathing {
             }
         }
         loc = r.myLocation.add(dir.rotateRight());
-        if (rc.onTheMap(loc) && !rc.isLocationOccupied(loc)) {
+        if (rc.onTheMap(loc) && rc.canMove(dir.rotateRight())) {
             int rubble = rc.senseRubble(loc);
             if (rubble < bestRubble) {
                 bestRubble = rubble;
