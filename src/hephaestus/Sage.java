@@ -24,9 +24,10 @@ public class Sage extends Robot {
     public void envisionCharge() throws GameActionException {
         if (rc.canEnvision(AnomalyType.CHARGE)) {
             int damageDealt = 0;
-            int nearbyEnemiesLength = Math.min(nearbyEnemies.length, 15);
+            RobotInfo[] attackEnemies = rc.senseNearbyRobots(RobotType.SAGE.actionRadiusSquared, enemyTeam);
+            int nearbyEnemiesLength = Math.min(attackEnemies.length, 15);
             for (int i = 0; i < nearbyEnemiesLength; i++) {
-                RobotInfo enemy = nearbyEnemies[i];
+                RobotInfo enemy = attackEnemies[i];
                 if (enemy.mode == RobotMode.DROID) {
                     damageDealt += enemy.type.getMaxHealth(enemy.level) * 22 / 100;
                 }

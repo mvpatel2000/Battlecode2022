@@ -726,16 +726,56 @@ public class Robot {
                 double score = 0;
                 if (!atMaxHealth) {
                     if (archonZeroAlive && moveLocation.distanceSquaredTo(archonZeroLocation) <= RobotType.ARCHON.actionRadiusSquared) {
-                        score += rc.canSenseLocation(archonZeroLocation) ? (2*rc.senseRobotAtLocation(archonZeroLocation).level) * 10 / (10.0 + rc.senseRubble(archonZeroLocation)) : 2.0;
+                        if (rc.canSenseLocation(archonZeroLocation)) {
+                            RobotInfo archonObj = rc.senseRobotAtLocation(archonZeroLocation);
+                            if (archonObj != null) {
+                                score += (2*archonObj.level) * 10 / (10.0 + rc.senseRubble(archonZeroLocation));
+                            }
+                            else {
+                                score += 2;
+                            }
+                        } else {
+                            score += 2;
+                        }
                     }
                     if (archonOneAlive && moveLocation.distanceSquaredTo(archonOneLocation) <= RobotType.ARCHON.actionRadiusSquared) {
-                        score += rc.canSenseLocation(archonOneLocation) ? (2*rc.senseRobotAtLocation(archonOneLocation).level) * 10 / (10.0 + rc.senseRubble(archonOneLocation)) : 2.0;
+                        if (rc.canSenseLocation(archonOneLocation)) {
+                            RobotInfo archonObj = rc.senseRobotAtLocation(archonOneLocation);
+                            if (archonObj != null) {
+                                score += (2*archonObj.level) * 10 / (10.0 + rc.senseRubble(archonOneLocation));
+                            }
+                            else {
+                                score += 2;
+                            }
+                        } else {
+                            score += 2;
+                        }
                     }
                     if (archonTwoAlive && moveLocation.distanceSquaredTo(archonTwoLocation) <= RobotType.ARCHON.actionRadiusSquared) {
-                        score += rc.canSenseLocation(archonTwoLocation) ? (2*rc.senseRobotAtLocation(archonTwoLocation).level) * 10 / (10.0 + rc.senseRubble(archonTwoLocation)) : 2.0;
+                        if (rc.canSenseLocation(archonTwoLocation)) {
+                            RobotInfo archonObj = rc.senseRobotAtLocation(archonTwoLocation);
+                            if (archonObj != null) {
+                                score += (2*archonObj.level) * 10 / (10.0 + rc.senseRubble(archonTwoLocation));
+                            }
+                            else {
+                                score += 2;
+                            }
+                        } else {
+                            score += 2;
+                        }
                     }
                     if (archonThreeAlive && moveLocation.distanceSquaredTo(archonThreeLocation) <= RobotType.ARCHON.actionRadiusSquared) {
-                        score += rc.canSenseLocation(archonThreeLocation) ? (2*rc.senseRobotAtLocation(archonThreeLocation).level) * 10 / (10.0 + rc.senseRubble(archonThreeLocation)) : 2.0;
+                        if (rc.canSenseLocation(archonThreeLocation)) {
+                            RobotInfo archonObj = rc.senseRobotAtLocation(archonThreeLocation);
+                            if (archonObj != null) {
+                                score += (2*archonObj.level) * 10 / (10.0 + rc.senseRubble(archonThreeLocation));
+                            }
+                            else {
+                                score += 2;
+                            }
+                        } else {
+                            score += 2;
+                        }
                     }
                 }
                 double enemyCombatHealth = 0.0;
