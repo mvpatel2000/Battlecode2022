@@ -643,7 +643,7 @@ public class Robot {
                     for (int i = 0; i < nearbyAlliesLength; i++) {
                         RobotInfo ally = nearbyAllies[i];
                         int allyChargeDamage = ally.type.getMaxHealth(ally.level) * 22 / 100;
-                        if (ally.type == RobotType.ARCHON) {
+                        if (ally.type == RobotType.ARCHON && ally.mode == RobotMode.TURRET) {
                             if (allyChargeDamage >= ally.health) {
                                 friendlyKills++;
                                 friendlyDamage += ally.health;
@@ -661,8 +661,8 @@ public class Robot {
                         int attackEnemiesLength = Math.min(attackEnemies.length, 15);
                         for (int i = 0; i < attackEnemiesLength; i++) {
                             RobotInfo enemy = attackEnemies[i];
-                            int enemyChargeDamage = enemy.type.getMaxHealth(enemy.level) * 22 / 100;
-                            if (enemy.type == RobotType.ARCHON) {
+                            if (enemy.type == RobotType.ARCHON && enemy.mode == RobotMode.TURRET) {
+                                int enemyChargeDamage = enemy.type.getMaxHealth(enemy.level) * 22 / 100;
                                 if (enemyChargeDamage >= enemy.health) {
                                     enemyKills++;
                                     enemyDamage += enemy.health;
