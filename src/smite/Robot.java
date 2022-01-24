@@ -940,7 +940,7 @@ public class Robot {
                 //     //System.out.println\(myLocation + " " + dir + " " + score);
                 // }
                 // Add rubble movement factor, often serves as a tiebreak for flee
-                score += myRubbleFactor;
+                score += myRubbleFactor * 10;
                 if (score > optimalScore) {
                     optimalDirection = dir;
                     optimalScore = score;

@@ -248,18 +248,24 @@ public class Miner extends Robot {
         //     //rc.setIndicatorLine(myLocation, clusterToCenter(nearestCluster), 0, 255, 0);
         // }   
 
-        // Navigate to nearest resources found 
-        if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
-            MapLocation newDestination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
-                                                            clusterCentersY[nearestCluster / clusterWidthsLength]);
-            double distToDest = pathing.destination == null ? 99999.0 : Math.sqrt(myLocation.distanceSquaredTo(pathing.destination));
-            double distToNewDest = Math.sqrt(myLocation.distanceSquaredTo(newDestination));
-            // If we're exploring and close to destination (squared distance <= 8), finish exploring
-            if (!exploreMode || distToDest <= 2.9 || distToDest * 2.0 > distToNewDest) {
-                resetControlStatus(pathing.destination);
-                pathing.updateDestination(newDestination);
-                return;
+        // Navigate to nearest resources found. Ignore for first 100 rounds to encourage exploration
+        if (currentRound >= 100) {
+            if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+                MapLocation newDestination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
+                                                                clusterCentersY[nearestCluster / clusterWidthsLength]);
+                double distToDest = pathing.destination == null ? 99999.0 : Math.sqrt(myLocation.distanceSquaredTo(pathing.destination));
+                double distToNewDest = Math.sqrt(myLocation.distanceSquaredTo(newDestination));
+                // If we're exploring and close to destination (squared distance <= 8), finish exploring
+                if (!exploreMode || distToDest <= 2.9 || distToDest * 2.0 > distToNewDest) {
+                    resetControlStatus(pathing.destination);
+                    pathing.updateDestination(newDestination);
+                    return;
+                }
             }
+        }
+        // Free up cluster because we're exploring
+        else {
+            considerFreeClusterClaim(nearestCluster);
         }
 
         // Explore map. Get new cluster if not in explore mode or close to destination
