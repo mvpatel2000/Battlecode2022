@@ -344,7 +344,10 @@ public class Robot {
         int markedClustersCount = 0;
 
         // Scan nearby resources and aggregate counts. Require at least 2 lead since 1 lead regenerates
-        for (MapLocation tile : rc.senseNearbyLocationsWithLead(RobotType.MINER.visionRadiusSquared, 2)) {
+        MapLocation[] leadTiles = rc.senseNearbyLocationsWithLead(rc.getType().visionRadiusSquared, 2);
+        int leadTilesLength = leadTiles.length;
+        for (int i = 0; i < leadTilesLength; i++) {
+            MapLocation tile = leadTiles[i];
             // int clusterIdx = whichCluster(tile); Note: Inlined to save bytecode
             int clusterIdx = whichXLoc[tile.x] + whichYLoc[tile.y];
             // Only add to modified list if we haven't marked this cluster yet
@@ -354,7 +357,10 @@ public class Robot {
             }
             clusterResources[clusterIdx] += rc.senseLead(tile) - 1;
         }
-        for (MapLocation tile : rc.senseNearbyLocationsWithGold(RobotType.MINER.visionRadiusSquared)) {
+        MapLocation[] goldTiles = rc.senseNearbyLocationsWithGold(rc.getType().visionRadiusSquared);
+        int goldTilesLength = goldTiles.length;
+        for (int i = 0; i < goldTilesLength; i++) {
+            MapLocation tile = goldTiles[i];
             // int clusterIdx = whichCluster(tile); Note: Inlined to save bytecode
             int clusterIdx = whichXLoc[tile.x] + whichYLoc[tile.y];
             // Only add to modified list if we haven't marked this cluster yet
@@ -715,6 +721,10 @@ public class Robot {
         }
         // Combat move. Kites enemy soldiers if harassing, otherwise pushes
         else if (nearbyEnemies.length > 0) {
+            // Don't try kite moving on turn 1 or we'll TLE
+            if (turnCount == 1) {
+                return;
+            }
             combatKiteMove();
         }
         else {
@@ -940,7 +950,7 @@ public class Robot {
                 //     //System.out.println\(myLocation + " " + dir + " " + score);
                 // }
                 // Add rubble movement factor, often serves as a tiebreak for flee
-                score += myRubbleFactor;
+                score += myRubbleFactor * 10;
                 if (score > optimalScore) {
                     optimalDirection = dir;
                     optimalScore = score;

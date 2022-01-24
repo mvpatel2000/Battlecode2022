@@ -68,7 +68,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 40) {
+        // if (currentRound > 585) {
         //     rc.resign();
         // }
 
@@ -846,12 +846,15 @@ public class Archon extends Robot {
             int amountToRepairForAlly = ally.type.getMaxHealth(ally.level) - ally.health;
             if (amountToRepairForAlly > 0) {
                 amountToRepair += amountToRepairForAlly;
-                // If under duress, prioritize healing soldiers unless a miner is about to die
-                boolean allyPriority = existEnemies 
-                                && (ally.type == RobotType.SOLDIER || (ally.type == RobotType.MINER && ally.health <= 9));
-                // Either ally is priority or both current priority and ally priority are false
-                boolean isHigherPriority = allyPriority || optimalPriority == allyPriority;
-                if (rc.canRepair(ally.location)
+                // Prioritize healing soldiers/sages unless a miner is about to die
+                boolean allyPriority = (ally.type == RobotType.SOLDIER 
+                                        || ally.type == RobotType.SAGE 
+                                        || (ally.type == RobotType.MINER && ally.health <= 9));
+                // If ally is priority and existing optimal is not higher priority, automatically take it
+                boolean isHigherPriority = allyPriority && !optimalPriority;
+                // If ally is not priority and existing optimal is higher priority, reject it
+                boolean isLowerPriority = !allyPriority && optimalPriority;
+                if (rc.canRepair(ally.location) && !isLowerPriority
                         && (isHigherPriority || (existEnemies && ally.health < remainingHealth)
                         || (!existEnemies && ally.health > remainingHealth))) {
                     optimalPriority = allyPriority;
