@@ -40,6 +40,9 @@ public class Archon extends Robot {
 
     int oldResourceCount = 0;
     int resourceRate = 0;
+    double resourceRateEMA = 0;
+    final double RESOURCE_ALPHA = 0.1;
+    boolean highEMA = false;
 
     // used to move around
     int turnsUntilLand = -1;
@@ -76,6 +79,9 @@ public class Archon extends Robot {
 
         if (lastArchon) {
             lastArchonTasks();
+        }
+        if (firstArchon) {
+            firstArchonTasks();
         }
 
         if (currentRound == 2) {
@@ -119,6 +125,10 @@ public class Archon extends Robot {
             builderRequest == CommsHandler.BuilderRequest.LABORATORY_LEVEL_3) {
             commsHandler.writeBuilderRequestType(CommsHandler.BuilderRequest.NONE);
         }
+    }
+
+    public void firstArchonTasks() throws GameActionException {
+        commsHandler.writeProductionControlGold(CommsHandler.ProductionControl.CONTINUE);
     }
 
     @Override
@@ -304,7 +314,7 @@ public class Archon extends Robot {
 
     public void updateResourceRate() throws GameActionException {
         int newResourceCount = rc.getTeamLeadAmount(allyTeam);
-        resourceRate = newResourceCount - oldResourceCount;
+        int resourceRate = newResourceCount - oldResourceCount;
         // Built a unit, adjust for it
         if (resourceRate < 0) {
             // Built builder
@@ -324,6 +334,7 @@ public class Archon extends Robot {
                 resourceRate = 10;
             }
         }
+        resourceRateEMA = (1 - RESOURCE_ALPHA) * resourceRateEMA + (RESOURCE_ALPHA) * resourceRate;
     }
 
     public void readUnitUpdates() throws GameActionException {
@@ -677,13 +688,7 @@ public class Archon extends Robot {
             return;
         }
 
-        // un-reserve whatever we previously reserved; we'll decide what to build
-        // independently from the past
-        // System.out.println("Start of build, currently have reserved " + reservedLead
-        // + " lead and " + reservedGold + " gold");
-        // System.out.println("Global reserves are " +
-        // commsHandler.readReservedResourcesLead() + " lead and " +
-        // commsHandler.readReservedResourcesGold() + " gold");
+        // un-reserve whatever we previously reserved; we'll decide what to build independently from the past
         if (reservedLead > 0) {
             commsHandler.writeReservedResourcesLead(commsHandler.readReservedResourcesLead() - reservedLead);
             reservedLead = 0;
@@ -696,11 +701,17 @@ public class Archon extends Robot {
         RobotType toBuild = RobotType.SOLDIER;
         int initialMiners = Math.max(4, (int) ((mapHeight * mapWidth / 240) + 3)); // 4-18
 
+        if (!highEMA && resourceRateEMA > 9) {
+            highEMA = true;
+        } else if (highEMA && resourceRateEMA < 7) {
+            highEMA = false;
+        }
+
         if (minerCount < Math.min(2 * numOurArchons, initialMiners)) { // make the first set of initial miners
             toBuild = RobotType.MINER;
         } else if (builderCount == 0) { // make one builder
             toBuild = RobotType.BUILDER;
-        } else if (laboratoryCount == 0) { // pause building until first laboratory (except overrides)
+        } else if (highEMA && rc.getTeamLeadAmount(allyTeam) < 275 && rc.getRoundNum() >= laboratoryCount * 150) { // pause building until next laboratory (except overrides)
             toBuild = null;
         } else if (minerCount < initialMiners) { // make the rest of the initial miners; this is the last step of early game
             toBuild = RobotType.MINER;
@@ -708,6 +719,10 @@ public class Archon extends Robot {
             toBuild = RobotType.MINER;
         } else if (numSoldiersBuilt >= 2 && rng.nextDouble() < 0.3 && rc.getRoundNum() <= 1800) { // produce builders for farming
             toBuild = RobotType.BUILDER;
+        }
+
+        if (minerCount < initialMiners / 2 || minerCount < 2) {
+            commsHandler.writeProductionControlGold(CommsHandler.ProductionControl.HALT);
         }
 
         // Override: if I'm dying (and there are no enemy threats visible) and there aren't many builders out on the map, priority build a builder
@@ -732,8 +747,8 @@ public class Archon extends Robot {
             }
         }
 
-        // Highest priority override: if we have gold, just make a sage
-        if (rc.getTeamGoldAmount(allyTeam) >= RobotType.SAGE.buildCostGold) {
+        // if we have gold, just make a sage, unless it's lategame and we want to make miners
+        if (rc.getTeamGoldAmount(allyTeam) >= RobotType.SAGE.buildCostGold && (rc.getRoundNum() < 500 || toBuild != RobotType.MINER)) {
             toBuild = RobotType.SAGE;
             reservedLead = 0;
         }

@@ -40,6 +40,10 @@ public class CommsHandler {
         public static final int ARCHON_LEVEL_2 = 4; // from lab
         public static final int ARCHON_LEVEL_3 = 5; // from lab
     }
+    public class ProductionControl {
+        public static final int CONTINUE = 0;
+        public static final int HALT = 1;
+    }
 
     final int UNDEFINED_CLUSTER_INDEX = 127;
 

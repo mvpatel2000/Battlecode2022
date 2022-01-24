@@ -205,8 +205,8 @@ public class Builder extends Robot {
         if (mainBuilder && builderRequest == CommsHandler.BuilderRequest.NONE) {
             resetControlStatus(pathing.destination);
             if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                pathing.updateDestination(new MapLocation(20 * myLocation.x - 19 * clusterCentersX[nearestCluster % clusterWidthsLength],
-                                                20 * myLocation.y - 19 * clusterCentersY[nearestCluster / clusterWidthsLength]));
+                pathing.updateDestination(new MapLocation(20 * ourArchonCentroid.x - 19 * clusterCentersX[nearestCluster % clusterWidthsLength],
+                                                20 * ourArchonCentroid.y - 19 * clusterCentersY[nearestCluster / clusterWidthsLength]));
             } else {
                 pathing.updateDestination(new MapLocation(20 * myLocation.x - 19 * ((mapWidth - 1)/2),
                                                 20 * myLocation.y - 19 * ((mapHeight - 1)/2)));
@@ -216,13 +216,17 @@ public class Builder extends Robot {
         else if (leadFarmSacrifice) {
             if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 resetControlStatus(pathing.destination);
-                pathing.updateDestination(new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
-                                                clusterCentersY[nearestCluster / clusterWidthsLength]));
+                pathing.updateDestination(new MapLocation((clusterCentersX[nearestCluster % clusterWidthsLength] + ourArchonCentroid.x)/2, 
+                                                (clusterCentersY[nearestCluster / clusterWidthsLength] + ourArchonCentroid.y)/2));
             } else {
-                pathing.updateDestination(new MapLocation((mapWidth - 1)/2, (mapHeight - 1)/2));
+                pathing.updateDestination(new MapLocation((mapWidth - 1 + ourArchonCentroid.x)/2, (mapHeight - 1 + ourArchonCentroid.y)/2));
             }
         }
 
-        pathing.pathToDestination();
+        if (turnCount == 1) {
+            pathing.cautiousGreedyMove(pathing.destination);
+        } else {
+            pathing.pathToDestination();
+        }
     }
 }

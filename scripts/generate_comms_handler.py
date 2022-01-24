@@ -88,6 +88,12 @@ SCHEMA = {
             'symmetry': 2
         }
     },
+    'production_control': {
+        'slots': 1,
+        'bits': {
+            'gold': 1,
+        },
+    }
 }
 
 def gen_constants():

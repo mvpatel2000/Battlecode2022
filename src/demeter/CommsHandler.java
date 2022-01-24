@@ -19,6 +19,7 @@ public class CommsHandler {
     final int LAST_ARCHON_SLOTS = 1;
     final int RESERVED_RESOURCES_SLOTS = 1;
     final int MAP_SLOTS = 1;
+    final int PRODUCTION_CONTROL_SLOTS = 1;
 
     public class ArchonStatus {
         public static final int DEAD = 0;
@@ -51,6 +52,10 @@ public class CommsHandler {
         public static final int LABORATORY_LEVEL_3 = 3; // from lab
         public static final int ARCHON_LEVEL_2 = 4; // from lab
         public static final int ARCHON_LEVEL_3 = 5; // from lab
+    }
+    public class ProductionControl {
+        public static final int CONTINUE = 0;
+        public static final int HALT = 1;
     }
 
     final int UNDEFINED_CLUSTER_INDEX = 127;
@@ -2600,5 +2605,21 @@ public class CommsHandler {
 
     public void writeMapAll(int value) throws GameActionException {
         rc.writeSharedArray(62, (rc.readSharedArray(62) & 62463) | (value << 10));
+    }
+
+    public int readProductionControlGold() throws GameActionException {
+        return (rc.readSharedArray(62) & 512) >>> 9;
+    }
+
+    public void writeProductionControlGold(int value) throws GameActionException {
+        rc.writeSharedArray(62, (rc.readSharedArray(62) & 65023) | (value << 9));
+    }
+
+    public int readProductionControlAll() throws GameActionException {
+        return (rc.readSharedArray(62) & 512) >>> 9;
+    }
+
+    public void writeProductionControlAll(int value) throws GameActionException {
+        rc.writeSharedArray(62, (rc.readSharedArray(62) & 65023) | (value << 9));
     }
 }
