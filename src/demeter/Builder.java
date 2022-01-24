@@ -1,4 +1,4 @@
-package hephaestus;
+package demeter;
 
 import battlecode.common.*;
 

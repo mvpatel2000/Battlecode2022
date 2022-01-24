@@ -1,4 +1,4 @@
-package hephaestus;
+package demeter;
 
 import battlecode.common.*;
 
@@ -712,8 +712,8 @@ public class Archon extends Robot {
             // System.out.println("Build phase 4: rest of initial miners");
         } else if (minerCount < rc.getRobotCount() / (Math.max(2.5, (4.5 - resourcesOnMap / 600)))) {
             toBuild = RobotType.MINER;
-        // } else if (numSoldiersBuilt >= 2 && rng.nextDouble() < 0.3) {
-            // toBuild = RobotType.BUILDER;
+        } else if (numSoldiersBuilt >= 2 && rng.nextDouble() < 0.3) {
+            toBuild = RobotType.BUILDER;
         }
 
         // TODO: actually make builders sometime?
