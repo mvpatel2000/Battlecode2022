@@ -48,6 +48,7 @@ public class Robot {
 
     boolean isDying;
     final int FLEE_HEALTH = 8;
+    final int SAGE_FLEE_HEALTH = 10;
     final double GAMMA = 0.9;
 
     CommsHandler commsHandler;
@@ -162,7 +163,7 @@ public class Robot {
         if (myHealth == rc.getType().getMaxHealth(rc.getLevel())) {
             isDying = false;
         }
-        else if (myHealth <= FLEE_HEALTH) {
+        else if (myHealth <= FLEE_HEALTH || (rc.getType() == RobotType.SAGE && myHealth <= SAGE_FLEE_HEALTH)) {
             isDying = true;
         }
 
@@ -643,7 +644,7 @@ public class Robot {
                     for (int i = 0; i < nearbyAlliesLength; i++) {
                         RobotInfo ally = nearbyAllies[i];
                         int allyChargeDamage = ally.type.getMaxHealth(ally.level) * 22 / 100;
-                        if (ally.type == RobotType.ARCHON) {
+                        if (ally.type == RobotType.ARCHON && ally.mode == RobotMode.TURRET) {
                             if (allyChargeDamage >= ally.health) {
                                 friendlyKills++;
                                 friendlyDamage += ally.health;
@@ -661,8 +662,8 @@ public class Robot {
                         int attackEnemiesLength = Math.min(attackEnemies.length, 15);
                         for (int i = 0; i < attackEnemiesLength; i++) {
                             RobotInfo enemy = attackEnemies[i];
-                            int enemyChargeDamage = enemy.type.getMaxHealth(enemy.level) * 22 / 100;
-                            if (enemy.type == RobotType.ARCHON) {
+                            if (enemy.type == RobotType.ARCHON && enemy.mode == RobotMode.TURRET) {
+                                int enemyChargeDamage = enemy.type.getMaxHealth(enemy.level) * 22 / 100;
                                 if (enemyChargeDamage >= enemy.health) {
                                     enemyKills++;
                                     enemyDamage += enemy.health;
