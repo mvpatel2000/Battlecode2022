@@ -114,15 +114,6 @@ public class Archon extends Robot {
         commsHandler.writeFighterCountAll(0);
         commsHandler.writeBuildingCountAll(0);
 
-        // last archon resets lab upgrade requests
-        // builder who completes them resets archon upgrade or lab build requests
-        // labs request each round until they either get upgraded or they don't need upgrade
-        int builderRequest = commsHandler.readBuilderRequestType();
-        if (builderRequest == CommsHandler.BuilderRequest.LABORATORY_LEVEL_2 || 
-            builderRequest == CommsHandler.BuilderRequest.LABORATORY_LEVEL_3) {
-            commsHandler.writeBuilderRequestType(CommsHandler.BuilderRequest.NONE);
-        }
-
         if (rc.getTeamGoldAmount(allyTeam) >= 60) {
             rc.setIndicatorString("Halting gold production");
             commsHandler.writeProductionControlGold(CommsHandler.ProductionControl.HALT);

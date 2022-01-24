@@ -39,7 +39,7 @@ public class Laboratory extends Robot {
     public void transmute() throws GameActionException {
         // //rc.setIndicatorString("Transmutation rate: " + transmutationRate);
         int currentTeamLead = rc.getTeamLeadAmount(allyTeam);
-        if (rc.canTransmute() && !requestingUpgrade && commsHandler.readProductionControlGold() == CommsHandler.ProductionControl.CONTINUE) {
+        if (rc.canTransmute() && ((!requestingUpgrade && commsHandler.readProductionControlGold() == CommsHandler.ProductionControl.CONTINUE) || currentTeamLead >= 600)) {
             rc.transmute();
         }
         lastTeamLead = currentTeamLead;

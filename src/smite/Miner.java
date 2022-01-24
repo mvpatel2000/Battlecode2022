@@ -56,7 +56,7 @@ public class Miner extends Robot {
 
     public void determineRequiredLead() throws GameActionException {
         // mine out lead on other side of the map
-        requiredLead = distanceToSymmetryLine > 0 ? 1 : 2;
+        requiredLead = onOurSide ? 2 : 1;
         
         // if we're near an enemy archon, mine out the lead
         int maxScan = Math.min(nearbyEnemies.length, 10);
