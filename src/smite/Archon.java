@@ -22,6 +22,7 @@ public class Archon extends Robot {
     int laboratoryCount = 0;
     int watchtowerCout = 0;
 
+    int numArchonsBehindMe = 0;
     boolean lastArchon = false;
     boolean firstArchon = false;
 
@@ -659,9 +660,10 @@ public class Archon extends Robot {
      */
     public void build() throws GameActionException {
         // temporary solution to starvation
-        double passThreshold = (1 / (double) (numOurArchons - myArchonNum)) + (rc.getTeamLeadAmount(allyTeam) / 600.0);
+        double passThreshold = computeBuildPassThreshold();
+        //rc.setIndicatorString("Pass thresh: " + passThreshold);
         boolean pass = rng.nextDouble() > passThreshold;
-        if (pass && reservedLead == 0 && reservedGold == 0) { // don't pass if we have already reserved some resources
+        if (pass && reservedLead == 0 && reservedGold == 0 && rc.getTeamLeadAmount(allyTeam) < 275 && rc.getTeamGoldAmount(allyTeam) < 40) { // don't pass if we have already reserved some resources
             return;
         }
 
@@ -682,6 +684,7 @@ public class Archon extends Robot {
         }
 
         RobotType toBuild = RobotType.SOLDIER;
+        // RobotType toBuild = null;
         int initialMiners = Math.max(4, (int) ((mapHeight * mapWidth / 240) + 3)); // 4-18
         // int initialMiners = (mapHeight * mapWidth / 200) + 2;
 
@@ -697,7 +700,7 @@ public class Archon extends Robot {
                 commsHandler.writeBuilderQueueLaboratory(CommsHandler.BuilderQueue.REQUESTED);
             }
             // //System.out.println\("Build phase 2: one builder");
-        } else if (laboratoryCount == 0) { // pause building till we have a laboratory (except overrides)
+        } else if (laboratoryCount == 0) { // pause building so builders can make a laboratory (except overrides)
             toBuild = null;
             // request a lab to be built
             if (commsHandler.readBuilderQueueLaboratory() == CommsHandler.BuilderQueue.NONE) {
@@ -709,6 +712,8 @@ public class Archon extends Robot {
             // //System.out.println\("Build phase 4: rest of initial miners");
         } else if (minerCount < rc.getRobotCount() / (Math.max(2.5, (4.5 - resourcesOnMap / 600)))) {
             toBuild = RobotType.MINER;
+        } else if (numSoldiersBuilt >= 2 && rng.nextDouble() < 0.3) {
+            toBuild = RobotType.BUILDER;
         }
 
         // TODO: actually make builders sometime?
@@ -801,6 +806,10 @@ public class Archon extends Robot {
         }
     }
 
+    private double computeBuildPassThreshold() throws GameActionException {
+        return (1 / (double) (numOurArchonsAlive - numArchonsBehindMe));
+    }
+
     private void buildRobot(RobotType type, Direction dir) throws GameActionException {
         switch (type) {
             case MINER:
@@ -846,12 +855,15 @@ public class Archon extends Robot {
             int amountToRepairForAlly = ally.type.getMaxHealth(ally.level) - ally.health;
             if (amountToRepairForAlly > 0) {
                 amountToRepair += amountToRepairForAlly;
-                // If under duress, prioritize healing soldiers unless a miner is about to die
-                boolean allyPriority = existEnemies 
-                                && (ally.type == RobotType.SOLDIER || (ally.type == RobotType.MINER && ally.health <= 9));
-                // Either ally is priority or both current priority and ally priority are false
-                boolean isHigherPriority = allyPriority || optimalPriority == allyPriority;
-                if (rc.canRepair(ally.location)
+                // Prioritize healing soldiers/sages unless a miner is about to die
+                boolean allyPriority = (ally.type == RobotType.SOLDIER 
+                                        || ally.type == RobotType.SAGE 
+                                        || (ally.type == RobotType.MINER && ally.health <= 9));
+                // If ally is priority and existing optimal is not higher priority, automatically take it
+                boolean isHigherPriority = allyPriority && !optimalPriority;
+                // If ally is not priority and existing optimal is higher priority, reject it
+                boolean isLowerPriority = !allyPriority && optimalPriority;
+                if (rc.canRepair(ally.location) && !isLowerPriority
                         && (isHigherPriority || (existEnemies && ally.health < remainingHealth)
                         || (!existEnemies && ally.health > remainingHealth))) {
                     optimalPriority = allyPriority;
@@ -976,24 +988,18 @@ public class Archon extends Robot {
             if (archonThreeAlive) archonThreeLocation = commsHandler.readOurArchonLocation(3);
 
             lastArchon = false;
-            if (myArchonNum == 3)
-                lastArchon = true;
-            else if (myArchonNum == 2 && !archonThreeAlive)
-                lastArchon = true;
-            else if (myArchonNum == 1 && !archonTwoAlive && !archonThreeAlive)
-                lastArchon = true;
-            else if (myArchonNum == 0 && !archonOneAlive && !archonTwoAlive && !archonThreeAlive)
-                lastArchon = true;
-
-            firstArchon = false;
-            if (myArchonNum == 0)
-                firstArchon = true;
-            else if (myArchonNum == 1 && !archonZeroAlive)
-                firstArchon = true;
-            else if (myArchonNum == 2 && !archonZeroAlive && !archonOneAlive)
-                firstArchon = true;
-            else if (myArchonNum == 3 && !archonZeroAlive && !archonOneAlive && !archonTwoAlive)
-                firstArchon = true;
+            numArchonsBehindMe = 0;
+            if (archonZeroAlive && myArchonNum > 0) {
+                numArchonsBehindMe++;
+            }
+            if (archonOneAlive && myArchonNum > 1) {
+                numArchonsBehindMe++;
+            }
+            if (archonTwoAlive && myArchonNum > 2) {
+                numArchonsBehindMe++;
+            }
+            firstArchon = numArchonsBehindMe == 0;
+            lastArchon = numArchonsBehindMe == numOurArchons - 1;
         }
 
         numOurArchonsAlive = rc.getArchonCount();
