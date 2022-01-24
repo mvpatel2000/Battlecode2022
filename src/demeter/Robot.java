@@ -715,6 +715,10 @@ public class Robot {
         }
         // Combat move. Kites enemy soldiers if harassing, otherwise pushes
         else if (nearbyEnemies.length > 0) {
+            // Don't try kite moving on turn 1 or we'll TLE
+            if (turnCount == 1) {
+                return;
+            }
             combatKiteMove();
         }
         else {
