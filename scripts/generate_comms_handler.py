@@ -69,10 +69,11 @@ SCHEMA = {
             'index': 7,
         }
     },
-    'last_archon': {
+    'starting_archon_centroid': {
         'slots': 1,
         'bits': {
-            'num': 2,
+            'x_coord': 6,
+            'y_coord': 6,
         }
     },
     'reserved_resources': {
@@ -85,7 +86,7 @@ SCHEMA = {
     'map': {
         'slots': 1,
         'bits': {
-            'symmetry': 2
+            'symmetry': 2,
         }
     },
     'production_control': {

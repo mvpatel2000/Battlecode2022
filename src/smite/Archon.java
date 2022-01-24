@@ -127,6 +127,10 @@ public class Archon extends Robot {
             //rc.setIndicatorString("Halting gold production");
             commsHandler.writeProductionControlGold(CommsHandler.ProductionControl.HALT);
         }
+
+        if (currentRound == 2) {
+            commsHandler.writeStartingArchonCentroidAll((ourArchonCentroid.x << 6) | ourArchonCentroid.y);
+        }
     }
 
     public void firstArchonTasks() throws GameActionException {
@@ -993,10 +997,34 @@ public class Archon extends Robot {
                     break;
             }
 
-            if (archonZeroAlive) archonZeroLocation = commsHandler.readOurArchonLocation(0);
-            if (archonOneAlive) archonOneLocation = commsHandler.readOurArchonLocation(1);
-            if (archonTwoAlive) archonTwoLocation = commsHandler.readOurArchonLocation(2);
-            if (archonThreeAlive) archonThreeLocation = commsHandler.readOurArchonLocation(3);
+            numOurArchonsAlive = 0;
+            int xSum = 0;
+            int ySum = 0;
+            if (archonZeroAlive) {
+                archonZeroLocation = commsHandler.readOurArchonLocation(0);
+                numOurArchonsAlive++;
+                xSum += archonZeroLocation.x;
+                ySum += archonZeroLocation.y;
+            }
+            if (archonOneAlive) {
+                archonOneLocation = commsHandler.readOurArchonLocation(1);
+                numOurArchonsAlive++;
+                xSum += archonOneLocation.x;
+                ySum += archonOneLocation.y;
+            }
+            if (archonTwoAlive) {
+                archonTwoLocation = commsHandler.readOurArchonLocation(2);
+                numOurArchonsAlive++;
+                xSum += archonTwoLocation.x;
+                ySum += archonTwoLocation.y;
+            }
+            if (archonThreeAlive) {
+                archonThreeLocation = commsHandler.readOurArchonLocation(3);
+                numOurArchonsAlive++;
+                xSum += archonThreeLocation.x;
+                ySum += archonThreeLocation.y;
+            }
+            ourArchonCentroid = new MapLocation(xSum / numOurArchonsAlive, ySum / numOurArchonsAlive);
 
             lastArchon = false;
             numArchonsBehindMe = 0;
@@ -1012,8 +1040,6 @@ public class Archon extends Robot {
             firstArchon = numArchonsBehindMe == 0;
             lastArchon = numArchonsBehindMe == numOurArchons - 1;
         }
-
-        numOurArchonsAlive = rc.getArchonCount();
 
         // //System.out.println\("Archon survival: " + archonZeroAlive + " " +
         // archonOneAlive + " " + archonTwoAlive + " " + archonThreeAlive);

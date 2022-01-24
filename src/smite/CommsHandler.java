@@ -16,7 +16,7 @@ public class CommsHandler {
     final int COMBAT_CLUSTER_SLOTS = 10;
     final int EXPLORE_CLUSTER_SLOTS = 10;
     final int MINE_CLUSTER_SLOTS = 10;
-    final int LAST_ARCHON_SLOTS = 1;
+    final int STARTING_ARCHON_CENTROID_SLOTS = 1;
     final int RESERVED_RESOURCES_SLOTS = 1;
     final int MAP_SLOTS = 1;
     final int PRODUCTION_CONTROL_SLOTS = 1;
@@ -2549,77 +2549,85 @@ public class CommsHandler {
         }
     }
 
-    public int readLastArchonNum() throws GameActionException {
-        return (rc.readSharedArray(61) & 12288) >>> 12;
+    public int readStartingArchonCentroidXCoord() throws GameActionException {
+        return (rc.readSharedArray(61) & 16128) >>> 8;
     }
 
-    public void writeLastArchonNum(int value) throws GameActionException {
-        rc.writeSharedArray(61, (rc.readSharedArray(61) & 53247) | (value << 12));
+    public void writeStartingArchonCentroidXCoord(int value) throws GameActionException {
+        rc.writeSharedArray(61, (rc.readSharedArray(61) & 49407) | (value << 8));
     }
 
-    public int readLastArchonAll() throws GameActionException {
-        return (rc.readSharedArray(61) & 12288) >>> 12;
+    public int readStartingArchonCentroidYCoord() throws GameActionException {
+        return (rc.readSharedArray(61) & 252) >>> 2;
     }
 
-    public void writeLastArchonAll(int value) throws GameActionException {
-        rc.writeSharedArray(61, (rc.readSharedArray(61) & 53247) | (value << 12));
+    public void writeStartingArchonCentroidYCoord(int value) throws GameActionException {
+        rc.writeSharedArray(61, (rc.readSharedArray(61) & 65283) | (value << 2));
+    }
+
+    public int readStartingArchonCentroidAll() throws GameActionException {
+        return (rc.readSharedArray(61) & 16380) >>> 2;
+    }
+
+    public void writeStartingArchonCentroidAll(int value) throws GameActionException {
+        rc.writeSharedArray(61, (rc.readSharedArray(61) & 49155) | (value << 2));
     }
 
     public int readReservedResourcesLead() throws GameActionException {
-        return (rc.readSharedArray(61) & 4092) >>> 2;
+        return ((rc.readSharedArray(61) & 3) << 8) + ((rc.readSharedArray(62) & 65280) >>> 8);
     }
 
     public void writeReservedResourcesLead(int value) throws GameActionException {
-        rc.writeSharedArray(61, (rc.readSharedArray(61) & 61443) | (value << 2));
+        rc.writeSharedArray(61, (rc.readSharedArray(61) & 65532) | ((value & 768) >>> 8));
+        rc.writeSharedArray(62, (rc.readSharedArray(62) & 255) | ((value & 255) << 8));
     }
 
     public int readReservedResourcesGold() throws GameActionException {
-        return ((rc.readSharedArray(61) & 3) << 4) + ((rc.readSharedArray(62) & 61440) >>> 12);
+        return (rc.readSharedArray(62) & 252) >>> 2;
     }
 
     public void writeReservedResourcesGold(int value) throws GameActionException {
-        rc.writeSharedArray(61, (rc.readSharedArray(61) & 65532) | ((value & 48) >>> 4));
-        rc.writeSharedArray(62, (rc.readSharedArray(62) & 4095) | ((value & 15) << 12));
+        rc.writeSharedArray(62, (rc.readSharedArray(62) & 65283) | (value << 2));
     }
 
     public int readReservedResourcesAll() throws GameActionException {
-        return ((rc.readSharedArray(61) & 4095) << 4) + ((rc.readSharedArray(62) & 61440) >>> 12);
+        return ((rc.readSharedArray(61) & 3) << 14) + ((rc.readSharedArray(62) & 65532) >>> 2);
     }
 
     public void writeReservedResourcesAll(int value) throws GameActionException {
-        rc.writeSharedArray(61, (rc.readSharedArray(61) & 61440) | ((value & 65520) >>> 4));
-        rc.writeSharedArray(62, (rc.readSharedArray(62) & 4095) | ((value & 15) << 12));
+        rc.writeSharedArray(61, (rc.readSharedArray(61) & 65532) | ((value & 49152) >>> 14));
+        rc.writeSharedArray(62, (rc.readSharedArray(62) & 3) | ((value & 16383) << 2));
     }
 
     public int readMapSymmetry() throws GameActionException {
-        return (rc.readSharedArray(62) & 3072) >>> 10;
+        return (rc.readSharedArray(62) & 3);
     }
 
     public void writeMapSymmetry(int value) throws GameActionException {
-        rc.writeSharedArray(62, (rc.readSharedArray(62) & 62463) | (value << 10));
+        rc.writeSharedArray(62, (rc.readSharedArray(62) & 65532) | (value));
     }
 
     public int readMapAll() throws GameActionException {
-        return (rc.readSharedArray(62) & 3072) >>> 10;
+        return (rc.readSharedArray(62) & 3);
     }
 
     public void writeMapAll(int value) throws GameActionException {
-        rc.writeSharedArray(62, (rc.readSharedArray(62) & 62463) | (value << 10));
+        rc.writeSharedArray(62, (rc.readSharedArray(62) & 65532) | (value));
     }
 
     public int readProductionControlGold() throws GameActionException {
-        return (rc.readSharedArray(62) & 512) >>> 9;
+        return (rc.readSharedArray(63) & 32768) >>> 15;
     }
 
     public void writeProductionControlGold(int value) throws GameActionException {
-        rc.writeSharedArray(62, (rc.readSharedArray(62) & 65023) | (value << 9));
+        rc.writeSharedArray(63, (rc.readSharedArray(63) & 32767) | (value << 15));
     }
 
     public int readProductionControlAll() throws GameActionException {
-        return (rc.readSharedArray(62) & 512) >>> 9;
+        return (rc.readSharedArray(63) & 32768) >>> 15;
     }
 
     public void writeProductionControlAll(int value) throws GameActionException {
-        rc.writeSharedArray(62, (rc.readSharedArray(62) & 65023) | (value << 9));
+        rc.writeSharedArray(63, (rc.readSharedArray(63) & 32767) | (value << 15));
     }
 }

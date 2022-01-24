@@ -18,8 +18,9 @@ public class Robot {
     int mapHeight;
     int mapWidth;
     int numOurArchons;
-    double distanceToSymmetryLine;
+    boolean onOurSide;
     MapLocation ourArchonCentroid;
+    MapLocation startingArchonCentroid = null;
 
     // Cache sensing
     RobotInfo[] nearbyEnemies;
@@ -157,7 +158,10 @@ public class Robot {
         nearbyEnemies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, enemyTeam);
         setClusterStates();
         archonStatusCheck();
-        distanceToSymmetryLine = distanceAcrossSymmetry(myLocation);
+        if (startingArchonCentroid == null && currentRound >= 2) {
+            startingArchonCentroid = new MapLocation(commsHandler.readStartingArchonCentroidXCoord(), commsHandler.readStartingArchonCentroidYCoord());
+        }
+        onOurSide = onOurSide(myLocation);
         // Flee to archon if dying
         int myHealth = rc.getHealth();
         if (myHealth == rc.getType().getMaxHealth(rc.getLevel())) {
@@ -520,42 +524,23 @@ public class Robot {
     }
 
     /**
-     * Returns the distance to the best known line of symmetry. This number is negative on our side
-     * and positive on the enemy's side.
+     * Checks if we are on our side of the map (based on symmetry).
      * 
-     * @param loc MapLocation to check
-     * @return distance to symmetry line (negative on our side, positive on enemy's side)
+     * @param loc
+     * @return whether we are on our side of the map
      * @throws GameActionException
      */
-    public double distanceAcrossSymmetry(MapLocation loc) throws GameActionException {
-        if (currentRound == 1) return myLocation.distanceSquaredTo(new MapLocation((mapWidth-1)/2, (mapHeight-1)/2));
+    public boolean onOurSide(MapLocation loc) throws GameActionException {
+        if (currentRound == 1) return true;
         if (numOurArchonsAlive == 0) {
             //System.out.println\("No archons alive, we lost :(");
-            return 0.0;
+            return false;
         }
         int symmetry = commsHandler.readMapSymmetry();
-        int archonXSum = 0;
-        int archonYSum = 0;
-        if (archonZeroAlive) {
-            archonXSum += archonZeroLocation.x;
-            archonYSum += archonZeroLocation.y;
-        }
-        if (archonOneAlive) {
-            archonXSum += archonOneLocation.x;
-            archonYSum += archonOneLocation.y;
-        }
-        if (archonTwoAlive) {
-            archonXSum += archonTwoLocation.x;
-            archonYSum += archonTwoLocation.y;
-        }
-        if (archonThreeAlive) {
-            archonXSum += archonThreeLocation.x;
-            archonYSum += archonThreeLocation.y;
-        }
-        ourArchonCentroid = new MapLocation(archonXSum/numOurArchonsAlive, archonYSum/numOurArchonsAlive);
+
         if (symmetry == CommsHandler.MapSymmetry.UNKNOWN || symmetry == CommsHandler.MapSymmetry.ROTATIONAL) {
-            double orthoVecX = ourArchonCentroid.x - ((mapWidth - 1) / 2.0);
-            double orthoVecY = ourArchonCentroid.y - ((mapHeight - 1) / 2.0);
+            double orthoVecX = startingArchonCentroid.x - ((mapWidth - 1) / 2.0);
+            double orthoVecY = startingArchonCentroid.y - ((mapHeight - 1) / 2.0);
             double orthoLen = Math.sqrt(orthoVecX*orthoVecX + orthoVecY*orthoVecY);
             orthoVecX /= orthoLen;
             orthoVecY /= orthoLen;
@@ -563,13 +548,27 @@ public class Robot {
             double myVecY = loc.y - ((mapHeight - 1) / 2.0);
             double dotProd = myVecX * orthoVecX + myVecY * orthoVecY;
             double distToSym = Math.sqrt(myVecX*myVecX + myVecY*myVecY - dotProd);
-            return dotProd > 0 ? -distToSym : distToSym;
+            double currArchonVecX = ourArchonCentroid.x - ((mapWidth - 1) / 2.0);
+            double currArchonVecY = ourArchonCentroid.y - ((mapHeight - 1) / 2.0);
+            double currArchonDotProd = currArchonVecX * orthoVecX + currArchonVecY * orthoVecY;
+            double currentArchonDistToSym = Math.sqrt(myVecX*myVecX + myVecY*myVecY - currArchonDotProd);
+            return dotProd > 0 || currentArchonDistToSym > distToSym;
         } else if (symmetry == CommsHandler.MapSymmetry.HORIZONTAL) {
-            return ourArchonCentroid.y <= ((mapHeight - 1) / 2.0) ? loc.y - ((mapHeight - 1) / 2.0) : ((mapHeight - 1) / 2.0) - loc.y;
+            if (startingArchonCentroid.y <= ((mapHeight - 1) / 2.0)) {
+                return loc.y <= ((mapHeight - 1) / 2.0) || loc.y <= ourArchonCentroid.y;
+            } else {
+                return loc.y > ((mapHeight - 1) / 2.0) || loc.y >= ourArchonCentroid.y;
+            }
         } else if (symmetry == CommsHandler.MapSymmetry.VERTICAL) {
-            return ourArchonCentroid.x <= ((mapWidth - 1) / 2.0) ? loc.x - ((mapWidth - 1) / 2.0) : ((mapWidth - 1) / 2.0) - loc.x;
+            if (startingArchonCentroid.x <= ((mapWidth - 1) / 2.0)) {
+                return loc.x <= ((mapWidth - 1) / 2.0) || loc.x <= ourArchonCentroid.x;
+            } else {
+                return loc.x > ((mapWidth - 1) / 2.0) || loc.x >= ourArchonCentroid.x;
+            }
+        } else {
+            //System.out.println\("Unknown map symmetry: " + symmetry);
+            throw new IllegalStateException("Unknown symmetry");
         }
-        throw new IllegalStateException("Unknown symmetry");
     }
 
     /**
@@ -1081,8 +1080,10 @@ public class Robot {
     }
     
     public void archonStatusCheck() throws GameActionException {
-        numOurArchonsAlive = rc.getArchonCount();
+        numOurArchonsAlive = 0;
         boolean odd = rc.getRoundNum() % 2 == 1;
+        int xSum = 0;
+        int ySum = 0;
         // update each of archons zero through three
         if (archonZeroAlive) {
             if (commsHandler.readOurArchonStatus(0) != (odd ? CommsHandler.ArchonStatus.STANDBY_ODD : CommsHandler.ArchonStatus.STANDBY_EVEN)) {
@@ -1090,6 +1091,9 @@ public class Robot {
                 archonZeroLocation = null;
             } else {
                 archonZeroLocation = commsHandler.readOurArchonLocation(0);
+                xSum += archonZeroLocation.x;
+                ySum += archonZeroLocation.y;
+                numOurArchonsAlive++;
             }
         }
         if (archonOneAlive) {
@@ -1098,6 +1102,9 @@ public class Robot {
                 archonOneLocation = null;
             } else {
                 archonOneLocation = commsHandler.readOurArchonLocation(1);
+                xSum += archonOneLocation.x;
+                ySum += archonOneLocation.y;
+                numOurArchonsAlive++;
             }
         }
         if (archonTwoAlive) {
@@ -1106,6 +1113,9 @@ public class Robot {
                 archonTwoLocation = null;
             } else {
                 archonTwoLocation = commsHandler.readOurArchonLocation(2);
+                xSum += archonTwoLocation.x;
+                ySum += archonTwoLocation.y;
+                numOurArchonsAlive++;
             }
         }
         if (archonThreeAlive) {
@@ -1114,8 +1124,13 @@ public class Robot {
                 archonThreeLocation = null;
             } else {
                 archonThreeLocation = commsHandler.readOurArchonLocation(3);
+                xSum += archonThreeLocation.x;
+                ySum += archonThreeLocation.y;
+                numOurArchonsAlive++;
             }
         }
+        // update the centroid
+        ourArchonCentroid = new MapLocation(xSum / numOurArchonsAlive, ySum / numOurArchonsAlive);
     }
 
     public void setupClusters() {

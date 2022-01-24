@@ -47,11 +47,12 @@ public class Builder extends Robot {
         leadFarmSacrifice = !mainBuilder; // everyone else is a sacrifice
         
         if (mainBuilder) {
-            rc.setIndicatorString("Main builder");
             builderRequest = commsHandler.readBuilderRequestType();
+            rc.setIndicatorString("Main builder; no requests");
             if (builderRequest != CommsHandler.BuilderRequest.NONE) {
                 MapLocation builderRequestLocation = new MapLocation(commsHandler.readBuilderRequestXCoord(), commsHandler.readBuilderRequestYCoord());
                 pathing.updateDestination(builderRequestLocation);
+                rc.setIndicatorString("Main builder; request " + builderRequest + " at " + builderRequestLocation);
             }
         }
         else {
