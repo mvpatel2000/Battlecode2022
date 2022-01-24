@@ -47,6 +47,8 @@ public class Archon extends Robot {
     // regen cache
     int[] timeToRegen;
 
+    int builderRequest = CommsHandler.BuilderRequest.NONE;
+
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
         computeArchonNum();
@@ -70,7 +72,11 @@ public class Archon extends Robot {
         //     rc.resign();
         // }
 
-        updateUnitCounts();
+        readUnitUpdates();
+
+        if (lastArchon) {
+            lastArchonTasks();
+        }
 
         if (currentRound == 2) {
             setInitialExploreClusters();
@@ -100,11 +106,27 @@ public class Archon extends Robot {
         checkTLE();
     }
 
+    public void lastArchonTasks() throws GameActionException {
+        commsHandler.writeWorkerCountAll(0);
+        commsHandler.writeFighterCountAll(0);
+        commsHandler.writeBuildingCountAll(0);
+
+        // last archon resets lab upgrade requests
+        // builder who completes them resets archon upgrade or lab build requests
+        // labs request each round until they either get upgraded or they don't need upgrade
+        int builderRequest = commsHandler.readBuilderRequestType();
+        if (builderRequest == CommsHandler.BuilderRequest.LABORATORY_LEVEL_2 || 
+            builderRequest == CommsHandler.BuilderRequest.LABORATORY_LEVEL_3) {
+            commsHandler.writeBuilderRequestType(CommsHandler.BuilderRequest.NONE);
+        }
+    }
+
+    @Override
     public void checkTLE() throws GameActionException {
         if (rc.getRoundNum() > currentRound) { // if we TLEd into the next round
             System.out.println("I TLE'd");
             currentRound = rc.getRoundNum();
-            updateUnitCounts();
+            readUnitUpdates();
             updateResourceRate();
             archonStatusCheck();
         }
@@ -304,7 +326,7 @@ public class Archon extends Robot {
         }
     }
 
-    public void updateUnitCounts() throws GameActionException {
+    public void readUnitUpdates() throws GameActionException {
         minerCount = commsHandler.readWorkerCountMiners();
         soldierCount = commsHandler.readFighterCountSoldiers();
         builderCount = commsHandler.readWorkerCountBuilders();
@@ -312,19 +334,7 @@ public class Archon extends Robot {
         laboratoryCount = commsHandler.readBuildingCountLaboratories();
         watchtowerCout = commsHandler.readBuildingCountWatchtowers();
 
-        // System.out.println("We currently have " + minerCount + " miners and " +
-        // soldierCount + " soldiers.");
-
-        if (lastArchon) {
-            commsHandler.writeWorkerCountAll(0);
-            commsHandler.writeFighterCountAll(0);
-            commsHandler.writeBuildingCountAll(0);
-            commsHandler.writeBuilderQueueWatchtower(CommsHandler.BuilderQueue.NONE);
-        }
-
-        if (firstArchon) {
-            commsHandler.writeBuilderQueueLaboratory(CommsHandler.BuilderQueue.NONE);
-        }
+        builderRequest = commsHandler.readBuilderRequestType();
     }
 
     /**
@@ -684,46 +694,24 @@ public class Archon extends Robot {
         }
 
         RobotType toBuild = RobotType.SOLDIER;
-        // RobotType toBuild = null;
         int initialMiners = Math.max(4, (int) ((mapHeight * mapWidth / 240) + 3)); // 4-18
-        // int initialMiners = (mapHeight * mapWidth / 200) + 2;
 
-        // System.out.println("Miner count: " + minerCount);
-        // System.out.println("Builder count: " + builderCount);
         if (minerCount < Math.min(2 * numOurArchons, initialMiners)) { // make the first set of initial miners
             toBuild = RobotType.MINER;
-            // System.out.println("Build phase 1: first set of initial miners");
         } else if (builderCount == 0) { // make one builder
             toBuild = RobotType.BUILDER;
-            // request a lab to be built
-            if (commsHandler.readBuilderQueueLaboratory() == CommsHandler.BuilderQueue.NONE) {
-                commsHandler.writeBuilderQueueLaboratory(CommsHandler.BuilderQueue.REQUESTED);
-            }
-            // System.out.println("Build phase 2: one builder");
-        } else if (laboratoryCount == 0) { // pause building so builders can make a laboratory (except overrides)
+        } else if (laboratoryCount == 0) { // pause building until first laboratory (except overrides)
             toBuild = null;
-            // request a lab to be built
-            if (commsHandler.readBuilderQueueLaboratory() == CommsHandler.BuilderQueue.NONE) {
-                commsHandler.writeBuilderQueueLaboratory(CommsHandler.BuilderQueue.REQUESTED);
-            }
-            // System.out.println("Build phase 3: wait for lab");
-        } else if (minerCount < initialMiners) { // make the rest of the initial miners
+        } else if (minerCount < initialMiners) { // make the rest of the initial miners; this is the last step of early game
             toBuild = RobotType.MINER;
-            // System.out.println("Build phase 4: rest of initial miners");
-        } else if (minerCount < rc.getRobotCount() / (Math.max(2.5, (4.5 - resourcesOnMap / 600)))) {
+        } else if (minerCount < rc.getRobotCount() / (Math.max(2.5, (4.5 - resourcesOnMap / 600)))) { // produce additional miners based on resource count
             toBuild = RobotType.MINER;
-        } else if (numSoldiersBuilt >= 2 && rng.nextDouble() < 0.3) {
+        } else if (numSoldiersBuilt >= 2 && rng.nextDouble() < 0.3 && rc.getRoundNum() <= 1800) { // produce builders for farming
             toBuild = RobotType.BUILDER;
         }
 
-        // TODO: actually make builders sometime?
-        // // Build builders if lots of lead for watchtowers
-        // if (rc.getTeamLeadAmount(allyTeam) > 500 && rng.nextDouble() < 0.3) {
-        // toBuild = RobotType.BUILDER;
-        // }
-
         // Override: if I'm dying (and there are no enemy threats visible) and there aren't many builders out on the map, priority build a builder
-        if (rc.getHealth() < 0.3 * RobotType.ARCHON.getMaxHealth(rc.getLevel()) && builderCount < 2) {
+        if (rc.getHealth() < 0.3 * RobotType.ARCHON.getMaxHealth(rc.getLevel()) && builderCount <= 3) {
             toBuild = RobotType.BUILDER;
             reservedLead = RobotType.BUILDER.buildCostLead / LEAD_RESERVE_SCALE;
         }
@@ -734,14 +722,12 @@ public class Archon extends Robot {
             reservedLead = RobotType.MINER.buildCostLead / LEAD_RESERVE_SCALE;
         }
 
-        // Override: if there is a visible enemy archon/soldier/sage/watchtower, priority build a
-        // soldier
+        // Override: if there is a visible enemy archon/soldier/sage/watchtower, priority build a soldier
         if (nearbyEnemies.length > 0) {
             for (RobotInfo enemy : nearbyEnemies) {
                 if (enemy.type == RobotType.SOLDIER || enemy.type == RobotType.ARCHON || enemy.type == RobotType.SAGE || enemy.type == RobotType.WATCHTOWER) {
                     toBuild = RobotType.SOLDIER;
                     reservedLead = RobotType.SOLDIER.buildCostLead / LEAD_RESERVE_SCALE; // priority build
-                    // System.out.println("Would like to priority build a soldier");
                 }
             }
         }
@@ -758,7 +744,7 @@ public class Archon extends Robot {
             return;
         }
 
-        // Prioritize building towards resources on low rubble
+        // Decide build direction -- prioritize building towards resources on low rubble
         MapLocation optimalBuildLocation = toBuild == RobotType.MINER ? optimalResourceBuildLocation : toBuild == RobotType.BUILDER ? optimalShelteredBuildLocation : optimalCombatBuildLocation;
         Direction optimalDir = null;
         int optimalScore = Integer.MAX_VALUE;
@@ -774,12 +760,21 @@ public class Archon extends Robot {
             }
         }
 
+        // totalLeadReserved and totalGoldReserved are the amounts we should respect when deciding whether to build.
+        // However, if we choose to priority build (i.e. we've reserved some resources), we ignore these.
+        int totalLeadReserved = commsHandler.readReservedResourcesLead() * LEAD_RESERVE_SCALE;
+        if (builderRequest == CommsHandler.BuilderRequest.LABORATORY_LEVEL_2) {
+            totalLeadReserved += RobotType.LABORATORY.getLeadMutateCost(2);
+        }
+        int totalGoldReserved = commsHandler.readReservedResourcesGold() * GOLD_RESERVE_SCALE;
+        if (builderRequest == CommsHandler.BuilderRequest.LABORATORY_LEVEL_3) {
+            totalGoldReserved += RobotType.LABORATORY.getGoldMutateCost(3);
+        }
+
         // Either build or reserve
         if (optimalDir != null
-                && rc.getTeamLeadAmount(allyTeam) >= toBuild.buildCostLead
-                        + (commsHandler.readReservedResourcesLead() * LEAD_RESERVE_SCALE * (reservedLead > 0 ? 0 : 1))
-                && rc.getTeamGoldAmount(allyTeam) >= toBuild.buildCostGold
-                        + (commsHandler.readReservedResourcesGold() * GOLD_RESERVE_SCALE * (reservedGold > 0 ? 0 : 1))
+                && rc.getTeamLeadAmount(allyTeam) >= toBuild.buildCostLead + totalLeadReserved * (reservedLead > 0 ? 0 : 1)
+                && rc.getTeamGoldAmount(allyTeam) >= toBuild.buildCostGold + totalGoldReserved * (reservedGold > 0 ? 0 : 1)
                 && rc.canBuildRobot(toBuild, optimalDir)) {
             buildRobot(toBuild, optimalDir);
             reservedLead = 0;
@@ -787,8 +782,6 @@ public class Archon extends Robot {
         } else { // Can't build now, reserve resources for it
             if (reservedLead > 0) {
                 if (commsHandler.readReservedResourcesLead() + reservedLead < 1024) {
-                    // System.out.println("Updating global lead reserve to " +
-                    // commsHandler.readReservedResourcesLead() + reservedLead);
                     commsHandler.writeReservedResourcesLead(commsHandler.readReservedResourcesLead() + reservedLead);
                 } else {
                     reservedLead = 0;
@@ -796,8 +789,6 @@ public class Archon extends Robot {
             }
             if (reservedGold > 0) {
                 if (commsHandler.readReservedResourcesGold() + reservedGold < 64) {
-                    // System.out.println("Updating global gold reserve to " +
-                    // commsHandler.readReservedResourcesGold() + reservedGold);
                     commsHandler.writeReservedResourcesGold(commsHandler.readReservedResourcesGold() + reservedGold);
                 } else {
                     reservedGold = 0;

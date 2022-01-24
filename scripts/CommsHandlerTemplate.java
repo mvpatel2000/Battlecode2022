@@ -33,9 +33,12 @@ public class CommsHandler {
         public static final int UNCLAIMED = 0;
         public static final int CLAIMED = 1;
     }
-    public class BuilderQueue {
-        public static final int NONE = 0;
-        public static final int REQUESTED = 1;
+    public class BuilderRequest {
+        public static final int NONE = 0; // default
+        public static final int LABORATORY_LEVEL_2 = 2; // from lab
+        public static final int LABORATORY_LEVEL_3 = 3; // from lab
+        public static final int ARCHON_LEVEL_2 = 4; // from lab
+        public static final int ARCHON_LEVEL_3 = 5; // from lab
     }
 
     final int UNDEFINED_CLUSTER_INDEX = 127;

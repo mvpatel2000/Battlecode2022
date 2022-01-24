@@ -151,6 +151,50 @@ public class Pathing {
         }
     }
 
+    /**
+     * Move in the directon to the target, either directly or 45 degrees left or right, if there
+     * is an open move with less than 20 rubble.
+     * 
+     * @param target
+     * @throws GameActionException
+     */
+    public void cautiousGreedyMove(MapLocation target) throws GameActionException {
+        if (!rc.isMovementReady()) return;
+
+        // Get direction to target; check rubble in that direction, to the left, and to the right,
+        // and move to the direction with the least rubble, as long as that rubble is at most 20.
+        Direction dir = r.myLocation.directionTo(target);
+        int bestRubble = 20;
+        Direction bestDir = null;
+        MapLocation loc = r.myLocation.add(dir);
+        if (rc.onTheMap(loc) && rc.canMove(dir)) {
+            int rubble = rc.senseRubble(loc);
+            if (rubble < bestRubble) {
+                bestRubble = rubble;
+                bestDir = dir;
+            }
+        }
+        loc = r.myLocation.add(dir.rotateLeft());
+        if (rc.onTheMap(loc) && rc.canMove(dir.rotateLeft())) {
+            int rubble = rc.senseRubble(loc);
+            if (rubble < bestRubble) {
+                bestRubble = rubble;
+                bestDir = dir.rotateLeft();
+            }
+        }
+        loc = r.myLocation.add(dir.rotateRight());
+        if (rc.onTheMap(loc) && rc.canMove(dir.rotateRight())) {
+            int rubble = rc.senseRubble(loc);
+            if (rubble < bestRubble) {
+                bestRubble = rubble;
+                bestDir = dir.rotateRight();
+            }
+        }
+        if (bestDir != null) {
+            move(bestDir);
+        }
+    }
+
     private void addVisited(MapLocation loc) {
         int bit = loc.x + 60*loc.y;
         tracker[bit >>> 5] |= 1 << (31 - bit & 31);

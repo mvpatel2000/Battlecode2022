@@ -11,20 +11,19 @@ public class Builder extends Robot {
     int reservedGold = 0;
 
     boolean shouldMakeLaboratory = false;
+    boolean leadFarmSacrifice = false;
 
     public Builder(RobotController rc) throws GameActionException {
         super(rc);
     }
 
     @Override
-    public void runUnit() throws GameActionException { 
+    public void runUnit() throws GameActionException {
         announceAlive();
 
-        if (commsHandler.readBuilderQueueLaboratory() == CommsHandler.BuilderQueue.REQUESTED) {
-            //System.out.println\("I am going to try to make a lab");
-            shouldMakeLaboratory = true;
-            commsHandler.writeBuilderQueueLaboratory(CommsHandler.BuilderQueue.NONE);
-        }
+        checkLabRequested();
+
+        shouldDisintegrate();
 
         buildOrHealOrUpgrade();
         
@@ -39,6 +38,29 @@ public class Builder extends Robot {
         int currBuilders = commsHandler.readWorkerCountBuilders();
         if (currBuilders < 254) {
             commsHandler.writeWorkerCountBuilders(currBuilders + 1);
+        }
+    }
+
+    public void checkLabRequested() throws GameActionException {
+        shouldMakeLaboratory = commsHandler.readWorkerCountBuilders() == 1; // temporary
+        leadFarmSacrifice = !shouldMakeLaboratory;
+        //rc.setIndicatorString("Should make lab: " + shouldMakeLaboratory);
+        // if (commsHandler.readBuilderQueueLaboratory() == CommsHandler.BuilderQueue.REQUESTED) {
+        //     // //System.out.println\("I am going to try to make a lab");
+        //     //rc.setIndicatorString("Making lab");
+        //     shouldMakeLaboratory = true;
+        //     commsHandler.writeBuilderQueueLaboratory(CommsHandler.BuilderQueue.NONE);
+        // }
+        // if (!shouldMakeLaboratory) {
+        //     //rc.setIndicatorString("Going to battlefront");
+        // }
+    }
+
+    public void shouldDisintegrate() throws GameActionException {
+        //System.out.println\("I see " + commsHandler.readWorkerCountBuilders() + " builders before me");
+        if (leadFarmSacrifice && rc.senseLead(rc.getLocation()) == 0) {
+            commsHandler.writeWorkerCountBuilders(commsHandler.readWorkerCountBuilders() - 1);
+            rc.disintegrate();
         }
     }
 
@@ -87,7 +109,7 @@ public class Builder extends Robot {
             rc.repair(repairLocation);
         }
         // build watchtower if in danger and didn't heal
-        if (rc.isActionReady() && !shouldMakeLaboratory) {
+        if (rc.isActionReady() && !shouldMakeLaboratory && false) { // TODO: remove the false and eventually make watchtowers?
             if (nearbyEnemies.length > 0) {
                 Direction optimalDir = null;
                 int optimalRubble = Integer.MAX_VALUE;
@@ -143,6 +165,26 @@ public class Builder extends Robot {
         // Flee back to archon to heal
         if (baseRetreat()) {
             return;
+        }
+        
+        // temporary, for lead farming
+        if (leadFarmSacrifice) {
+            int bestRubble = 99999;
+            Direction bestDir = null;
+            // if I'm adjacent to a low rubble tile and I can move there, move there
+            for (Direction d : directionsWithoutCenter) {
+                if (rc.canSenseLocation(myLocation.add(d))) {
+                    int rubble = rc.senseRubble(myLocation.add(d));
+                    if (rc.canMove(d) && rc.senseRubble(myLocation.add(d)) < bestRubble) {
+                        bestRubble = rubble;
+                        bestDir = d;
+                    }
+                }
+            }
+            if (bestDir != null) {
+                rc.move(bestDir);
+                return;
+            }
         }
 
         MapLocation nearestCombatEnemy = null;

@@ -12,6 +12,15 @@ SCHEMA = {
             'y_coord': 6,
         }
     },
+    'builder_request': {
+        'slots': 1,
+        'bits': {
+            'watchtower': 1,
+            'type': 3,
+            'x_coord': 6,
+            'y_coord': 6,
+        }
+    },
     'worker_count': { # make sure this is in a single int
         'slots': 1,
         'bits': {
@@ -79,13 +88,6 @@ SCHEMA = {
             'symmetry': 2
         }
     },
-    'builder_queue': {
-        'slots': 1,
-        'bits': {
-            'laboratory': 1,
-            'watchtower': 1,
-        }
-    }
 }
 
 def gen_constants():
