@@ -77,12 +77,8 @@ public class Archon extends Robot {
 
         readUnitUpdates();
 
-        if (lastArchon) {
-            lastArchonTasks();
-        }
-        if (firstArchon) {
-            firstArchonTasks();
-        }
+        firstArchonTasks();
+        lastArchonTasks();
 
         if (currentRound == 2) {
             setInitialExploreClusters();
@@ -113,6 +109,7 @@ public class Archon extends Robot {
     }
 
     public void lastArchonTasks() throws GameActionException {
+        if (!lastArchon) return;
         commsHandler.writeWorkerCountAll(0);
         commsHandler.writeFighterCountAll(0);
         commsHandler.writeBuildingCountAll(0);
@@ -125,9 +122,15 @@ public class Archon extends Robot {
             builderRequest == CommsHandler.BuilderRequest.LABORATORY_LEVEL_3) {
             commsHandler.writeBuilderRequestType(CommsHandler.BuilderRequest.NONE);
         }
+
+        if (rc.getTeamGoldAmount(allyTeam) >= 60) {
+            rc.setIndicatorString("Halting gold production");
+            commsHandler.writeProductionControlGold(CommsHandler.ProductionControl.HALT);
+        }
     }
 
     public void firstArchonTasks() throws GameActionException {
+        if (!firstArchon) return;
         commsHandler.writeProductionControlGold(CommsHandler.ProductionControl.CONTINUE);
     }
 
@@ -139,6 +142,8 @@ public class Archon extends Robot {
             readUnitUpdates();
             updateResourceRate();
             archonStatusCheck();
+            firstArchonTasks();
+            lastArchonTasks();
         }
     }
 
@@ -722,10 +727,6 @@ public class Archon extends Robot {
             toBuild = null;
         } else if (numSoldiersBuilt >= 2 && rng.nextDouble() < 0.3 && rc.getRoundNum() <= 1800) { // produce builders for farming
             toBuild = RobotType.BUILDER;
-        }
-
-        if (minerCount < initialMiners / 2 || minerCount < 2) {
-            commsHandler.writeProductionControlGold(CommsHandler.ProductionControl.HALT);
         }
 
         // Override: if I'm dying (and there are no enemy threats visible) and there aren't many builders out on the map, priority build a builder
