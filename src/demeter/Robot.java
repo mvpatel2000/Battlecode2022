@@ -461,6 +461,9 @@ public class Robot {
                     nearestArchonDistance = dist;
                 }
             }
+            // rc.setIndicatorString(nearestArchonLocation + " " + commsHandler.readOurArchonAcceptingPatients(0)
+            //     + " " + commsHandler.readOurArchonAcceptingPatients(1) + " " + commsHandler.readOurArchonAcceptingPatients(2)
+            //     + " " + commsHandler.readOurArchonAcceptingPatients(3));
             // MapLocation nearestArchonLocation = baseLocation;
             if (nearestArchonLocation != null) {
                 if (myLocation.distanceSquaredTo(nearestArchonLocation) > RobotType.ARCHON.actionRadiusSquared) {
@@ -469,6 +472,7 @@ public class Robot {
                 }
                 return true;
             }
+            return false;
         }
         return false;
     }

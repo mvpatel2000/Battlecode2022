@@ -71,7 +71,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 155) {
+        // if (currentRound > 700) {
         //     rc.resign();
         // }
 
@@ -881,13 +881,14 @@ public class Archon extends Robot {
             rc.repair(optimalRepair);
         }
         double myRubbleFactor = 10 / (10.0 + rc.senseRubble(myLocation));
-        boolean shouldAcceptPatients = amountToRepair >= HOSPITAL_SIZE * myRubbleFactor * (numFriendlyArchons + 1);
-        // rc.setIndicatorString(amountToRepair + " " + HOSPITAL_SIZE + " " + myRubbleFactor + " " + numFriendlyArchons + " " + shouldAcceptPatients);
-        int isHospitalFull = shouldAcceptPatients ? CommsHandler.ArchonStatus.NOT_ACCEPTING_PATIENTS
+        boolean shouldNotAcceptPatients = amountToRepair >= HOSPITAL_SIZE * myRubbleFactor * (numFriendlyArchons + 1);
+        int isHospitalFull = shouldNotAcceptPatients ? CommsHandler.ArchonStatus.NOT_ACCEPTING_PATIENTS
                                                     : CommsHandler.ArchonStatus.ACCEPTING_PATIENTS;
         if (commsHandler.readOurArchonAcceptingPatients(myArchonNum) != isHospitalFull) {
             commsHandler.writeOurArchonAcceptingPatients(myArchonNum, isHospitalFull);
         }
+        // rc.setIndicatorString(amountToRepair + " " + HOSPITAL_SIZE + " " + myRubbleFactor + " " + numFriendlyArchons + " " + shouldNotAcceptPatients
+        //                         + " " + commsHandler.readOurArchonAcceptingPatients(myArchonNum));
     }
 
     /**
