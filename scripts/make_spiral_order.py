@@ -2,7 +2,7 @@ import math
 
 # spiral order starts north and goes clockwise
 
-R2 = 20;
+R2 = 16
 D = []
 
 for x in range(-10, 10):
