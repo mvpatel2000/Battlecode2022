@@ -715,7 +715,7 @@ public class Archon extends Robot {
             toBuild = null;
         } else if (minerCount < initialMiners) { // make the rest of the initial miners; this is the last step of early game
             toBuild = RobotType.MINER;
-        } else if (minerCount < rc.getRobotCount() / (Math.max(2.5, (4.5 - resourcesOnMap / 600)))) { // produce additional miners based on resource count
+        } else if (minerCount < rc.getRobotCount() / (Math.max(3, (4.5 - resourcesOnMap / 600)))) { // produce additional miners based on resource count
             toBuild = RobotType.MINER;
         } else if (highEMA && rc.getTeamLeadAmount(allyTeam) < 275 && rc.getRoundNum() >= laboratoryCount * 150) { // another pause till laboratory
             toBuild = null;
