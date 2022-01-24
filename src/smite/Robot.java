@@ -25,6 +25,8 @@ public class Robot {
     // Cache sensing
     RobotInfo[] nearbyEnemies;
 
+    int[][] shifts = {{0, 3}, {2, 2}, {3, 0}, {2, -2}, {0, -3}, {-2, -2}, {-3, 0}, {-2, 2}};
+
     // Pathing
     MapLocation baseLocation;
     boolean exploreMode;
@@ -155,6 +157,12 @@ public class Robot {
         // Before unit runs
         turnCount++;
         currentRound = rc.getRoundNum();
+        // Don't run setup for labs on turn 1, they TLE
+        if (rc.getType() == RobotType.LABORATORY && turnCount == 1) {
+            return;
+        }
+
+        // Rest of setup
         nearbyEnemies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, enemyTeam);
         setClusterStates();
         archonStatusCheck();
@@ -260,8 +268,9 @@ public class Robot {
     public void setClusterStates() throws GameActionException {
         // int bytecodeUsed = Clock.getBytecodeNum();
 
-        // Turrets only run on turns 2 and 3
-        if (rc.getMode() == RobotMode.TURRET && turnCount > 2) {
+        // Turrets only run on turns 2 and 3, labs dont run
+        if ((rc.getMode() == RobotMode.TURRET && turnCount > 2)
+            || rc.getType() == RobotType.LABORATORY) {
             return;
         }
         
@@ -288,7 +297,6 @@ public class Robot {
         int markedClustersCount = 0;
 
         // Mark nearby clusters as explored
-        int[][] shifts = {{0, 3}, {2, 2}, {3, 0}, {2, -2}, {0, -3}, {-2, -2}, {-3, 0}, {-2, 2}};
         for (int[] shift : shifts) {
             MapLocation shiftedLocation = myLocation.translate(shift[0], shift[1]);
             if (rc.canSenseLocation(shiftedLocation)) {
@@ -351,6 +359,17 @@ public class Robot {
         // Scan nearby resources and aggregate counts. Require at least 2 lead since 1 lead regenerates
         MapLocation[] leadTiles = rc.senseNearbyLocationsWithLead(rc.getType().visionRadiusSquared, 2);
         int leadTilesLength = leadTiles.length;
+        MapLocation[] goldTiles;
+        int goldTilesLength;
+        if (rc.getType() == RobotType.BUILDER) {
+            leadTilesLength = Math.min(leadTilesLength, 5);
+            goldTiles = new MapLocation[0];
+            goldTilesLength = 0;
+        }
+        else {
+            goldTiles = rc.senseNearbyLocationsWithGold(rc.getType().visionRadiusSquared);
+            goldTilesLength = goldTiles.length;
+        }
         for (int i = 0; i < leadTilesLength; i++) {
             MapLocation tile = leadTiles[i];
             // int clusterIdx = whichCluster(tile); Note: Inlined to save bytecode
@@ -362,8 +381,6 @@ public class Robot {
             }
             clusterResources[clusterIdx] += rc.senseLead(tile) - 1;
         }
-        MapLocation[] goldTiles = rc.senseNearbyLocationsWithGold(rc.getType().visionRadiusSquared);
-        int goldTilesLength = goldTiles.length;
         for (int i = 0; i < goldTilesLength; i++) {
             MapLocation tile = goldTiles[i];
             // int clusterIdx = whichCluster(tile); Note: Inlined to save bytecode
@@ -376,19 +393,20 @@ public class Robot {
             clusterResources[clusterIdx] += rc.senseGold(tile);
         }
 
-        // Add surrounding clusters to buffer. This ensures we clear out clusters where all
-        // resources have been mined
-        int[][] shifts = {{0, 3}, {2, 2}, {3, 0}, {2, -2}, {0, -3}, {-2, -2}, {-3, 0}, {-2, 2}};
-        for (int[] shift : shifts) {
-            MapLocation shiftedLocation = myLocation.translate(shift[0], shift[1]);
-            if (rc.canSenseLocation(shiftedLocation)) {
-                // int clusterIdx = whichCluster(shiftedLocation); Note: Inlined to save bytecode
-                int clusterIdx = whichXLoc[shiftedLocation.x] + whichYLoc[shiftedLocation.y];
-                MapLocation clusterCenter = new MapLocation(clusterCentersX[clusterIdx % clusterWidthsLength], 
-                                                clusterCentersY[clusterIdx / clusterWidthsLength]);
-                if (rc.canSenseLocation(clusterCenter) && (clusterResources[clusterIdx] & 32767) == 0) {
-                    markedClustersBuffer[markedClustersCount] = clusterIdx;
-                    markedClustersCount++;
+        if (rc.getType() != RobotType.BUILDER) {
+            // Add surrounding clusters to buffer. This ensures we clear out clusters where all
+            // resources have been mined
+            for (int[] shift : shifts) {
+                MapLocation shiftedLocation = myLocation.translate(shift[0], shift[1]);
+                if (rc.canSenseLocation(shiftedLocation)) {
+                    // int clusterIdx = whichCluster(shiftedLocation); Note: Inlined to save bytecode
+                    int clusterIdx = whichXLoc[shiftedLocation.x] + whichYLoc[shiftedLocation.y];
+                    MapLocation clusterCenter = new MapLocation(clusterCentersX[clusterIdx % clusterWidthsLength], 
+                                                    clusterCentersY[clusterIdx / clusterWidthsLength]);
+                    if (rc.canSenseLocation(clusterCenter) && (clusterResources[clusterIdx] & 32767) == 0) {
+                        markedClustersBuffer[markedClustersCount] = clusterIdx;
+                        markedClustersCount++;
+                    }
                 }
             }
         }

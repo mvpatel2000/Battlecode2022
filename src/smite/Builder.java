@@ -143,6 +143,10 @@ public class Builder extends Robot {
         if (repairLocation != null && rc.canRepair(repairLocation)) {
             rc.repair(repairLocation);
         }
+        // mutate if we have lots of resources and we can mutate level 1 to level 2
+        else if (shouldMutate && mutateLocation != null && rc.canMutate(mutateLocation)) {
+            rc.mutate(mutateLocation);
+        }
     }
 
     public void move() throws GameActionException {
@@ -160,9 +164,10 @@ public class Builder extends Robot {
             Direction bestDir = null;
             // if I'm adjacent to a low rubble tile with no lead and I can move there, move there and disintegrate
             for (Direction d : directionsWithoutCenter) {
-                if (rc.canSenseLocation(myLocation.add(d))) {
-                    int rubble = rc.senseRubble(myLocation.add(d));
-                    if (rc.canMove(d) && rc.senseRubble(myLocation.add(d)) < bestRubble && rc.senseLead(myLocation.add(d)) == 0) {
+                MapLocation moveLocation = myLocation.add(d);
+                if (rc.canSenseLocation(moveLocation)) {
+                    int rubble = rc.senseRubble(moveLocation);
+                    if (rc.canMove(d) && rubble < bestRubble && rc.senseLead(moveLocation) == 0) {
                         bestRubble = rubble;
                         bestDir = d;
                     }
