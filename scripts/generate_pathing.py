@@ -4,8 +4,9 @@ from pathlib import Path
 def encode(x, y):
     return (x+7) + 15*(y+7)
 
-RADII = {'Miner': 20, 'Builder': 20, 'Soldier': 20, 'Sage': 34, 'Archon': 34, 'Watchtower': 34, 'Laboratory': 34}
-SMALLER_RADII = {'Miner': 10, 'Builder': 10, 'Soldier': 10, 'Sage': 20, 'Archon': 20, 'Watchtower': 20, 'Laboratory': 20}
+# Note: Sage should be (34, 20) but we've reduced for bytecode reasons
+RADII = {'Miner': 20, 'Builder': 20, 'Soldier': 20, 'Sage': 20, 'Archon': 34, 'Watchtower': 34, 'Laboratory': 34}
+SMALLER_RADII = {'Miner': 10, 'Builder': 10, 'Soldier': 10, 'Sage': 10, 'Archon': 20, 'Watchtower': 20, 'Laboratory': 20}
 
 DIRECTIONS = {
     (1, 0): 'Direction.EAST',

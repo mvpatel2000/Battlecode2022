@@ -222,14 +222,20 @@ public class Miner extends Robot {
         // Set nearby resource tiles as a destination
         MapLocation nearestResource = null;
         int optimalDistance = Integer.MAX_VALUE;
-        for (MapLocation tile : rc.senseNearbyLocationsWithLead(RobotType.MINER.visionRadiusSquared, requiredLead)) {
+        MapLocation[] leadTiles = rc.senseNearbyLocationsWithLead(RobotType.MINER.visionRadiusSquared, requiredLead);
+        int leadTilesLength = leadTiles.length;
+        for (int i = 0; i < leadTilesLength; i++) {
+            MapLocation tile = leadTiles[i];
             int dist = myLocation.distanceSquaredTo(tile);
             if (dist < optimalDistance) {
                 nearestResource = tile;
                 optimalDistance = dist;
             }
         }
-        for (MapLocation tile : rc.senseNearbyLocationsWithGold(RobotType.MINER.visionRadiusSquared)) {
+        MapLocation[] goldTiles = rc.senseNearbyLocationsWithGold(RobotType.MINER.visionRadiusSquared);
+        int goldTilesLength = goldTiles.length;
+        for (int i = 0; i < goldTilesLength; i++) {
+            MapLocation tile = goldTiles[i];
             int dist = myLocation.distanceSquaredTo(tile);
             if (dist < optimalDistance) {
                 nearestResource = tile;
