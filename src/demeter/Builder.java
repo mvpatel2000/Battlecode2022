@@ -78,11 +78,14 @@ public class Builder extends Robot {
             return;
         }
 
+        boolean shouldMutate = rc.getTeamLeadAmount(allyTeam) >= 500;
+
         // Look for nearby buildings to heal
         RobotInfo[] allies = rc.senseNearbyRobots(RobotType.BUILDER.actionRadiusSquared, allyTeam);
         MapLocation repairLocation = null;
         int remainingHealth = Integer.MAX_VALUE;
         boolean foundLabPrototype = false;
+        MapLocation mutateLocation = null;
         for (RobotInfo ally : allies) {
             // Prioritize finishing prototypes
             int allyHealth = ally.getMode() == RobotMode.PROTOTYPE ? ally.getType().getMaxHealth(1) - ally.health - 1000 : ally.health;
@@ -91,6 +94,9 @@ public class Builder extends Robot {
                 remainingHealth = allyHealth;
                 foundLabPrototype = foundLabPrototype | (ally.getMode() == RobotMode.PROTOTYPE && ally.getType() == RobotType.LABORATORY);
             }
+            if (shouldMutate && ally.level == 1 && rc.canMutate(ally.location)) {
+                mutateLocation = ally.location;
+            }
         }
 
         // main builder stays away from the action
@@ -98,6 +104,11 @@ public class Builder extends Robot {
             // repair lab prototype if possible
             if (foundLabPrototype && repairLocation != null && rc.canRepair(repairLocation)) {
                 rc.repair(repairLocation);
+                return;
+            }
+            // mutate if we have lots of resources and we can mutate level 1 to level 2
+            else if (shouldMutate && mutateLocation != null && rc.canMutate(mutateLocation)) {
+                rc.mutate(mutateLocation);
                 return;
             }
 
