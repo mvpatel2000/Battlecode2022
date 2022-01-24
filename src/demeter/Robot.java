@@ -719,6 +719,7 @@ public class Robot {
         // }
         // Flee back to archon to heal
         if (baseRetreat()) {
+            exploreMode = false;
             return;
         }
         // Combat move. Kites enemy soldiers if harassing, otherwise pushes
@@ -737,6 +738,7 @@ public class Robot {
                 resetControlStatus(pathing.destination);
                 newDestination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                                 clusterCentersY[nearestCluster / clusterWidthsLength]);
+                exploreMode = false;
             }
             // Explore map. Get new cluster if not in explore mode or close to destination. Don't make sages explore
             else if (rc.getType() != RobotType.SAGE && (!exploreMode || myLocation.distanceSquaredTo(pathing.destination) <= 8)) {
@@ -749,6 +751,7 @@ public class Robot {
             // Instead, send all sages to cluster in middle. Keep them moving like a pack
             else if (rc.getType() == RobotType.SAGE) {
                 newDestination = new MapLocation(mapWidth / 2, mapHeight / 2);
+                exploreMode = false;
             }
             
             pathing.updateDestination(newDestination);

@@ -71,7 +71,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 2) {
+        // if (currentRound > 155) {
         //     rc.resign();
         // }
 
@@ -207,9 +207,10 @@ public class Archon extends Robot {
      * @throws GameActionException
      */
     public int considerTransform() throws GameActionException {
-        // Must be in turret mode with no allies nearby
+        // Must be in turret mode
         if (rc.getMode() == RobotMode.TURRET) {
-            if (nearbyEnemies.length == 0) {
+            // No enemies nearby and miners exist in beginning
+            if (nearbyEnemies.length == 0 && (minerCount >= 2*numOurArchons || currentRound >= 50)) {
                 boolean otherArchonTurretExists = false;
                 if (archonZeroAlive && myArchonNum != 0 && commsHandler.readOurArchonIsMoving(0) == CommsHandler.ArchonStatus.STATIONARY) {
                     otherArchonTurretExists = true;
@@ -447,9 +448,9 @@ public class Archon extends Robot {
         // String status = "";
         // for (int i = 0; i < commsHandler.MINE_CLUSTER_SLOTS; i++) {
         //     int cluster = commsHandler.readMineClusterIndex(i);
-        //     if (cluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
-        //         rc.setIndicatorDot(clusterToCenter(cluster), 255, 0, 0);
-        //     }
+        //     // if (cluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+        //     //     rc.setIndicatorDot(clusterToCenter(cluster), 255, 0, 0);
+        //     // }
         //     MapLocation center = cluster != commsHandler.UNDEFINED_CLUSTER_INDEX ? clusterToCenter(cluster) : new MapLocation(-1, -1);
         //     status += " " + cluster + "|" + center + "(" + commsHandler.readMineClusterClaimStatus(i) +
         //     "," + commsHandler.readClusterResourceCount(cluster) + ")";
@@ -486,7 +487,7 @@ public class Archon extends Robot {
                 } 
                 // Reset claim status
                 else {
-                    commsHandler.writeMineClusterClaimStatus(i, resourceCount / 4 + 1);
+                    commsHandler.writeMineClusterClaimStatus(i, resourceCount / 5 + 1);
                 }
             }
             // Clear explore slots
@@ -641,7 +642,7 @@ public class Archon extends Robot {
                         }
                     }
                     if (isValid) {
-                        commsHandler.writeMineClusterAll(mineClusterIndex, i + ((resourceCount / 4 + 1) << 7));
+                        commsHandler.writeMineClusterAll(mineClusterIndex, i + ((resourceCount / 5 + 1) << 7));
                         mineClusterIndex++;
 
                         // Preserve mining clusters which still have resources

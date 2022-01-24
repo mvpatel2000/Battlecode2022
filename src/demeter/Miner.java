@@ -216,6 +216,7 @@ public class Miner extends Robot {
              && (rc.senseLead(pathing.destination) > requiredLead || rc.senseGold(pathing.destination) > 0)) {
             // rc.setIndicatorString("Destination still has lead or gold: " + destination);
             considerFreeClusterClaim(nearestCluster);
+            exploreMode = false;
             return;
         }
         
@@ -246,6 +247,7 @@ public class Miner extends Robot {
             resetControlStatus(pathing.destination);
             pathing.updateDestination(nearestResource);
             considerFreeClusterClaim(nearestCluster);
+            exploreMode = false;
             return;
         }
 
@@ -265,6 +267,7 @@ public class Miner extends Robot {
                 if (!exploreMode || distToDest <= 2.9 || distToDest * 2.0 > distToNewDest) {
                     resetControlStatus(pathing.destination);
                     pathing.updateDestination(newDestination);
+                    exploreMode = false;
                     return;
                 }
             }
@@ -281,6 +284,16 @@ public class Miner extends Robot {
                 pathing.updateDestination(new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                                 clusterCentersY[nearestCluster / clusterWidthsLength]));
                 return;
+            }
+        }
+
+        // No mining or explore destinations, just go away from archon to avoid clog
+        if (!exploreMode) {
+            Direction dir = baseLocation.directionTo(myLocation);
+            MapLocation destination = myLocation.add(dir).add(dir);
+            if (rc.canSenseLocation(destination)) {
+                pathing.updateDestination(destination);
+                pathing.fuzzyMove(pathing.destination);
             }
         }
     }

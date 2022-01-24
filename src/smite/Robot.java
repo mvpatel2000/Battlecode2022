@@ -48,6 +48,7 @@ public class Robot {
 
     boolean isDying;
     final int FLEE_HEALTH = 8;
+    final int SAGE_FLEE_HEALTH = 10;
     final double GAMMA = 0.9;
 
     CommsHandler commsHandler;
@@ -162,7 +163,7 @@ public class Robot {
         if (myHealth == rc.getType().getMaxHealth(rc.getLevel())) {
             isDying = false;
         }
-        else if (myHealth <= FLEE_HEALTH) {
+        else if (myHealth <= FLEE_HEALTH || (rc.getType() == RobotType.SAGE && myHealth <= SAGE_FLEE_HEALTH)) {
             isDying = true;
         }
 
@@ -719,6 +720,7 @@ public class Robot {
         // }
         // Flee back to archon to heal
         if (baseRetreat()) {
+            exploreMode = false;
             return;
         }
         // Combat move. Kites enemy soldiers if harassing, otherwise pushes
@@ -737,6 +739,7 @@ public class Robot {
                 resetControlStatus(pathing.destination);
                 newDestination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                                 clusterCentersY[nearestCluster / clusterWidthsLength]);
+                exploreMode = false;
             }
             // Explore map. Get new cluster if not in explore mode or close to destination. Don't make sages explore
             else if (rc.getType() != RobotType.SAGE && (!exploreMode || myLocation.distanceSquaredTo(pathing.destination) <= 8)) {
@@ -749,6 +752,7 @@ public class Robot {
             // Instead, send all sages to cluster in middle. Keep them moving like a pack
             else if (rc.getType() == RobotType.SAGE) {
                 newDestination = new MapLocation(mapWidth / 2, mapHeight / 2);
+                exploreMode = false;
             }
             
             pathing.updateDestination(newDestination);

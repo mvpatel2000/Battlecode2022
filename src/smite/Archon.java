@@ -71,18 +71,14 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 585) {
+        // if (currentRound > 155) {
         //     //rc.resign\();
         // }
 
         readUnitUpdates();
 
-        if (lastArchon) {
-            lastArchonTasks();
-        }
-        if (firstArchon) {
-            firstArchonTasks();
-        }
+        firstArchonTasks();
+        lastArchonTasks();
 
         if (currentRound == 2) {
             setInitialExploreClusters();
@@ -113,6 +109,7 @@ public class Archon extends Robot {
     }
 
     public void lastArchonTasks() throws GameActionException {
+        if (!lastArchon) return;
         commsHandler.writeWorkerCountAll(0);
         commsHandler.writeFighterCountAll(0);
         commsHandler.writeBuildingCountAll(0);
@@ -125,9 +122,15 @@ public class Archon extends Robot {
             builderRequest == CommsHandler.BuilderRequest.LABORATORY_LEVEL_3) {
             commsHandler.writeBuilderRequestType(CommsHandler.BuilderRequest.NONE);
         }
+
+        if (rc.getTeamGoldAmount(allyTeam) >= 60) {
+            //rc.setIndicatorString("Halting gold production");
+            commsHandler.writeProductionControlGold(CommsHandler.ProductionControl.HALT);
+        }
     }
 
     public void firstArchonTasks() throws GameActionException {
+        if (!firstArchon) return;
         commsHandler.writeProductionControlGold(CommsHandler.ProductionControl.CONTINUE);
     }
 
@@ -139,6 +142,8 @@ public class Archon extends Robot {
             readUnitUpdates();
             updateResourceRate();
             archonStatusCheck();
+            firstArchonTasks();
+            lastArchonTasks();
         }
     }
 
@@ -198,9 +203,10 @@ public class Archon extends Robot {
      * @throws GameActionException
      */
     public int considerTransform() throws GameActionException {
-        // Must be in turret mode with no allies nearby
+        // Must be in turret mode
         if (rc.getMode() == RobotMode.TURRET) {
-            if (nearbyEnemies.length == 0) {
+            // No enemies nearby and miners exist in beginning
+            if (nearbyEnemies.length == 0 && (minerCount >= 2*numOurArchons || currentRound >= 50)) {
                 boolean otherArchonTurretExists = false;
                 if (archonZeroAlive && myArchonNum != 0 && commsHandler.readOurArchonIsMoving(0) == CommsHandler.ArchonStatus.STATIONARY) {
                     otherArchonTurretExists = true;
@@ -438,9 +444,9 @@ public class Archon extends Robot {
         // String status = "";
         // for (int i = 0; i < commsHandler.MINE_CLUSTER_SLOTS; i++) {
         //     int cluster = commsHandler.readMineClusterIndex(i);
-        //     if (cluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
-        //         //rc.setIndicatorDot(clusterToCenter(cluster), 255, 0, 0);
-        //     }
+        //     // if (cluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+        //     //     //rc.setIndicatorDot(clusterToCenter(cluster), 255, 0, 0);
+        //     // }
         //     MapLocation center = cluster != commsHandler.UNDEFINED_CLUSTER_INDEX ? clusterToCenter(cluster) : new MapLocation(-1, -1);
         //     status += " " + cluster + "|" + center + "(" + commsHandler.readMineClusterClaimStatus(i) +
         //     "," + commsHandler.readClusterResourceCount(cluster) + ")";
@@ -477,7 +483,7 @@ public class Archon extends Robot {
                 } 
                 // Reset claim status
                 else {
-                    commsHandler.writeMineClusterClaimStatus(i, resourceCount / 4 + 1);
+                    commsHandler.writeMineClusterClaimStatus(i, resourceCount / 5 + 1);
                 }
             }
             // Clear explore slots
@@ -632,7 +638,7 @@ public class Archon extends Robot {
                         }
                     }
                     if (isValid) {
-                        commsHandler.writeMineClusterAll(mineClusterIndex, i + ((resourceCount / 4 + 1) << 7));
+                        commsHandler.writeMineClusterAll(mineClusterIndex, i + ((resourceCount / 5 + 1) << 7));
                         mineClusterIndex++;
 
                         // Preserve mining clusters which still have resources
@@ -721,10 +727,6 @@ public class Archon extends Robot {
             toBuild = null;
         } else if (numSoldiersBuilt >= 2 && rng.nextDouble() < 0.3 && rc.getRoundNum() <= 1800) { // produce builders for farming
             toBuild = RobotType.BUILDER;
-        }
-
-        if (minerCount < initialMiners / 2 || minerCount < 2) {
-            commsHandler.writeProductionControlGold(CommsHandler.ProductionControl.HALT);
         }
 
         // Override: if I'm dying (and there are no enemy threats visible) and there aren't many builders out on the map, priority build a builder
