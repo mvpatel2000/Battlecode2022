@@ -461,14 +461,19 @@ public class Robot {
                     nearestArchonDistance = dist;
                 }
             }
+            // //rc.setIndicatorString(nearestArchonLocation + " " + commsHandler.readOurArchonAcceptingPatients(0)
+            //     + " " + commsHandler.readOurArchonAcceptingPatients(1) + " " + commsHandler.readOurArchonAcceptingPatients(2)
+            //     + " " + commsHandler.readOurArchonAcceptingPatients(3));
             // MapLocation nearestArchonLocation = baseLocation;
             if (nearestArchonLocation != null) {
                 if (myLocation.distanceSquaredTo(nearestArchonLocation) > RobotType.ARCHON.actionRadiusSquared) {
+                    baseLocation = nearestArchonLocation;
                     pathing.updateDestination(nearestArchonLocation);
                     pathing.pathToDestination();
                 }
                 return true;
             }
+            return false;
         }
         return false;
     }
@@ -720,17 +725,20 @@ public class Robot {
         // Flee back to archon to heal
         if (baseRetreat()) {
             exploreMode = false;
-            return;
         }
         // Combat move. Kites enemy soldiers if harassing, otherwise pushes
-        else if (nearbyEnemies.length > 0) {
+        if (nearbyEnemies.length > 0) {
             // Don't try kite moving on turn 1 or we'll TLE
             if (turnCount == 1) {
                 return;
             }
-            combatKiteMove();
+            // Combat kite move if you're not dying or if you're baseRetreating but you're inside archon heal
+            if (!isDying || (myLocation.distanceSquaredTo(baseLocation) <= RobotType.ARCHON.actionRadiusSquared)) {
+                combatKiteMove();
+            }
         }
-        else {
+        // Go to enemy or explore if you're not dying
+        else if (!isDying) {
             MapLocation newDestination = pathing.destination;
             // Navigate to nearest found enemy
             int nearestCluster = getNearestCombatCluster();

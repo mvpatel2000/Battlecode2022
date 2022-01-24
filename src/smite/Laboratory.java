@@ -37,10 +37,13 @@ public class Laboratory extends Robot {
     }
 
     public void transmute() throws GameActionException {
-        // //rc.setIndicatorString("Transmutation rate: " + transmutationRate);
         int currentTeamLead = rc.getTeamLeadAmount(allyTeam);
+        //rc.setIndicatorString("Rate: " + transmutationRate + ", requesting upgrade: " + requestingUpgrade);
         if (rc.canTransmute() && ((!requestingUpgrade && commsHandler.readProductionControlGold() == CommsHandler.ProductionControl.CONTINUE) || currentTeamLead >= 600)) {
+            //rc.setIndicatorDot(myLocation, 255, 215, 0);
             rc.transmute();
+        } else {
+            //rc.setIndicatorDot(myLocation, 118, 136, 143);
         }
         lastTeamLead = currentTeamLead;
     }
@@ -52,6 +55,9 @@ public class Laboratory extends Robot {
      * @throws GameActionException
      */
     public void shouldRequestUpgrade() throws GameActionException {
+        if (requestingUpgrade && commsHandler.readBuilderRequestXCoord() == myLocation.x && commsHandler.readBuilderRequestYCoord() == myLocation.y) {
+            commsHandler.writeBuilderRequestType(CommsHandler.BuilderRequest.NONE);
+        }
         if (transmutationRate >= 6 && rc.getLevel() == 1) {
             requestingUpgrade = true;
         } else if (transmutationRate <= 4 && rc.getLevel() == 1) {
@@ -74,7 +80,6 @@ public class Laboratory extends Robot {
     public void considerMoving() throws GameActionException {
         int bestRubble = rc.senseRubble(myLocation);
         if (bestRubble == 0) {
-            //rc.setIndicatorString("I'm on zero rubble! yay :D");
             if (rc.getMode() == RobotMode.PORTABLE && rc.canTransform()) {
                 rc.transform();
             }
