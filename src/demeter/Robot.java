@@ -416,52 +416,54 @@ public class Robot {
      * @throws GameActionException
      */
     public boolean baseRetreat() throws GameActionException {
-        // get nearest archon location
-        MapLocation nearestArchonLocation = null;
-        int nearestArchonDistance = Integer.MAX_VALUE;
-        if (archonZeroAlive) {
-            int dist = myLocation.distanceSquaredTo(archonZeroLocation);
-            if (dist < nearestArchonDistance 
-                && (dist < RobotType.ARCHON.actionRadiusSquared 
-                    || commsHandler.readOurArchonAcceptingPatients(0) == CommsHandler.ArchonStatus.ACCEPTING_PATIENTS)) {
-                nearestArchonLocation = archonZeroLocation;
-                nearestArchonDistance = dist;
+        if (isDying) {
+            // get nearest archon location
+            MapLocation nearestArchonLocation = null;
+            int nearestArchonDistance = Integer.MAX_VALUE;
+            if (archonZeroAlive) {
+                int dist = myLocation.distanceSquaredTo(archonZeroLocation);
+                if (dist < nearestArchonDistance 
+                    && (dist < RobotType.ARCHON.actionRadiusSquared 
+                        || commsHandler.readOurArchonAcceptingPatients(0) == CommsHandler.ArchonStatus.ACCEPTING_PATIENTS)) {
+                    nearestArchonLocation = archonZeroLocation;
+                    nearestArchonDistance = dist;
+                }
             }
-        }
-        if (archonOneAlive) {
-            int dist = myLocation.distanceSquaredTo(archonOneLocation);
-            if (dist < nearestArchonDistance 
-                && (dist < RobotType.ARCHON.actionRadiusSquared 
-                    || commsHandler.readOurArchonAcceptingPatients(1) == CommsHandler.ArchonStatus.ACCEPTING_PATIENTS)) {
-                nearestArchonLocation = archonOneLocation;
-                nearestArchonDistance = dist;
+            if (archonOneAlive) {
+                int dist = myLocation.distanceSquaredTo(archonOneLocation);
+                if (dist < nearestArchonDistance 
+                    && (dist < RobotType.ARCHON.actionRadiusSquared 
+                        || commsHandler.readOurArchonAcceptingPatients(1) == CommsHandler.ArchonStatus.ACCEPTING_PATIENTS)) {
+                    nearestArchonLocation = archonOneLocation;
+                    nearestArchonDistance = dist;
+                }
             }
-        }
-        if (archonTwoAlive) {
-            int dist = myLocation.distanceSquaredTo(archonTwoLocation);
-            if (dist < nearestArchonDistance 
-                && (dist < RobotType.ARCHON.actionRadiusSquared 
-                    || commsHandler.readOurArchonAcceptingPatients(2) == CommsHandler.ArchonStatus.ACCEPTING_PATIENTS)) {
-                nearestArchonLocation = archonTwoLocation;
-                nearestArchonDistance = dist;
+            if (archonTwoAlive) {
+                int dist = myLocation.distanceSquaredTo(archonTwoLocation);
+                if (dist < nearestArchonDistance 
+                    && (dist < RobotType.ARCHON.actionRadiusSquared 
+                        || commsHandler.readOurArchonAcceptingPatients(2) == CommsHandler.ArchonStatus.ACCEPTING_PATIENTS)) {
+                    nearestArchonLocation = archonTwoLocation;
+                    nearestArchonDistance = dist;
+                }
             }
-        }
-        if (archonThreeAlive) {
-            int dist = myLocation.distanceSquaredTo(archonThreeLocation);
-            if (dist < nearestArchonDistance 
-                && (dist < RobotType.ARCHON.actionRadiusSquared 
-                    || commsHandler.readOurArchonAcceptingPatients(3) == CommsHandler.ArchonStatus.ACCEPTING_PATIENTS)) {
-                nearestArchonLocation = archonThreeLocation;
-                nearestArchonDistance = dist;
+            if (archonThreeAlive) {
+                int dist = myLocation.distanceSquaredTo(archonThreeLocation);
+                if (dist < nearestArchonDistance 
+                    && (dist < RobotType.ARCHON.actionRadiusSquared 
+                        || commsHandler.readOurArchonAcceptingPatients(3) == CommsHandler.ArchonStatus.ACCEPTING_PATIENTS)) {
+                    nearestArchonLocation = archonThreeLocation;
+                    nearestArchonDistance = dist;
+                }
             }
-        }
-        // MapLocation nearestArchonLocation = baseLocation;
-        if (isDying && nearestArchonLocation != null) {
-            if (myLocation.distanceSquaredTo(nearestArchonLocation) > RobotType.ARCHON.actionRadiusSquared) {
-                pathing.updateDestination(nearestArchonLocation);
-                pathing.pathToDestination();
+            // MapLocation nearestArchonLocation = baseLocation;
+            if (nearestArchonLocation != null) {
+                if (myLocation.distanceSquaredTo(nearestArchonLocation) > RobotType.ARCHON.actionRadiusSquared) {
+                    pathing.updateDestination(nearestArchonLocation);
+                    pathing.pathToDestination();
+                }
+                return true;
             }
-            return true;
         }
         return false;
     }
