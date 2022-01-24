@@ -671,7 +671,7 @@ public class Archon extends Robot {
     public void build() throws GameActionException {
         // temporary solution to starvation
         double passThreshold = computeBuildPassThreshold();
-        rc.setIndicatorString("Pass thresh: " + passThreshold);
+        // rc.setIndicatorString("Pass thresh: " + passThreshold);
         boolean pass = rng.nextDouble() > passThreshold;
         if (pass && reservedLead == 0 && reservedGold == 0 && rc.getTeamLeadAmount(allyTeam) < 275 && rc.getTeamGoldAmount(allyTeam) < 40) { // don't pass if we have already reserved some resources
             return;
@@ -868,6 +868,7 @@ public class Archon extends Robot {
         }
         double myRubbleFactor = 10 / (10.0 + rc.senseRubble(myLocation));
         boolean shouldAcceptPatients = amountToRepair >= HOSPITAL_SIZE * myRubbleFactor * (numFriendlyArchons + 1);
+        // rc.setIndicatorString(amountToRepair + " " + HOSPITAL_SIZE + " " + myRubbleFactor + " " + numFriendlyArchons + " " + shouldAcceptPatients);
         int isHospitalFull = shouldAcceptPatients ? CommsHandler.ArchonStatus.NOT_ACCEPTING_PATIENTS
                                                     : CommsHandler.ArchonStatus.ACCEPTING_PATIENTS;
         if (commsHandler.readOurArchonAcceptingPatients(myArchonNum) != isHospitalFull) {
