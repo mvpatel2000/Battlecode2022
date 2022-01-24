@@ -157,6 +157,12 @@ public class Robot {
         // Before unit runs
         turnCount++;
         currentRound = rc.getRoundNum();
+        // Don't run setup for labs on turn 1, they TLE
+        if (rc.getType() == RobotType.LABORATORY && turnCount == 1) {
+            return;
+        }
+
+        // Rest of setup
         nearbyEnemies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, enemyTeam);
         setClusterStates();
         archonStatusCheck();
@@ -262,8 +268,9 @@ public class Robot {
     public void setClusterStates() throws GameActionException {
         // int bytecodeUsed = Clock.getBytecodeNum();
 
-        // Turrets only run on turns 2 and 3
-        if (rc.getMode() == RobotMode.TURRET && turnCount > 2) {
+        // Turrets only run on turns 2 and 3, labs dont run
+        if ((rc.getMode() == RobotMode.TURRET && turnCount > 2)
+            || rc.getType() == RobotType.LABORATORY) {
             return;
         }
         
