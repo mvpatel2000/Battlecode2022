@@ -711,12 +711,14 @@ public class Archon extends Robot {
             toBuild = RobotType.MINER;
         } else if (builderCount == 0) { // make one builder
             toBuild = RobotType.BUILDER;
-        } else if (highEMA && rc.getTeamLeadAmount(allyTeam) < 275 && rc.getRoundNum() >= laboratoryCount * 150) { // pause building until next laboratory (except overrides)
+        } else if (laboratoryCount == 0) { // pause building until first laboratory (except overrides)
             toBuild = null;
         } else if (minerCount < initialMiners) { // make the rest of the initial miners; this is the last step of early game
             toBuild = RobotType.MINER;
         } else if (minerCount < rc.getRobotCount() / (Math.max(2.5, (4.5 - resourcesOnMap / 600)))) { // produce additional miners based on resource count
             toBuild = RobotType.MINER;
+        } else if (highEMA && rc.getTeamLeadAmount(allyTeam) < 275 && rc.getRoundNum() >= laboratoryCount * 150) { // another pause till laboratory
+            toBuild = null;
         } else if (numSoldiersBuilt >= 2 && rng.nextDouble() < 0.3 && rc.getRoundNum() <= 1800) { // produce builders for farming
             toBuild = RobotType.BUILDER;
         }
