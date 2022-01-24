@@ -48,6 +48,7 @@ public class Robot {
 
     boolean isDying;
     final int FLEE_HEALTH = 8;
+    final int SAGE_FLEE_HEALTH = 10;
     final double GAMMA = 0.9;
 
     CommsHandler commsHandler;
@@ -162,7 +163,7 @@ public class Robot {
         if (myHealth == rc.getType().getMaxHealth(rc.getLevel())) {
             isDying = false;
         }
-        else if (myHealth <= FLEE_HEALTH) {
+        else if (myHealth <= FLEE_HEALTH || (rc.getType() == RobotType.SAGE && myHealth <= SAGE_FLEE_HEALTH)) {
             isDying = true;
         }
 
