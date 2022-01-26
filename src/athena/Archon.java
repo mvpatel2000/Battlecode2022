@@ -799,7 +799,9 @@ public class Archon extends Robot {
         if (builderRequest == CommsHandler.BuilderRequest.LABORATORY_LEVEL_3) {
             totalGoldReserved += RobotType.LABORATORY.getGoldMutateCost(3);
         }
-        if (reservedGold > 0) System.out.println("reserved gold: " + totalGoldReserved);
+        if (reservedGold > 0) {
+            System.out.println("reserved gold: " + totalGoldReserved);
+        }
 
         // Either build or reserve
         if (optimalDir != null

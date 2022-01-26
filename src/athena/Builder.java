@@ -246,14 +246,14 @@ public class Builder extends Robot {
             double yVec = 0;
             RobotInfo[] nearbyAllies = rc.senseNearbyRobots(RobotType.BUILDER.visionRadiusSquared, allyTeam);
             for (RobotInfo ally : nearbyAllies) {
-                xVec += -5.0 / ((myLocation.x - ally.location.x) * (myLocation.x - ally.location.x));
-                yVec += -5.0 / ((myLocation.y - ally.location.y) * (myLocation.y - ally.location.y));
+                double repulsion = 20.0 / ally.location.distanceSquaredTo(myLocation);
+                xVec += repulsion * (ally.location.x - myLocation.x);
+                yVec += repulsion * (ally.location.y - myLocation.y);
             }
             int xDest = Math.max(Math.min((int) (myLocation.x + xVec), mapWidth - 1), 0);
             int yDest = Math.max(Math.min((int) (myLocation.y + yVec), mapHeight - 1), 0);
             pathing.updateDestination(new MapLocation(xDest, yDest));
         }
-
         if (turnCount == 1) {
             pathing.cautiousGreedyMove(pathing.destination);
         } else {

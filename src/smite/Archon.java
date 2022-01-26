@@ -41,7 +41,7 @@ public class Archon extends Robot {
     int oldResourceCount = 0;
     int resourceRate = 0;
     double resourceRateEMA = 0;
-    final double RESOURCE_ALPHA = 0.05;
+    final double RESOURCE_ALPHA = 0.04;
     boolean highEMA = false;
 
     // used to move around
@@ -799,7 +799,9 @@ public class Archon extends Robot {
         if (builderRequest == CommsHandler.BuilderRequest.LABORATORY_LEVEL_3) {
             totalGoldReserved += RobotType.LABORATORY.getGoldMutateCost(3);
         }
-        if (reservedGold > 0) //System.out.println\("reserved gold: " + totalGoldReserved);
+        if (reservedGold > 0) {
+            //System.out.println\("reserved gold: " + totalGoldReserved);
+        }
 
         // Either build or reserve
         if (optimalDir != null
