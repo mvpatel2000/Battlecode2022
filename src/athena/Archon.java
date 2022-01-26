@@ -545,6 +545,8 @@ public class Archon extends Robot {
         // Set priority clusters
         int startIdx = 0;
         int endIdx = numClusters;
+        
+        // rc.setIndicatorString("Timer: " + timeToRegen[0] + " " + clusterToCenter(0) + " " + commsHandler.readClusterResourceCount(0));
 
         for (int prePermuteIdx = startIdx; prePermuteIdx < endIdx; prePermuteIdx++) {
             int i = clusterPermutation[prePermuteIdx];
