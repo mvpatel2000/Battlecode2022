@@ -21,6 +21,25 @@ SCHEMA = {
             'y_coord': 6,
         }
     },
+    'reserved_resources': {
+        'slots': 1,
+        'bits': {
+            'lead': 10,
+            'gold': 6,
+        }
+    },
+    'production_control': {
+        'slots': 1,
+        'bits': {
+            'gold': 1,
+        },
+    },
+    'lead_delta': { # make sure this is in a single int
+        'slots': 1,
+        'bits': {
+            '': 15,
+        }
+    },
     'worker_count': { # make sure this is in a single int
         'slots': 1,
         'bits': {
@@ -40,6 +59,19 @@ SCHEMA = {
         'bits': {
             'laboratories': 8,
             'watchtowers': 8,
+        }
+    },
+    'map': {
+        'slots': 1,
+        'bits': {
+            'symmetry': 2,
+        }
+    },
+    'starting_archon_centroid': {
+        'slots': 1,
+        'bits': {
+            'x_coord': 6,
+            'y_coord': 6,
         }
     },
     'cluster': {
@@ -69,32 +101,6 @@ SCHEMA = {
             'index': 7,
         }
     },
-    'starting_archon_centroid': {
-        'slots': 1,
-        'bits': {
-            'x_coord': 6,
-            'y_coord': 6,
-        }
-    },
-    'reserved_resources': {
-        'slots': 1,
-        'bits': {
-            'lead': 10,
-            'gold': 6,
-        }
-    },
-    'map': {
-        'slots': 1,
-        'bits': {
-            'symmetry': 2,
-        }
-    },
-    'production_control': {
-        'slots': 1,
-        'bits': {
-            'gold': 1,
-        },
-    }
 }
 
 def gen_constants():
@@ -210,6 +216,7 @@ def gen():
     # remove redundant shifts
     out = out.replace(" >>> 0", "")
     out = out.replace(" << 0", "")
+    print("Total bit usage: " + str(bits_so_far))
     return out
 
 def gen_cluster_control_status_reset():

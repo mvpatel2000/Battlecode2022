@@ -94,7 +94,7 @@ public class Builder extends Robot {
                 remainingHealth = allyHealth;
                 foundLabPrototype = foundLabPrototype | (ally.getMode() == RobotMode.PROTOTYPE && ally.getType() == RobotType.LABORATORY);
             }
-            if (shouldMutate && ally.level == 1 && rc.canMutate(ally.location)) {
+            if (shouldMutate && rc.canMutate(ally.location)) {
                 mutateLocation = ally.location;
             }
         }
@@ -178,6 +178,7 @@ public class Builder extends Robot {
                 rc.disintegrate();
                 return;
             }
+
         }
 
         // Calculations for kiting
@@ -229,15 +230,28 @@ public class Builder extends Robot {
                                                 20 * myLocation.y - 19 * ((mapHeight - 1)/2)));
             }
         }
-        // Farmer moves towards combat or towards center
+        
         else if (leadFarmSacrifice) {
-            if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
-                resetControlStatus(pathing.destination);
-                pathing.updateDestination(new MapLocation((clusterCentersX[nearestCluster % clusterWidthsLength] + ourArchonCentroid.x)/2, 
-                                                (clusterCentersY[nearestCluster / clusterWidthsLength] + ourArchonCentroid.y)/2));
-            } else {
-                pathing.updateDestination(new MapLocation((mapWidth - 1 + ourArchonCentroid.x)/2, (mapHeight - 1 + ourArchonCentroid.y)/2));
+            // Farmer moves towards combat or towards center
+            // if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+            //     resetControlStatus(pathing.destination);
+            //     pathing.updateDestination(new MapLocation((clusterCentersX[nearestCluster % clusterWidthsLength] + ourArchonCentroid.x)/2, 
+            //                                     (clusterCentersY[nearestCluster / clusterWidthsLength] + ourArchonCentroid.y)/2));
+            // } else {
+            //     pathing.updateDestination(new MapLocation((mapWidth - 1 + ourArchonCentroid.x)/2, (mapHeight - 1 + ourArchonCentroid.y)/2));
+            // }
+
+            // Farmer moves away from friendly units
+            double xVec = 0;
+            double yVec = 0;
+            RobotInfo[] nearbyAllies = rc.senseNearbyRobots(RobotType.BUILDER.visionRadiusSquared, allyTeam);
+            for (RobotInfo ally : nearbyAllies) {
+                xVec += -5.0 / ((myLocation.x - ally.location.x) * (myLocation.x - ally.location.x));
+                yVec += -5.0 / ((myLocation.y - ally.location.y) * (myLocation.y - ally.location.y));
             }
+            int xDest = Math.max(Math.min((int) (myLocation.x + xVec), mapWidth - 1), 0);
+            int yDest = Math.max(Math.min((int) (myLocation.y + yVec), mapHeight - 1), 0);
+            pathing.updateDestination(new MapLocation(xDest, yDest));
         }
 
         if (turnCount == 1) {

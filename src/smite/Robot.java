@@ -416,9 +416,8 @@ public class Robot {
             int clusterIdx = markedClustersBuffer[i];
             int rawResourceCount = clusterResources[clusterIdx] & 32767;
             int newResourceCount = compressResourceCount(rawResourceCount);
-            int oldResourceCount = (clusterResources[clusterIdx] - rawResourceCount) >>> 15;
-            if (oldResourceCount != newResourceCount 
-                    && newResourceCount != commsHandler.readClusterResourceCount(clusterIdx)) {
+            // int oldResourceCount = (clusterResources[clusterIdx] - rawResourceCount) >>> 15;
+            if (newResourceCount != commsHandler.readClusterResourceCount(clusterIdx)) {
                 commsHandler.writeClusterResourceCount(clusterIdx, newResourceCount);
             }
             clusterResources[clusterIdx] = newResourceCount << 15;

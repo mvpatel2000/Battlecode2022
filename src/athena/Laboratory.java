@@ -42,6 +42,7 @@ public class Laboratory extends Robot {
         if (rc.canTransmute() && ((!requestingUpgrade && commsHandler.readProductionControlGold() == CommsHandler.ProductionControl.CONTINUE) || currentTeamLead >= 600)) {
             rc.setIndicatorDot(myLocation, 255, 215, 0);
             rc.transmute();
+            commsHandler.writeLeadDelta(Math.max(commsHandler.readLeadDelta() - transmutationRate, 0));
         } else {
             rc.setIndicatorDot(myLocation, 118, 136, 143);
         }
@@ -94,7 +95,7 @@ public class Laboratory extends Robot {
                 }
             }
             // System.out.println("Best destination: " + pathing.destination);
-            if (pathing.destination.distanceSquaredTo(myLocation) == 0) {
+            if (pathing.destination == null || pathing.destination.distanceSquaredTo(myLocation) == 0) {
                 if (rc.getMode() == RobotMode.PORTABLE && rc.canTransform()) {
                     rc.transform();
                 }

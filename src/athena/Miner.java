@@ -118,9 +118,14 @@ public class Miner extends Robot {
         }
         for (MapLocation mineLocation : nearbyActionLead) {
             int leadCount = rc.senseLead(mineLocation);
+            int leadMined = 0;
             while (rc.canMineLead(mineLocation) && leadCount >= requiredLead) {
                 rc.mineLead(mineLocation);
                 leadCount--;
+                leadMined++;
+            }
+            if (leadMined > 0) {
+                commsHandler.writeLeadDelta(Math.min(commsHandler.readLeadDelta() + leadMined, 32767));
             }
             // No longer able to mine
             if (!rc.isActionReady()) {
@@ -259,7 +264,7 @@ public class Miner extends Robot {
         // // for debug
         // if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
         //     rc.setIndicatorLine(myLocation, clusterToCenter(nearestCluster), 0, 255, 0);
-        // }   
+        // }
 
         // Navigate to nearest resources found. Ignore for first 100 rounds to encourage exploration. After,
         // only switch to mining if we've finished exploring
