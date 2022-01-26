@@ -78,7 +78,8 @@ public class Builder extends Robot {
             return;
         }
 
-        boolean shouldMutate = rc.getTeamLeadAmount(allyTeam) >= 500;
+        int teamLeadAmount = rc.getTeamLeadAmount(allyTeam)
+        boolean shouldMutate = teamLeadAmount >= 500;
 
         // Look for nearby buildings to heal
         RobotInfo[] allies = rc.senseNearbyRobots(RobotType.BUILDER.actionRadiusSquared, allyTeam);
@@ -125,7 +126,7 @@ public class Builder extends Robot {
                         }
                     }
                 }
-                if (optimalDir != null && rc.getTeamLeadAmount(allyTeam) >= RobotType.LABORATORY.buildCostLead) {
+                if (optimalDir != null && teamLeadAmount >= RobotType.LABORATORY.buildCostLead) {
                     rc.buildRobot(RobotType.LABORATORY, optimalDir);
                     return;
                 }
@@ -147,6 +148,20 @@ public class Builder extends Robot {
         else if (shouldMutate && mutateLocation != null && rc.canMutate(mutateLocation)) {
             rc.mutate(mutateLocation);
         }
+        // else if (teamLeadAmount >= 1000) {
+        //     // make a watchtower if possible
+        //     Direction optimalDir = null;
+        //     int optimalRubble = Integer.MAX_VALUE;
+        //     for (Direction dir : directionsWithoutCenter) {
+        //         if (rc.canBuildRobot(RobotType.WATCHTOWER, dir)) {
+        //             int rubble = rc.senseRubble(myLocation.add(dir));
+        //             if (rubble < optimalRubble) {
+        //                 optimalDir = dir;
+        //                 optimalRubble = rubble;
+        //             }
+        //         }
+        //     }
+        // }
     }
 
     public void move() throws GameActionException {
