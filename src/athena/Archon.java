@@ -41,7 +41,7 @@ public class Archon extends Robot {
     int oldResourceCount = 0;
     int resourceRate = 0;
     double resourceRateEMA = 0;
-    final double RESOURCE_ALPHA = 0.05;
+    final double RESOURCE_ALPHA = 0.04;
     boolean highEMA = false;
 
     // used to move around
