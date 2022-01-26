@@ -71,7 +71,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 22) {
+        // if (currentRound > 200) {
         //     //rc.resign\();
         // }
 
@@ -686,6 +686,7 @@ public class Archon extends Robot {
         // //rc.setIndicatorString("Pass thresh: " + passThreshold);
         boolean pass = rng.nextDouble() > passThreshold;
         if (pass && reservedLead == 0 && reservedGold == 0 && rc.getTeamLeadAmount(allyTeam) < 275 && rc.getTeamGoldAmount(allyTeam) < 40) { // don't pass if we have already reserved some resources
+            //rc.setIndicatorString("Passing build");
             return;
         }
 
@@ -700,40 +701,53 @@ public class Archon extends Robot {
         }
 
         RobotType toBuild = RobotType.SOLDIER;
-        int initialMiners = Math.max(4, (int) ((mapHeight * mapWidth / 240) + 3)); // 4-18
+        //rc.setIndicatorString("Build phase: normal soldier production");
+        // //System.out.println\("Num soldiers built: " + numSoldiersBuilt + "; farmer rng threshold: " + ((mapHeight * mapWidth / 4000.0) + (currentRound / 500.0)));
+        int initialMiners = Math.max(4, (mapHeight * mapWidth / 240) + 3); // 4-18
+        int maxMiners = mapWidth * mapHeight / 36;
 
-        if (!highEMA && resourceRateEMA > 9) {
+        if (!highEMA && resourceRateEMA > 7) {
             highEMA = true;
-        } else if (highEMA && resourceRateEMA < 7) {
+        } else if (highEMA && resourceRateEMA < 5) {
             highEMA = false;
         }
 
         if (minerCount < Math.min(2 * numOurArchons, initialMiners)) { // make the first set of initial miners
             toBuild = RobotType.MINER;
+            //rc.setIndicatorString("Build phase: first miners");
         } else if (builderCount == 0) { // make one builder
             toBuild = RobotType.BUILDER;
+            //rc.setIndicatorString("Build phase: first builder");
         } else if (laboratoryCount == 0) { // pause building until first laboratory (except overrides)
             toBuild = null;
+            //rc.setIndicatorString("Build phase: wait for first lab");
         } else if (minerCount < initialMiners) { // make the rest of the initial miners; this is the last step of early game
             toBuild = RobotType.MINER;
-        } else if (minerCount < rc.getRobotCount() / (Math.max(3, (4.5 - resourcesOnMap / 600)))) { // produce additional miners based on resource count
+            //rc.setIndicatorString("Build phase: rest of initial miners");
+        } else if (minerCount < rc.getRobotCount() / (Math.max(3, (4.5 - (resourcesOnMap / 600.0)))) && minerCount < maxMiners) { // produce additional miners based on resource count
+            //System.out.println\("Resources on map: " + resourcesOnMap);
             toBuild = RobotType.MINER;
+            //rc.setIndicatorString("Build phase: additional miners");
         } else if (highEMA && rc.getTeamLeadAmount(allyTeam) < 275 && rc.getRoundNum() >= laboratoryCount * 150) { // another pause till laboratory
             toBuild = null;
-        } else if (numSoldiersBuilt >= 2 && rng.nextDouble() < 0.3 && rc.getRoundNum() <= 1800) { // produce builders for farming
+            //rc.setIndicatorString("Build phase: wait for extra lab");
+        } else if (numSoldiersBuilt >= 2 && rng.nextDouble() < (mapHeight * mapWidth / 4000.0) + (currentRound / 500.0) && rc.getRoundNum() <= 1800) { // produce builders for farming
             toBuild = RobotType.BUILDER;
+            //rc.setIndicatorString("Build phase: builders for farming");
         }
 
         // Override: if I'm dying (and there are no enemy threats visible) and there aren't many builders out on the map, priority build a builder
         if (rc.getHealth() < 0.3 * RobotType.ARCHON.getMaxHealth(rc.getLevel()) && builderCount <= 3) {
             toBuild = RobotType.BUILDER;
             reservedLead = RobotType.BUILDER.buildCostLead / LEAD_RESERVE_SCALE;
+            //rc.setIndicatorString("Priority building builder for healing");
         }
 
         // Override: if I haven't built a miner yet, priority build one
         if (numMinersBuilt == 0) {
             toBuild = RobotType.MINER;
             reservedLead = RobotType.MINER.buildCostLead / LEAD_RESERVE_SCALE;
+            //rc.setIndicatorString("Priority building miner");
         }
 
         // Override: if there is a visible enemy archon/soldier/sage/watchtower, priority build a soldier
@@ -742,6 +756,7 @@ public class Archon extends Robot {
                 if (enemy.type == RobotType.SOLDIER || enemy.type == RobotType.ARCHON || enemy.type == RobotType.SAGE || enemy.type == RobotType.WATCHTOWER) {
                     toBuild = RobotType.SOLDIER;
                     reservedLead = RobotType.SOLDIER.buildCostLead / LEAD_RESERVE_SCALE; // priority build
+                    //rc.setIndicatorString("Priority building soldier");
                 }
             }
         }
@@ -750,6 +765,7 @@ public class Archon extends Robot {
         if (rc.getTeamGoldAmount(allyTeam) >= RobotType.SAGE.buildCostGold && (rc.getRoundNum() < 500 || toBuild != RobotType.MINER)) {
             toBuild = RobotType.SAGE;
             reservedLead = 0;
+            //rc.setIndicatorString("Priority building sage");
         }
 
         if (toBuild == null) {
