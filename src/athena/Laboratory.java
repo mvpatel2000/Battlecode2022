@@ -42,6 +42,7 @@ public class Laboratory extends Robot {
         if (rc.canTransmute() && ((!requestingUpgrade && commsHandler.readProductionControlGold() == CommsHandler.ProductionControl.CONTINUE) || currentTeamLead >= 600)) {
             rc.setIndicatorDot(myLocation, 255, 215, 0);
             rc.transmute();
+            commsHandler.writeLeadDelta(Math.max(commsHandler.readLeadDelta() - transmutationRate, 0));
         } else {
             rc.setIndicatorDot(myLocation, 118, 136, 143);
         }

@@ -118,9 +118,14 @@ public class Miner extends Robot {
         }
         for (MapLocation mineLocation : nearbyActionLead) {
             int leadCount = rc.senseLead(mineLocation);
+            int leadMined = 0;
             while (rc.canMineLead(mineLocation) && leadCount >= requiredLead) {
                 rc.mineLead(mineLocation);
                 leadCount--;
+                leadMined++;
+            }
+            if (leadMined > 0) {
+                commsHandler.writeLeadDelta(Math.min(commsHandler.readLeadDelta() + leadMined, 32767));
             }
             // No longer able to mine
             if (!rc.isActionReady()) {

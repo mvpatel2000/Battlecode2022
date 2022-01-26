@@ -71,11 +71,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-<<<<<<< HEAD
-        // if (currentRound > 200) {
-=======
         // if (currentRound > 400) {
->>>>>>> adfc7402c6987d6311220e01f9c16a8ae67d0455
         //     //rc.resign\();
         // }
 
