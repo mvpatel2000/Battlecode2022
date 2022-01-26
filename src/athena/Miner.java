@@ -157,7 +157,7 @@ public class Miner extends Robot {
         }
         if (nearestCombatEnemy != null) { 
             lastEnemyLocation = nearestCombatEnemy;
-            fleeingCounter = 2;
+            fleeingCounter = 6;
         }
 
         // Kite enemy unit
@@ -238,7 +238,7 @@ public class Miner extends Robot {
             int lead = rc.senseLead(tile);
             int dist = myLocation.distanceSquaredTo(tile);
             // Ignore first regen of lead in first 100 turns
-            if (dist < optimalDistance && (dist <= 2 || lead > 7 || currentRound > 100)) {
+            if (dist < optimalDistance && (dist <= 2 || lead > 7 || currentRound >= 50)) {
                 nearestResource = tile;
                 optimalDistance = dist;
             }
