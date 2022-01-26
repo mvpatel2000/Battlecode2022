@@ -53,9 +53,9 @@ if __name__ == "__main__":
     p1_wins = []
     p2_wins = []
     for m, w in winners.items():
-        if w[0] == w[1] and w[0] == args.p1:
+        if args.p2 not in w:
             p1_wins.append(m)
-        elif w[0] == w[1] and w[0] == args.p2:
+        elif args.p1 not in w:
             p2_wins.append(m)
     print(f"{args.p1} wins both sides on {p1_wins}")
     print(f"{args.p2} wins both sides on {p2_wins}")
