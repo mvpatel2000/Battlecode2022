@@ -775,9 +775,9 @@ public class Robot {
                 }
             }
             // Instead, send all sages to cluster in middle. Keep them moving like a pack
-            else if (rc.getType() == RobotType.SAGE) {
+            else if (rc.getType() == RobotType.SAGE && (!exploreMode || myLocation.distanceSquaredTo(pathing.destination) <= 8)) {
                 newDestination = new MapLocation(mapWidth / 2, mapHeight / 2);
-                exploreMode = false;
+                exploreMode = true;
             }
             
             pathing.updateDestination(newDestination);

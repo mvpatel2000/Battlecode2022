@@ -210,6 +210,9 @@ public class Miner extends Robot {
 
         // Always claim cluster each turn
         int nearestCluster = getNearestMineCluster();
+        
+        // MapLocation clusterCenter = nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX ? clusterToCenter(nearestCluster) : new MapLocation(-1, -1);
+        // //rc.setIndicatorString(pathing.destination + " " + clusterCenter + " " + exploreMode);
 
         // Don't scan if destination still has lead or gold
         if (pathing.destination != null && rc.canSenseLocation(pathing.destination)
@@ -227,7 +230,9 @@ public class Miner extends Robot {
         int leadTilesLength = leadTiles.length;
         for (int i = 0; i < leadTilesLength; i++) {
             MapLocation tile = leadTiles[i];
+            int lead = rc.senseLead(tile);
             int dist = myLocation.distanceSquaredTo(tile);
+            // Ignore first regen of lead in first 100 turns
             if (dist < optimalDistance) {
                 nearestResource = tile;
                 optimalDistance = dist;
@@ -256,8 +261,9 @@ public class Miner extends Robot {
         //     //rc.setIndicatorLine(myLocation, clusterToCenter(nearestCluster), 0, 255, 0);
         // }   
 
-        // Navigate to nearest resources found. Ignore for first 100 rounds to encourage exploration
-        if (currentRound >= 100) {
+        // Navigate to nearest resources found. Ignore for first 100 rounds to encourage exploration. After,
+        // only switch to mining if we've finished exploring
+        if (currentRound >= 100 && (!exploreMode || myLocation.distanceSquaredTo(pathing.destination) <= 8)) {
             if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 MapLocation newDestination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                                                 clusterCentersY[nearestCluster / clusterWidthsLength]);
