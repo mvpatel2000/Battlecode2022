@@ -78,7 +78,7 @@ public class Builder extends Robot {
             return;
         }
 
-        int teamLeadAmount = rc.getTeamLeadAmount(allyTeam)
+        int teamLeadAmount = rc.getTeamLeadAmount(allyTeam);
         boolean shouldMutate = teamLeadAmount >= 500;
 
         // Look for nearby buildings to heal
