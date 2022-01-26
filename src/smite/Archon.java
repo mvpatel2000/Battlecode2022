@@ -71,7 +71,11 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
+<<<<<<< HEAD
         // if (currentRound > 200) {
+=======
+        // if (currentRound > 400) {
+>>>>>>> adfc7402c6987d6311220e01f9c16a8ae67d0455
         //     //rc.resign\();
         // }
 
@@ -700,8 +704,8 @@ public class Archon extends Robot {
             reservedGold = 0;
         }
 
-        RobotType toBuild = RobotType.SOLDIER;
-        //rc.setIndicatorString("Build phase: normal soldier production");
+        RobotType toBuild = null;
+        //rc.setIndicatorString("Build phase: none");
         // //System.out.println\("Num soldiers built: " + numSoldiersBuilt + "; farmer rng threshold: " + ((mapHeight * mapWidth / 4000.0) + (currentRound / 500.0)));
         int initialMiners = Math.max(4, (mapHeight * mapWidth / 240) + 3); // 4-18
         int maxMiners = mapWidth * mapHeight / 36;
@@ -734,6 +738,9 @@ public class Archon extends Robot {
         } else if (numSoldiersBuilt >= 2 && rng.nextDouble() < (mapHeight * mapWidth / 4000.0) + (currentRound / 500.0) && rc.getRoundNum() <= 1800) { // produce builders for farming
             toBuild = RobotType.BUILDER;
             //rc.setIndicatorString("Build phase: builders for farming");
+        } else if (sageCount <= 4) {
+            toBuild = RobotType.SOLDIER;
+            //rc.setIndicatorString("Build phase: soldiers");
         }
 
         // Override: if I'm dying (and there are no enemy threats visible) and there aren't many builders out on the map, priority build a builder
