@@ -94,7 +94,7 @@ public class Builder extends Robot {
                 remainingHealth = allyHealth;
                 foundLabPrototype = foundLabPrototype | (ally.getMode() == RobotMode.PROTOTYPE && ally.getType() == RobotType.LABORATORY);
             }
-            if (shouldMutate && ally.level == 1 && rc.canMutate(ally.location)) {
+            if (shouldMutate && rc.canMutate(ally.location)) {
                 mutateLocation = ally.location;
             }
         }

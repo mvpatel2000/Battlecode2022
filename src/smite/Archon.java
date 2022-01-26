@@ -41,7 +41,7 @@ public class Archon extends Robot {
     int oldResourceCount = 0;
     int resourceRate = 0;
     double resourceRateEMA = 0;
-    final double RESOURCE_ALPHA = 0.1;
+    final double RESOURCE_ALPHA = 0.05;
     boolean highEMA = false;
 
     // used to move around
@@ -71,7 +71,7 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 400) {
+        // if (currentRound > 20) {
         //     //rc.resign\();
         // }
 
@@ -113,6 +113,7 @@ public class Archon extends Robot {
         commsHandler.writeWorkerCountAll(0);
         commsHandler.writeFighterCountAll(0);
         commsHandler.writeBuildingCountAll(0);
+        commsHandler.writeLeadDelta(16386);
 
         if (rc.getTeamGoldAmount(allyTeam) >= 60) {
             //rc.setIndicatorString("Halting gold production");
@@ -127,6 +128,7 @@ public class Archon extends Robot {
     public void firstArchonTasks() throws GameActionException {
         if (!firstArchon) return;
         commsHandler.writeProductionControlGold(CommsHandler.ProductionControl.CONTINUE);
+        //System.out.println\("EMA: " + resourceRateEMA);
     }
 
     @Override
@@ -314,28 +316,9 @@ public class Archon extends Robot {
     }
 
     public void updateResourceRate() throws GameActionException {
-        int newResourceCount = rc.getTeamLeadAmount(allyTeam);
-        int resourceRate = newResourceCount - oldResourceCount;
-        // Built a unit, adjust for it
-        if (resourceRate < 0) {
-            // Built builder
-            if (resourceRate > -40) {
-                resourceRate += 40;
-            }
-            // Built miner
-            else if (resourceRate > -50) {
-                resourceRate += 50;
-            }
-            // Built soldier
-            else {
-                resourceRate += 75;
-            }
-            // Built multiple units, unclear what we built. Set rate to 10
-            if (resourceRate < 0) {
-                resourceRate = 10;
-            }
-        }
-        resourceRateEMA = (1 - RESOURCE_ALPHA) * resourceRateEMA + (RESOURCE_ALPHA) * resourceRate;
+        resourceRate = commsHandler.readLeadDelta() - 16384;
+        if (currentRound == 1) resourceRate = 0;
+        resourceRateEMA = (resourceRateEMA * (1 - RESOURCE_ALPHA)) + (resourceRate * RESOURCE_ALPHA);
     }
 
     public void readUnitUpdates() throws GameActionException {
@@ -545,6 +528,8 @@ public class Archon extends Robot {
         // Set priority clusters
         int startIdx = 0;
         int endIdx = numClusters;
+        
+        // //rc.setIndicatorString("Timer: " + timeToRegen[0] + " " + clusterToCenter(0) + " " + commsHandler.readClusterResourceCount(0));
 
         for (int prePermuteIdx = startIdx; prePermuteIdx < endIdx; prePermuteIdx++) {
             int i = clusterPermutation[prePermuteIdx];
@@ -699,6 +684,7 @@ public class Archon extends Robot {
             commsHandler.writeReservedResourcesGold(commsHandler.readReservedResourcesGold() - reservedGold);
             reservedGold = 0;
         }
+        boolean haltGoldProduction = minerCount < 4;
 
         RobotType toBuild = null;
         //rc.setIndicatorString("Build phase: none");
@@ -706,9 +692,9 @@ public class Archon extends Robot {
         int initialMiners = Math.max(4, (mapHeight * mapWidth / 240) + 3); // 4-18
         int maxMiners = mapWidth * mapHeight / 36;
 
-        if (!highEMA && resourceRateEMA > 7) {
+        if (!highEMA && resourceRateEMA > 9) {
             highEMA = true;
-        } else if (highEMA && resourceRateEMA < 5) {
+        } else if (highEMA && resourceRateEMA < 7) {
             highEMA = false;
         }
 
@@ -728,7 +714,7 @@ public class Archon extends Robot {
             //System.out.println\("Resources on map: " + resourcesOnMap);
             toBuild = RobotType.MINER;
             //rc.setIndicatorString("Build phase: additional miners");
-        } else if (highEMA && rc.getTeamLeadAmount(allyTeam) < 275 && rc.getRoundNum() >= laboratoryCount * 150) { // another pause till laboratory
+        } else if (highEMA && rc.getTeamLeadAmount(allyTeam) < 275) { // another pause till laboratory
             toBuild = null;
             //rc.setIndicatorString("Build phase: wait for extra lab");
         } else if (numSoldiersBuilt >= 2 && rng.nextDouble() < (mapHeight * mapWidth / 4000.0) + (currentRound / 500.0) && rc.getRoundNum() <= 1800) { // produce builders for farming
@@ -746,13 +732,6 @@ public class Archon extends Robot {
             //rc.setIndicatorString("Priority building builder for healing");
         }
 
-        // Override: if I haven't built a miner yet, priority build one
-        if (numMinersBuilt == 0) {
-            toBuild = RobotType.MINER;
-            reservedLead = RobotType.MINER.buildCostLead / LEAD_RESERVE_SCALE;
-            //rc.setIndicatorString("Priority building miner");
-        }
-
         // Override: if there is a visible enemy archon/soldier/sage/watchtower, priority build a soldier
         if (nearbyEnemies.length > 0) {
             for (RobotInfo enemy : nearbyEnemies) {
@@ -760,6 +739,7 @@ public class Archon extends Robot {
                     toBuild = RobotType.SOLDIER;
                     reservedLead = RobotType.SOLDIER.buildCostLead / LEAD_RESERVE_SCALE; // priority build
                     //rc.setIndicatorString("Priority building soldier");
+                    haltGoldProduction = false; // we don't want to stop producing gold if we are making gold
                 }
             }
         }
@@ -769,6 +749,10 @@ public class Archon extends Robot {
             toBuild = RobotType.SAGE;
             reservedLead = 0;
             //rc.setIndicatorString("Priority building sage");
+        }
+
+        if (haltGoldProduction) {
+            commsHandler.writeProductionControlGold(CommsHandler.ProductionControl.HALT);
         }
 
         if (toBuild == null) {

@@ -47,7 +47,8 @@ if __name__ == "__main__":
 
     winners = {m: [] for m in args.maps}
     for r in results:
-        winners[r.split(' ')[-1]].append(r.split(' ')[0])
+        if r != "No result":
+            winners[r.split(' ')[-1]].append(r.split(' ')[0])
 
     p1_wins = []
     p2_wins = []

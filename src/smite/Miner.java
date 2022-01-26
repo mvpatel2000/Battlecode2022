@@ -118,9 +118,14 @@ public class Miner extends Robot {
         }
         for (MapLocation mineLocation : nearbyActionLead) {
             int leadCount = rc.senseLead(mineLocation);
+            int leadMined = 0;
             while (rc.canMineLead(mineLocation) && leadCount >= requiredLead) {
                 rc.mineLead(mineLocation);
                 leadCount--;
+                leadMined++;
+            }
+            if (leadMined > 0) {
+                commsHandler.writeLeadDelta(Math.min(commsHandler.readLeadDelta() + leadMined, 32767));
             }
             // No longer able to mine
             if (!rc.isActionReady()) {
@@ -152,7 +157,7 @@ public class Miner extends Robot {
         }
         if (nearestCombatEnemy != null) { 
             lastEnemyLocation = nearestCombatEnemy;
-            fleeingCounter = 2;
+            fleeingCounter = 6;
         }
 
         // Kite enemy unit
@@ -233,7 +238,7 @@ public class Miner extends Robot {
             int lead = rc.senseLead(tile);
             int dist = myLocation.distanceSquaredTo(tile);
             // Ignore first regen of lead in first 100 turns
-            if (dist < optimalDistance && (dist <= 2 || lead > 7 || currentRound > 100)) {
+            if (dist < optimalDistance && (dist <= 2 || lead > 7 || currentRound >= 50)) {
                 nearestResource = tile;
                 optimalDistance = dist;
             }

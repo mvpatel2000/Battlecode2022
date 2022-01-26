@@ -113,7 +113,7 @@ public class Archon extends Robot {
         commsHandler.writeWorkerCountAll(0);
         commsHandler.writeFighterCountAll(0);
         commsHandler.writeBuildingCountAll(0);
-        commsHandler.writeLeadDelta(16384);
+        commsHandler.writeLeadDelta(16386);
 
         if (rc.getTeamGoldAmount(allyTeam) >= 60) {
             rc.setIndicatorString("Halting gold production");
@@ -128,7 +128,7 @@ public class Archon extends Robot {
     public void firstArchonTasks() throws GameActionException {
         if (!firstArchon) return;
         commsHandler.writeProductionControlGold(CommsHandler.ProductionControl.CONTINUE);
-        System.out.println("EMA: " + resourceRateEMA);
+        // System.out.println("EMA: " + resourceRateEMA);
     }
 
     @Override
@@ -319,6 +319,18 @@ public class Archon extends Robot {
         resourceRate = commsHandler.readLeadDelta() - 16384;
         if (currentRound == 1) resourceRate = 0;
         resourceRateEMA = (resourceRateEMA * (1 - RESOURCE_ALPHA)) + (resourceRate * RESOURCE_ALPHA);
+        for (int i = (int) (resourceRate + 0.5); --i >= 0;) {
+            rc.setIndicatorDot(new MapLocation(mapWidth-1, i), 255, 0, 255);
+        }
+        for (int i = (int) (resourceRateEMA + 0.5); --i >= 0;) {
+            rc.setIndicatorDot(new MapLocation(mapWidth-2, i), 255, 255, 0);
+        }
+        if (resourceRate < 0) {
+            rc.setIndicatorDot(new MapLocation(mapWidth-1, 0), 255, 0, 0);
+        }
+        if (resourceRateEMA < 0) {
+            rc.setIndicatorDot(new MapLocation(mapWidth-2, 0), 255, 0, 0);
+        }
     }
 
     public void readUnitUpdates() throws GameActionException {
@@ -692,9 +704,9 @@ public class Archon extends Robot {
         int initialMiners = Math.max(4, (mapHeight * mapWidth / 240) + 3); // 4-18
         int maxMiners = mapWidth * mapHeight / 36;
 
-        if (!highEMA && resourceRateEMA > 7) {
+        if (!highEMA && resourceRateEMA > 9) {
             highEMA = true;
-        } else if (highEMA && resourceRateEMA < 5) {
+        } else if (highEMA && resourceRateEMA < 7) {
             highEMA = false;
         }
 
@@ -711,7 +723,7 @@ public class Archon extends Robot {
             toBuild = RobotType.MINER;
             rc.setIndicatorString("Build phase: rest of initial miners");
         } else if (minerCount < rc.getRobotCount() / (Math.max(3, (4.5 - (resourcesOnMap / 600.0)))) && minerCount < maxMiners) { // produce additional miners based on resource count
-            System.out.println("Resources on map: " + resourcesOnMap);
+            // System.out.println("Resources on map: " + resourcesOnMap);
             toBuild = RobotType.MINER;
             rc.setIndicatorString("Build phase: additional miners");
         } else if (highEMA && rc.getTeamLeadAmount(allyTeam) < 275) { // another pause till laboratory
@@ -787,6 +799,7 @@ public class Archon extends Robot {
         if (builderRequest == CommsHandler.BuilderRequest.LABORATORY_LEVEL_3) {
             totalGoldReserved += RobotType.LABORATORY.getGoldMutateCost(3);
         }
+        if (reservedGold > 0) System.out.println("reserved gold: " + totalGoldReserved);
 
         // Either build or reserve
         if (optimalDir != null

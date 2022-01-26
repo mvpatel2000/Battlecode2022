@@ -95,7 +95,7 @@ public class Laboratory extends Robot {
                 }
             }
             // System.out.println("Best destination: " + pathing.destination);
-            if (pathing.destination.distanceSquaredTo(myLocation) == 0) {
+            if (pathing.destination == null || pathing.destination.distanceSquaredTo(myLocation) == 0) {
                 if (rc.getMode() == RobotMode.PORTABLE && rc.canTransform()) {
                     rc.transform();
                 }
