@@ -24,10 +24,13 @@ def play_game(p1, p2, map):
     return 'No result'
 
 if __name__ == "__main__":
-    all_maps = maps = ["chessboard", "collaboration", "colosseum", "dodgeball", "eckleburg", "equals",
-        "fortress", "highway", "intersection", "jellyfish", "nottestsmall", "nyancat", "panda", "pillars",
-        "progress", "rivers", "sandwich", "snowflake", "spine", "squer", "stronghold", "tower", "uncomfortable",
-        "underground", "valley"]
+    # all_maps = maps = ["chessboard", "collaboration", "colosseum", "dodgeball", "eckleburg", "equals",
+    #     "fortress", "highway", "intersection", "jellyfish", "nottestsmall", "nyancat", "panda", "pillars",
+    #     "progress", "rivers", "sandwich", "snowflake", "spine", "squer", "stronghold", "tower", "uncomfortable",
+    #     "underground", "valley"]
+    all_maps = ['chalice', 'charge', 'cobra', 'deer', 'definitely_not_league', 'desert', 'despair', 'fire', 'flowers', 'highway_redux',
+        'island_hopping', 'lotus', 'maze', 'octopus_game', 'olympics', 'one_river', 'planets', 'rugged', 'snowflake_redux', 'snowman',
+        'treasure', 'tunnels', 'vault', 'walls']
     parser = argparse.ArgumentParser()
     parser.add_argument("--n", type=int, help="number of threads to spawn", default=8)
     parser.add_argument("--p1", type=str, help="player 1")
