@@ -940,8 +940,9 @@ public class Archon extends Robot {
             if (amountToRepairForAlly > 0) {
                 amountToRepair += amountToRepairForAlly;
                 // Prioritize healing soldiers/sages unless a miner is about to die
+                // Don't prioritize over >90 hp sages because they can absorb 2 shots
                 boolean allyPriority = (ally.type == RobotType.SOLDIER 
-                                        || ally.type == RobotType.SAGE 
+                                        || (ally.type == RobotType.SAGE && ally.health <= 90)
                                         || (ally.type == RobotType.MINER && ally.health <= 9));
                 // If ally is priority and existing optimal is not higher priority, automatically take it
                 boolean isHigherPriority = allyPriority && !optimalPriority;

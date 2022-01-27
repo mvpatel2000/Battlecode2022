@@ -172,7 +172,8 @@ public class Robot {
         onOurSide = onOurSide(myLocation);
         // Flee to archon if dying
         int myHealth = rc.getHealth();
-        if (myHealth == rc.getType().getMaxHealth(rc.getLevel())) {
+        if (myHealth == rc.getType().getMaxHealth(rc.getLevel()) 
+            || (myHealth >= 91 && rc.getType() == RobotType.SAGE)) {
             isDying = false;
         }
         else if (myHealth <= FLEE_HEALTH || (rc.getType() == RobotType.SAGE && myHealth <= SAGE_FLEE_HEALTH)) {
