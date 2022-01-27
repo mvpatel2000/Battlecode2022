@@ -261,7 +261,7 @@ public class Builder extends Robot {
             double yVec = 0;
             RobotInfo[] nearbyAllies = rc.senseNearbyRobots(RobotType.BUILDER.visionRadiusSquared, allyTeam);
             for (RobotInfo ally : nearbyAllies) {
-                double repulsion = 20.0 / ally.location.distanceSquaredTo(myLocation);
+                double repulsion = (ally.type == RobotType.BUILDER ? 20.0 : 10.0) / ally.location.distanceSquaredTo(myLocation);
                 xVec += repulsion * (ally.location.x - myLocation.x);
                 yVec += repulsion * (ally.location.y - myLocation.y);
             }
