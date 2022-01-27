@@ -1117,7 +1117,7 @@ public class Archon extends Robot {
         }
 
         // System.out.println("Archon survival: " + archonZeroAlive + " " +
-        // archonOneAlive + " " + archonTwoAlive + " " + archonThreeAlive);
+        // archonOneAlive + " " + archonTwoAlive + " " + archonThreeAlive); 
 
         // if (lastArchon) {
         // System.out.println("I am archon " + myArchonNum + " and I am the last
