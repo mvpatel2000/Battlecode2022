@@ -1,4 +1,4 @@
-package smite;
+package dionysus;
 
 import battlecode.common.*;
 
@@ -186,13 +186,13 @@ public class Robot {
         // Does turn
         runUnit();
         
-        // //rc.setIndicatorString("SymDist " + distanceToSymmetryLine);
+        // rc.setIndicatorString("SymDist " + distanceToSymmetryLine);
 
         // After unit runs
         if (rc.getRoundNum() < 150 && Clock.getBytecodesLeft() > 1000) {
-            // //System.out.println\("Bytecodes left before symmetry: " + Clock.getBytecodesLeft());
+            // System.out.println("Bytecodes left before symmetry: " + Clock.getBytecodesLeft());
             updateSymmetry();
-            // //System.out.println\("Bytecodes left after symmetry: " + Clock.getBytecodesLeft());
+            // System.out.println("Bytecodes left after symmetry: " + Clock.getBytecodesLeft());
         }
 
         checkTLE();
@@ -207,7 +207,7 @@ public class Robot {
 
     public void checkTLE() throws GameActionException {
         if (rc.getRoundNum() > currentRound) {
-            //System.out.println\("I TLE'd");
+            System.out.println("I TLE'd");
             currentRound = rc.getRoundNum();
             announceAlive();
         }
@@ -230,8 +230,8 @@ public class Robot {
                 // check some rubble points to see if we can eliminate the symmetry axis
                 MapLocation test1 = new MapLocation(mapWidth/2 - 1, myLocation.y);
                 MapLocation test2 = new MapLocation(mapWidth - mapWidth/2, myLocation.y);
-                // //rc.setIndicatorDot(test1, 211, 211, 211);
-                // //rc.setIndicatorDot(test2, 211, 211, 211);
+                // rc.setIndicatorDot(test1, 211, 211, 211);
+                // rc.setIndicatorDot(test2, 211, 211, 211);
                 if (rc.canSenseLocation(test1)) {
                     if (rc.canSenseLocation(test2)) {
                         if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
@@ -247,8 +247,8 @@ public class Robot {
             if (myLocation.y * 2 < mapHeight + 5 && myLocation.y * 2 > mapHeight - 5) {
                 MapLocation test1 = new MapLocation(myLocation.x, mapHeight/2 - 1);
                 MapLocation test2 = new MapLocation(myLocation.x, mapHeight - mapHeight/2);
-                //rc.setIndicatorDot(test1, 0, 255, 0);
-                //rc.setIndicatorDot(test2, 0, 255, 0);
+                rc.setIndicatorDot(test1, 0, 255, 0);
+                rc.setIndicatorDot(test2, 0, 255, 0);
                 if (rc.canSenseLocation(test1)) {
                     if (rc.canSenseLocation(test2)) {
                         if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
@@ -287,7 +287,7 @@ public class Robot {
         }
 
         // int bytecodeUsed2 = Clock.getBytecodeNum();
-        // //rc.setIndicatorString("Cluster States: "+(bytecodeUsed2 - bytecodeUsed));
+        // rc.setIndicatorString("Cluster States: "+(bytecodeUsed2 - bytecodeUsed));
     }
 
     /**
@@ -487,7 +487,7 @@ public class Robot {
                     nearestArchonDistance = dist;
                 }
             }
-            // //rc.setIndicatorString(nearestArchonLocation + " " + commsHandler.readOurArchonAcceptingPatients(0)
+            // rc.setIndicatorString(nearestArchonLocation + " " + commsHandler.readOurArchonAcceptingPatients(0)
             //     + " " + commsHandler.readOurArchonAcceptingPatients(1) + " " + commsHandler.readOurArchonAcceptingPatients(2)
             //     + " " + commsHandler.readOurArchonAcceptingPatients(3));
             // MapLocation nearestArchonLocation = baseLocation;
@@ -568,7 +568,7 @@ public class Robot {
     public boolean onOurSide(MapLocation loc) throws GameActionException {
         if (currentRound == 1) return true;
         if (numOurArchonsAlive == 0) {
-            //System.out.println\("No archons alive, we lost :(");
+            System.out.println("No archons alive, we lost :(");
             return false;
         }
         int symmetry = commsHandler.readMapSymmetry();
@@ -601,7 +601,7 @@ public class Robot {
                 return loc.x > ((mapWidth - 1) / 2.0) || loc.x >= ourArchonCentroid.x;
             }
         } else {
-            //System.out.println\("Unknown map symmetry: " + symmetry);
+            System.out.println("Unknown map symmetry: " + symmetry);
             throw new IllegalStateException("Unknown symmetry");
         }
     }
@@ -617,7 +617,7 @@ public class Robot {
     public double distanceAcrossSymmetry(MapLocation loc) throws GameActionException {
         if (currentRound == 1) return myLocation.distanceSquaredTo(new MapLocation((mapWidth-1)/2, (mapHeight-1)/2));
         if (numOurArchonsAlive == 0) {
-            //System.out.println\("No archons alive, we lost :(");
+            System.out.println("No archons alive, we lost :(");
             return 0.0;
         }
         int symmetry = commsHandler.readMapSymmetry();
@@ -886,7 +886,7 @@ public class Robot {
         // Note that allies must be r^2 <= 5 to be counted here
         boolean oneVersusOne = allyCount == 0 && enemySoldiers == 1;
         // if (rc.getID() == 11882) {
-        //     //System.out.println\(myLocation + " " + oneVersusOne + " " + rc.isMovementReady());
+        //     System.out.println(myLocation + " " + oneVersusOne + " " + rc.isMovementReady());
         // }
         int nearbyEnemiesLength = Math.min(nearbyEnemies.length, 6); // approx 100 bytecode per enemy per dir
         Direction optimalDirection = null;
@@ -986,14 +986,14 @@ public class Robot {
                                 if (enemyDist <= enemy.type.actionRadiusSquared) {
                                     score -= enemy.type.getDamage(enemy.level) * enemyRubbleFactor;
                                     // if (rc.getID() == 11882) {
-                                    //     //System.out.println\("  hit: " + (-enemy.type.getDamage(enemy.level) * enemyRubbleFactor));
+                                    //     System.out.println("  hit: " + (-enemy.type.getDamage(enemy.level) * enemyRubbleFactor));
                                     // }
                                 }
                                 // They can see me. If they step in, I can start shooting but they can too, so normalize by rubble
                                 else if (enemyDist <= enemy.type.visionRadiusSquared) {
                                     score -= GAMMA * enemy.type.getDamage(enemy.level) * enemyRubbleFactor;
                                     // if (rc.getID() == 11882) {
-                                    //     //System.out.println\("  view: " + (-enemy.type.getDamage(enemy.level) * enemyRubbleFactor) + " " + enemy.location);
+                                    //     System.out.println("  view: " + (-enemy.type.getDamage(enemy.level) * enemyRubbleFactor) + " " + enemy.location);
                                     // }
                                     canView = true;
                                 }
@@ -1022,18 +1022,18 @@ public class Robot {
                 double myRubbleFactor = 10 / (10.0 + (rc.senseRubble(moveLocation)));
                 // Add damage normalized to per turn by rubble
                 if (isNotSageOrIsActionReady && (canAttack || canView)) {
-                    // //System.out.println\("  Shoot: " + (RobotType.SOLDIER.damage * myRubbleFactor));
+                    // System.out.println("  Shoot: " + (RobotType.SOLDIER.damage * myRubbleFactor));
                     double viewOnlyMultiplier = canAttack ? 1.0 : GAMMA;
                     score += rc.getType().damage * myRubbleFactor * viewOnlyMultiplier;
-                    // //System.out.println\(myLocation + " " + oneVersusOne + " " + distToNearestEnemy);
+                    // System.out.println(myLocation + " " + oneVersusOne + " " + distToNearestEnemy);
                     // if (rc.getID() == 11882) {
-                    //     //System.out.println\("  " + (rc.getType().damage * myRubbleFactor * viewOnlyMultiplier) + " " + viewOnlyMultiplier + " " + canAttack);
+                    //     System.out.println("  " + (rc.getType().damage * myRubbleFactor * viewOnlyMultiplier) + " " + viewOnlyMultiplier + " " + canAttack);
                     // }
                     score -= enemyHeal;
                 }
                 // 1v1: Pursue if higher health, otherwise flee. Tiebreak in favor of aggression since striking first wins
                 if (oneVersusOne && distToNearestEnemy < 1000000.0) {
-                    // //System.out.println\("Chase: " + (((rc.getHealth()+0.01) * myRubbleFactor - enemyCombatHealth) * distToNearestEnemy /10000.0));
+                    // System.out.println("Chase: " + (((rc.getHealth()+0.01) * myRubbleFactor - enemyCombatHealth) * distToNearestEnemy /10000.0));
                     score += ((rc.getHealth() + 0.01) * myRubbleFactor - enemyCombatHealth) * (-distToNearestEnemy) / 10000.0;
                 }
                 // Tiebreaker
@@ -1043,7 +1043,7 @@ public class Robot {
                 // Add rubble movement factor, often serves as a tiebreak for flee
                 score += myRubbleFactor * 10;
                 // if (rc.getID() == 11882) {
-                //     //System.out.println\(myLocation + " " + dir + " " + score);
+                //     System.out.println(myLocation + " " + dir + " " + score);
                 // }
                 if (score > optimalScore) {
                     optimalDirection = dir;
@@ -1052,8 +1052,8 @@ public class Robot {
             }
         }
         if (optimalDirection != null && optimalDirection != Direction.CENTER) {
-            //rc.setIndicatorLine(myLocation, myLocation.add(optimalDirection), 0, 255, 0);
-            // //System.out.println\("Moving!: " + myLocation + " -> " + myLocation.add(optimalDirection));
+            rc.setIndicatorLine(myLocation, myLocation.add(optimalDirection), 0, 255, 0);
+            // System.out.println("Moving!: " + myLocation + " -> " + myLocation.add(optimalDirection));
             pathing.move(optimalDirection);
         }
     }
