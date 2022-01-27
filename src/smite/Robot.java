@@ -849,7 +849,7 @@ public class Robot {
         boolean isNotSageOrIsActionReady = rc.getType() != RobotType.SAGE || rc.isActionReady();
         boolean atMaxHealth = rc.getHealth() == rc.getType().getMaxHealth(rc.getLevel());
 
-        double combatAllyHealth = 0.0;
+        // double combatAllyHealth = 0.0;
         int allyCount = 0;
         boolean isArchonVisible = false;
         // MapLocation archonLocation = null;
@@ -859,7 +859,7 @@ public class Robot {
         for (int i = 0; i < alliesLength; i++) {
             RobotInfo ally = allies[i];
             if (ally.type == RobotType.WATCHTOWER || (ally.type == RobotType.SOLDIER && ally.health > FLEE_HEALTH)) { // && ally.health > FLEE_HEALTH
-                combatAllyHealth += ally.health;
+                // combatAllyHealth += ally.health;
                 if (myLocation.distanceSquaredTo(ally.location) <= 5) {
                     allyCount++;
                 }
@@ -975,13 +975,17 @@ public class Robot {
                             if (enemyDist < distToNearestEnemy) {
                                 distToNearestEnemy = enemyDist;
                             }
-                            // // ignore enemy if guarding archon and enemy can hit the archon
-                            // boolean ignoreEnemyDamage = guardArchon &&
-                            //     ((archonZeroAlive && archonZeroLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared)
-                            //     || (archonOneAlive && archonOneLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared)
-                            //     || (archonTwoAlive && archonTwoLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared)
-                            //     || (archonThreeAlive && archonThreeLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared));
-                            if (!guardArchon) {
+                            // Ignore enemy if guarding archon
+                            boolean ignoreEnemyDamage = guardArchon;
+                            // Soldiers ignore enemy only if they can directly harm archon. They also ignore sages
+                            if (rc.getType() == RobotType.SOLDIER) {
+                                ignoreEnemyDamage = ignoreEnemyDamage && ((archonZeroAlive && archonZeroLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared)
+                                                        || (archonOneAlive && archonOneLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared)
+                                                        || (archonTwoAlive && archonTwoLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared)
+                                                        || (archonThreeAlive && archonThreeLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared));
+                                ignoreEnemyDamage = ignoreEnemyDamage || rc.getType() == RobotType.SAGE;
+                            }
+                            if (!ignoreEnemyDamage) {
                                 // They can hit me, full points off
                                 if (enemyDist <= enemy.type.actionRadiusSquared) {
                                     score -= enemy.type.getDamage(enemy.level) * enemyRubbleFactor;
