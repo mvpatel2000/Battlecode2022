@@ -802,7 +802,8 @@ public class Robot {
                 exploreMode = false;
             }
             // Explore map. Get new cluster if not in explore mode or close to destination. Don't make sages explore
-            else if (rc.getType() != RobotType.SAGE && (!exploreMode || myLocation.distanceSquaredTo(pathing.destination) <= 8)) {
+            else if ((rc.getType() != RobotType.SAGE || currentRound >= 200)
+                        && (!exploreMode || myLocation.distanceSquaredTo(pathing.destination) <= 8)) {
                 nearestCluster = getNearestExploreCluster();
                 if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
                     newDestination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
