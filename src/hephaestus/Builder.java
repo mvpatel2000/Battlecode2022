@@ -57,7 +57,7 @@ public class Builder extends Robot {
     }
 
     public void shouldDisintegrate() throws GameActionException {
-        System.out.println("I see " + commsHandler.readWorkerCountBuilders() + " builders before me");
+        // System.out.println("I see " + commsHandler.readWorkerCountBuilders() + " builders before me");
         if (leadFarmSacrifice && rc.senseLead(rc.getLocation()) == 0) {
             commsHandler.writeWorkerCountBuilders(commsHandler.readWorkerCountBuilders() - 1);
             rc.disintegrate();

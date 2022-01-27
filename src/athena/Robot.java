@@ -226,8 +226,8 @@ public class Robot {
                 // check some rubble points to see if we can eliminate the symmetry axis
                 MapLocation test1 = new MapLocation(mapWidth/2 - 1, myLocation.y);
                 MapLocation test2 = new MapLocation(mapWidth - mapWidth/2, myLocation.y);
-                rc.setIndicatorDot(test1, 211, 211, 211);
-                rc.setIndicatorDot(test2, 211, 211, 211);
+                // rc.setIndicatorDot(test1, 211, 211, 211);
+                // rc.setIndicatorDot(test2, 211, 211, 211);
                 if (rc.canSenseLocation(test1)) {
                     if (rc.canSenseLocation(test2)) {
                         if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
