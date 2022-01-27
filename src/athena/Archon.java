@@ -378,7 +378,7 @@ public class Archon extends Robot {
         int centerCluster = whichXLoc[mapWidth / 2] + whichYLoc[mapHeight / 2];
         int xyCluster = whichXLoc[mapWidth - myLocation.x - 1] + whichYLoc[mapHeight - myLocation.y - 1];
         int xCluster = whichXLoc[mapWidth - myLocation.x - 1] + whichYLoc[myLocation.y];
-        int yCluster = whichXLoc[myLocation.x - 1] + whichYLoc[mapHeight - myLocation.y - 1];
+        int yCluster = whichXLoc[myLocation.x] + whichYLoc[mapHeight - myLocation.y - 1];
         int[] clusters = { centerCluster, xyCluster, xCluster, yCluster };
 
         for (int i = 0; i < 4; i++) {
