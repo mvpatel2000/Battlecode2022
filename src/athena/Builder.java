@@ -13,9 +13,11 @@ public class Builder extends Robot {
     boolean mainBuilder = false;
     int builderRequest = -1;
     boolean leadFarmSacrifice = false;
+    MapLocation lastLabBuilt;
 
     public Builder(RobotController rc) throws GameActionException {
         super(rc);
+        lastLabBuilt = baseLocation;
     }
 
     @Override
@@ -128,6 +130,7 @@ public class Builder extends Robot {
                 }
                 if (optimalDir != null && teamLeadAmount >= RobotType.LABORATORY.buildCostLead) {
                     rc.buildRobot(RobotType.LABORATORY, optimalDir);
+                    lastLabBuilt = myLocation.add(optimalDir);
                     return;
                 }
             } else { // we've been requested to upgrade something
@@ -269,9 +272,33 @@ public class Builder extends Robot {
             int yDest = Math.max(Math.min((int) (myLocation.y + yVec), mapHeight - 1), 0);
             pathing.updateDestination(new MapLocation(xDest, yDest));
         }
+        // Turn 1 use cheap pathing
         if (turnCount == 1) {
             pathing.cautiousGreedyMove(pathing.destination);
-        } else {
+        }
+        // If main builder waiting to build lab, stay on low rubble
+        else if (mainBuilder && builderRequest == CommsHandler.BuilderRequest.NONE) {
+            MapLocation middle = new MapLocation(mapWidth / 2, mapHeight / 2);
+            Direction optimalDir = Direction.CENTER;
+            double optimalCost = rc.senseRubble(myLocation) * 100000 - Math.sqrt(myLocation.distanceSquaredTo(middle)) - 2 * Math.sqrt(myLocation.distanceSquaredTo(lastLabBuilt));
+            // System.out.println(myLocation + " " + optimalCost);
+            for (Direction dir : directionsWithoutCenter) {
+                if (rc.canMove(dir)) {
+                    MapLocation moveLocation = myLocation.add(dir);
+                    double cost = rc.senseRubble(moveLocation) * 100000 - Math.sqrt(moveLocation.distanceSquaredTo(middle)) - 2 * Math.sqrt(moveLocation.distanceSquaredTo(lastLabBuilt));
+                    // System.out.println(myLocation + " " + dir + " " + cost);
+                    if (cost < optimalCost) {
+                        optimalCost = cost;
+                        optimalDir = dir;
+                    }
+                }
+            }
+            if (optimalDir != Direction.CENTER && rc.canMove(optimalDir)) {
+                pathing.move(optimalDir);
+            }
+        }
+        // Path to destination 
+        else {
             pathing.pathToDestination();
         }
     }
