@@ -416,9 +416,10 @@ public class Robot {
     public void setClusterStates() throws GameActionException {
         // int bytecodeUsed = Clock.getBytecodeNum();
 
-        // Archons only run on turns 1 and 2, labs dont run on turn 1
+        // Archons only run on turns 1 and 2, labs dont run on turn 1 or if they're on rubble because they need to scan
+        // or if they're moving because they need to path
         if ((rc.getType() == RobotType.ARCHON && turnCount > 2)
-            || (rc.getType() == RobotType.LABORATORY && turnCount == 1)
+            || (rc.getType() == RobotType.LABORATORY && (turnCount == 1 || rc.senseRubble(myLocation) != 0 || rc.getMode() == RobotMode.PORTABLE))
             || (rc.getType() == RobotType.BUILDER && turnCount == 1)) {
             return;
         }
@@ -1137,7 +1138,7 @@ public class Robot {
                                                         || (archonOneAlive && archonOneLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared)
                                                         || (archonTwoAlive && archonTwoLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared)
                                                         || (archonThreeAlive && archonThreeLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared));
-                                ignoreEnemyDamage = ignoreEnemyDamage || rc.getType() == RobotType.SAGE;
+                                ignoreEnemyDamage = ignoreEnemyDamage || enemy.type == RobotType.SAGE;
                             }
                             if (!ignoreEnemyDamage) {
                                 // They can hit me, full points off
