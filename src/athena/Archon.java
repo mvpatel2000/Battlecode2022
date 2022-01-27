@@ -332,16 +332,16 @@ public class Archon extends Robot {
         if (currentRound == 1) resourceRate = 0;
         resourceRateEMA = (resourceRateEMA * (1 - RESOURCE_ALPHA)) + (resourceRate * RESOURCE_ALPHA);
         for (int i = (int) (resourceRate + 0.5); --i >= 0;) {
-            rc.setIndicatorDot(new MapLocation(mapWidth-1-2*myArchonNum, i), 255, 0, 255);
+            rc.setIndicatorDot(new MapLocation(mapWidth-1, i), 255, 0, 255);
         }
         for (int i = (int) (resourceRateEMA + 0.5); --i >= 0;) {
-            rc.setIndicatorDot(new MapLocation(mapWidth-2-2*myArchonNum, i), (waitForLab ? 0 : 255), 255, 0);
+            rc.setIndicatorDot(new MapLocation(mapWidth-2, i), (waitForLab ? 0 : 255), 255, 0);
         }
         if (resourceRate < 0) {
-            rc.setIndicatorDot(new MapLocation(mapWidth-1-2*myArchonNum, 0), 255, 0, 0);
+            rc.setIndicatorDot(new MapLocation(mapWidth-1, 0), 255, 0, 0);
         }
         if (resourceRateEMA < 0) {
-            rc.setIndicatorDot(new MapLocation(mapWidth-2-2*myArchonNum, 0), 255, 0, 0);
+            rc.setIndicatorDot(new MapLocation(mapWidth-2, 0), 255, 0, 0);
         }
     }
 
@@ -700,6 +700,7 @@ public class Archon extends Robot {
         } else {
             turnsSinceLastLabBuilt = 0;
             lastLaboratoryCount = laboratoryCount;
+            waitForLab = false;
         }
         // Decide whether we are past the income threshold to add more labs
         if (!waitForLab && resourceRateEMA > 4 && (laboratoryCount < 2 || turnsSinceLastLabBuilt > 40)) {
@@ -809,12 +810,12 @@ public class Archon extends Robot {
         } else if (waitForLab && rc.getTeamLeadAmount(allyTeam) < 275) { // another pause till laboratory
             toBuild = null;
             rc.setIndicatorString("Build phase: wait for extra lab");
-        } else if (numNearbyBuilders <= 5 && numSoldiersBuilt >= 2 && rng.nextDouble() < (mapHeight * mapWidth / 4000.0) + (currentRound / 500.0) && rc.getRoundNum() <= 1800) { // produce builders for farming
-            toBuild = RobotType.BUILDER;
-            rc.setIndicatorString("Build phase: midgame farming");
-        } else if (sageCount < 3) {
+        } else if (sageCount < 3 && laboratoryCount == 1 && soldierCount < 2) {
             toBuild = RobotType.SOLDIER;
             rc.setIndicatorString("Build phase: soldiers");
+        } else if (numNearbyBuilders <= 5 && rc.getRoundNum() <= 1800) { // produce builders for farming
+            toBuild = RobotType.BUILDER;
+            rc.setIndicatorString("Build phase: midgame farming");
         }
 
         // Override: if I'm dying (and there are no enemy threats visible) and there aren't many builders out on the map, priority build a builder
@@ -874,7 +875,7 @@ public class Archon extends Robot {
             haltGoldProduction = false; // we don't want to stop producing gold if we are making gold
         }
 
-        // Final override: if we have gold, just make a sage, unless it's lategame and we want to make miners
+        // Final override: if we have gold, just make a sage
         if (rc.getTeamGoldAmount(allyTeam) >= RobotType.SAGE.buildCostGold) {
             toBuild = RobotType.SAGE;
             reservedLead = 0;

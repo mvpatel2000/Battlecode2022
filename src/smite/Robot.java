@@ -963,12 +963,12 @@ public class Robot {
                             if (enemyDist < distToNearestEnemy) {
                                 distToNearestEnemy = enemyDist;
                             }
-                            // ignore enemy if guarding archon and enemy can hit the archon
-                            boolean ignoreEnemyDamage = guardArchon &&
-                                ((archonZeroAlive && archonZeroLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared)
-                                || (archonOneAlive && archonOneLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared)
-                                || (archonTwoAlive && archonTwoLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared)
-                                || (archonThreeAlive && archonThreeLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared));
+                            // // ignore enemy if guarding archon and enemy can hit the archon
+                            // boolean ignoreEnemyDamage = guardArchon &&
+                            //     ((archonZeroAlive && archonZeroLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared)
+                            //     || (archonOneAlive && archonOneLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared)
+                            //     || (archonTwoAlive && archonTwoLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared)
+                            //     || (archonThreeAlive && archonThreeLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared));
                             if (!guardArchon) {
                                 // They can hit me, full points off
                                 if (enemyDist <= enemy.type.actionRadiusSquared) {
