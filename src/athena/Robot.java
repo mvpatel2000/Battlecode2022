@@ -50,6 +50,7 @@ public class Robot {
     int[] clusterPermutation;
 
     boolean isDying;
+    boolean hospitalsAllFull;
     final int FLEE_HEALTH = 8;
     final int SAGE_FLEE_HEALTH = 10;
     final double GAMMA = 0.9;
@@ -124,6 +125,7 @@ public class Robot {
         commsHandler = new CommsHandler(rc);
         numOurArchons = rc.getArchonCount();
         isDying = false;
+        hospitalsAllFull = false;
         pathing = new Pathing(this);
         pathing.destination = null;
 
@@ -175,6 +177,7 @@ public class Robot {
         if (myHealth == rc.getType().getMaxHealth(rc.getLevel()) 
             || (myHealth >= 91 && rc.getType() == RobotType.SAGE)) {
             isDying = false;
+            hospitalsAllFull = false;
         }
         else if (myHealth <= FLEE_HEALTH || (rc.getType() == RobotType.SAGE && myHealth <= SAGE_FLEE_HEALTH)) {
             isDying = true;
@@ -269,10 +272,10 @@ public class Robot {
     public void setClusterStates() throws GameActionException {
         // int bytecodeUsed = Clock.getBytecodeNum();
 
-        // Turrets only run on turns 2 and 3, labs dont run
-        if ((rc.getMode() == RobotMode.TURRET && turnCount > 2)
-            || rc.getType() == RobotType.LABORATORY
-            || rc.getType() == RobotType.BUILDER && turnCount == 1) {
+        // Archons only run on turns 1 and 2, labs dont run on turn 1
+        if ((rc.getType() == RobotType.ARCHON && turnCount > 2)
+            || (rc.getType() == RobotType.LABORATORY && turnCount == 1)
+            || (rc.getType() == RobotType.BUILDER && turnCount == 1)) {
             return;
         }
         
@@ -366,6 +369,11 @@ public class Robot {
             leadTilesLength = Math.min(leadTilesLength, 5);
             goldTiles = new MapLocation[0];
             goldTilesLength = 0;
+        }
+        else if (rc.getType() == RobotType.LABORATORY) {
+            leadTilesLength = Math.min(leadTilesLength, 10);
+            goldTiles = rc.senseNearbyLocationsWithGold(rc.getType().visionRadiusSquared);
+            goldTilesLength = goldTiles.length;
         }
         else {
             goldTiles = rc.senseNearbyLocationsWithGold(rc.getType().visionRadiusSquared);
@@ -489,9 +497,13 @@ public class Robot {
                     pathing.updateDestination(nearestArchonLocation);
                     pathing.pathToDestination();
                 }
+                hospitalsAllFull = false;
                 return true;
             }
-            return false;
+            else {
+                hospitalsAllFull = true;
+                return false;
+            }
         }
         return false;
     }
@@ -791,7 +803,7 @@ public class Robot {
             }
         }
         // Go to enemy or explore if you're not dying
-        else if (!isDying) {
+        else if (!isDying || hospitalsAllFull) {
             MapLocation newDestination = pathing.destination;
             // Navigate to nearest found enemy
             int nearestCluster = getNearestCombatCluster();
@@ -1030,9 +1042,9 @@ public class Robot {
                 }
                 // Add rubble movement factor, often serves as a tiebreak for flee
                 score += myRubbleFactor * 10;
-                if (rc.getID() == 11882) {
-                    System.out.println(myLocation + " " + dir + " " + score);
-                }
+                // if (rc.getID() == 11882) {
+                //     System.out.println(myLocation + " " + dir + " " + score);
+                // }
                 if (score > optimalScore) {
                     optimalDirection = dir;
                     optimalScore = score;
