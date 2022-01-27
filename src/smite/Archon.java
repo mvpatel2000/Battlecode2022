@@ -223,7 +223,7 @@ public class Archon extends Robot {
                 // Must have at least one archon in turret mode
                 if (otherArchonTurretExists) {
                     RobotInfo[] nearbyAllies = rc.senseNearbyRobots(RobotType.ARCHON.actionRadiusSquared, allyTeam);
-                    int length = nearbyAllies.length;
+                    int length = Math.min(nearbyAllies.length, 20);
                     boolean canRepair = false;
                     for (int i = 0; i < length; i++) {
                         RobotInfo ally = nearbyAllies[i];
@@ -775,8 +775,10 @@ public class Archon extends Robot {
 
         // count nearby builders (so we don't overproduce farmers)
         RobotInfo[] nearbyAllies = rc.senseNearbyRobots(RobotType.ARCHON.actionRadiusSquared, allyTeam); // TODO: cache nearbyAllies?
+        int nearbyAlliesLength = Math.min(nearbyAllies.length, 10);
         int numNearbyBuilders = 0;
-        for (RobotInfo ally : nearbyAllies) {
+        for (int i = 0; i < nearbyAlliesLength; i++) {
+            RobotInfo ally = nearbyAllies[i];
             if (ally.type == RobotType.BUILDER) {
                 numNearbyBuilders++;
             }
@@ -991,7 +993,7 @@ public class Archon extends Robot {
         MapLocation optimalRepair = null;
         int remainingHealth = existEnemies ? Integer.MAX_VALUE : Integer.MIN_VALUE;
         boolean optimalPriority = false;
-        int length = Math.min(nearbyAllies.length, 15);
+        int length = Math.min(nearbyAllies.length, 20);
         for (int i = 0; i < length; i++) {
             RobotInfo ally = nearbyAllies[i];
             if (ally.type == RobotType.ARCHON) {
@@ -1159,6 +1161,8 @@ public class Archon extends Robot {
             }
             ourArchonCentroid = new MapLocation(xSum / numOurArchonsAlive, ySum / numOurArchonsAlive);
             // //rc.setIndicatorDot(ourArchonCentroid, 0, 255, 0);
+
+            numOurArchonsAlive = Math.max(1, numOurArchonsAlive);
 
             lastArchon = false;
             numArchonsBehindMe = 0;

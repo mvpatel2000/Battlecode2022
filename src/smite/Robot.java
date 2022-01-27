@@ -1220,6 +1220,7 @@ public class Robot {
         }
         // update the centroid
         ourArchonCentroid = new MapLocation(xSum / numOurArchonsAlive, ySum / numOurArchonsAlive);
+        numOurArchonsAlive = Math.max(1, numOurArchonsAlive);
     }
 
     public void setupClusters() {
