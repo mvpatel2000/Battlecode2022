@@ -262,11 +262,9 @@ public class Builder extends Robot {
             // Farmer moves away from friendly units
             double xVec = 0;
             double yVec = 0;
-            RobotInfo[] nearbyAllies = rc.senseNearbyRobots(RobotType.BUILDER.visionRadiusSquared, allyTeam);
-            int nearbyAlliesLength = Math.min(nearbyAllies.length, 6);
-            for (int i = 0; i < nearbyAlliesLength; i++) {
-                RobotInfo ally = nearbyAllies[i];
-                double repulsion = 20.0 / ally.location.distanceSquaredTo(myLocation);
+            RobotInfo[] nearbyAllies = rc.senseNearbyRobots(10, allyTeam);
+            for (RobotInfo ally : nearbyAllies) {
+                double repulsion = (ally.type == RobotType.BUILDER ? 20.0 : 10.0) / ally.location.distanceSquaredTo(myLocation);
                 xVec += repulsion * (ally.location.x - myLocation.x);
                 yVec += repulsion * (ally.location.y - myLocation.y);
             }

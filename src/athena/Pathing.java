@@ -73,7 +73,7 @@ public class Pathing {
         // if i'm not a special pather or if i still have fuzzy moves left, fuzzy move
         if (fuzzyMovesLeft > 0) {
             fuzzyMove(target);
-            rc.setIndicatorDot(rc.getLocation(), 0, 0, 0);
+            // rc.setIndicatorDot(rc.getLocation(), 0, 0, 0);
             return;
         }
 
@@ -98,7 +98,7 @@ public class Pathing {
             pathTo(target);
         } else {
             move(dir);
-            rc.setIndicatorDot(rc.getLocation(), 255, 255, 255);
+            // rc.setIndicatorDot(rc.getLocation(), 255, 255, 255);
         }
     }
 
