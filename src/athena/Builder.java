@@ -289,14 +289,26 @@ public class Builder extends Robot {
             boolean canMove = false;
             MapLocation middle = new MapLocation(mapWidth / 2, mapHeight / 2);
             Direction optimalDir = Direction.CENTER;
-            double optimalCost = rc.senseRubble(myLocation) * 100000 - Math.sqrt(myLocation.distanceSquaredTo(middle)) - 2 * Math.sqrt(myLocation.distanceSquaredTo(lastLabBuilt));
+            double optimalCost = rc.senseRubble(myLocation) * 100000 - Math.sqrt(myLocation.distanceSquaredTo(middle)) - 2 * Math.min(Math.sqrt(myLocation.distanceSquaredTo(lastLabBuilt)), 7.28);
+            if (myLocation.x == 0 && myLocation.y == 0
+                || myLocation.x == 0 && myLocation.y == mapHeight-1
+                || myLocation.x == mapWidth-1 && myLocation.y == 0
+                || myLocation.x == mapWidth-1 && myLocation.y == mapHeight-1) {
+                optimalCost = 100 * 1000000;
+            }
             // System.out.println(myLocation + " " + optimalCost);
             for (Direction dir : directionsWithoutCenter) {
                 if (rc.canMove(dir)) {
                     canMove = true;
                     MapLocation moveLocation = myLocation.add(dir);
-                    double cost = rc.senseRubble(moveLocation) * 100000 - Math.sqrt(moveLocation.distanceSquaredTo(middle)) - 2 * Math.sqrt(moveLocation.distanceSquaredTo(lastLabBuilt));
-                    // System.out.println(myLocation + " " + dir + " " + cost);
+                    double cost = rc.senseRubble(moveLocation) * 100000 - Math.sqrt(moveLocation.distanceSquaredTo(middle)) - 2 * Math.min(Math.sqrt(moveLocation.distanceSquaredTo(lastLabBuilt)), 7.28);
+                    // Avoid getting pinned in corners
+                    if (moveLocation.x == 0 && moveLocation.y == 0
+                        || moveLocation.x == 0 && moveLocation.y == mapHeight-1
+                        || moveLocation.x == mapWidth-1 && moveLocation.y == 0
+                        || moveLocation.x == mapWidth-1 && moveLocation.y == mapHeight-1) {
+                        cost = 100 * 1000000;
+                    }
                     if (cost < optimalCost) {
                         optimalCost = cost;
                         optimalDir = dir;
