@@ -1160,6 +1160,8 @@ public class Archon extends Robot {
             ourArchonCentroid = new MapLocation(xSum / numOurArchonsAlive, ySum / numOurArchonsAlive);
             // rc.setIndicatorDot(ourArchonCentroid, 0, 255, 0);
 
+            numOurArchonsAlive = Math.max(1, numOurArchonsAlive);
+
             lastArchon = false;
             numArchonsBehindMe = 0;
             if (archonZeroAlive && myArchonNum > 0) {
