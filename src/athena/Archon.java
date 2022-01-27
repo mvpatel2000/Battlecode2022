@@ -824,6 +824,11 @@ public class Archon extends Robot {
             rc.setIndicatorString("Priority building builder for healing");
         }
 
+        // Override: if I haven't built a miner yet, priority build one
+        if (numMinersBuilt == 0) {
+            toBuild = RobotType.MINER;
+            reservedLead = RobotType.MINER.buildCostLead / LEAD_RESERVE_SCALE;
+        }
         
         /*
          * Override: priority build a soldier
