@@ -871,7 +871,9 @@ public class Robot {
 
         // Note that allies must be r^2 <= 5 to be counted here
         boolean oneVersusOne = allyCount == 0 && enemySoldiers == 1;
-        // System.out.println(myLocation + " " + oneVersusOne + " " + allyCount + " " + enemySoldiers);
+        // if (rc.getID() == 11751) {
+        //     System.out.println(myLocation + " " + oneVersusOne + " " + allyCount + " " + enemySoldiers);
+        // }
         int nearbyEnemiesLength = Math.min(nearbyEnemies.length, 6); // approx 100 bytecode per enemy per dir
         Direction optimalDirection = null;
         double optimalScore = -999.0;
@@ -982,7 +984,7 @@ public class Robot {
                     }
 
                     // See if you can attack anyone
-                    if (!canAttack && moveLocation.distanceSquaredTo(enemy.location) <= RobotType.SOLDIER.actionRadiusSquared) {
+                    if (!canAttack && moveLocation.distanceSquaredTo(enemy.location) <= rc.getType().actionRadiusSquared) {
                         canAttack = true;
                     }
                     // TODO: Stop moving around archon?
@@ -1000,6 +1002,9 @@ public class Robot {
                     double viewOnlyMultiplier = canAttack ? 1.0 : GAMMA;
                     score += rc.getType().damage * myRubbleFactor * viewOnlyMultiplier;
                     // System.out.println(myLocation + " " + oneVersusOne + " " + distToNearestEnemy);
+                    // if (rc.getID() == 11751) {
+                    //     System.out.println("  " + (rc.getType().damage * myRubbleFactor * viewOnlyMultiplier) + " " + viewOnlyMultiplier + " " + canAttack);
+                    // }
                     score -= enemyHeal;
                 }
                 // 1v1: Pursue if higher health, otherwise flee. Tiebreak in favor of aggression since striking first wins
@@ -1011,11 +1016,11 @@ public class Robot {
                 if (dir == Direction.CENTER) {
                     score += 0.000000001;
                 }
-                // if (rc.getType() == RobotType.SAGE) {
-                //     System.out.println(myLocation + " " + dir + " " + score);
-                // }
                 // Add rubble movement factor, often serves as a tiebreak for flee
                 score += myRubbleFactor * 10;
+                // if (rc.getID() == 11751) {
+                //     System.out.println(myLocation + " " + dir + " " + score);
+                // }
                 if (score > optimalScore) {
                     optimalDirection = dir;
                     optimalScore = score;
