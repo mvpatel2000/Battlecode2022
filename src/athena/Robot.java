@@ -562,7 +562,7 @@ public class Robot {
         int symmetry = commsHandler.readMapSymmetry();
 
         if (symmetry == CommsHandler.MapSymmetry.UNKNOWN || symmetry == CommsHandler.MapSymmetry.ROTATIONAL) {
-            double orthoVecX = startingArchonCentroid.x - ((mapWidth - 1.01) / 2.0);
+            double orthoVecX = startingArchonCentroid.x - ((mapWidth - 1.01) / 2.0); // use 1.01 to avoid issues with centroid coinciding with center
             double orthoVecY = startingArchonCentroid.y - ((mapHeight - 1.01) / 2.0);
             double orthoLen = Math.sqrt(orthoVecX*orthoVecX + orthoVecY*orthoVecY);
             orthoVecX /= orthoLen;
@@ -611,7 +611,7 @@ public class Robot {
         int symmetry = commsHandler.readMapSymmetry();
         
         if (symmetry == CommsHandler.MapSymmetry.UNKNOWN || symmetry == CommsHandler.MapSymmetry.ROTATIONAL) {
-            double orthoVecX = ourArchonCentroid.x - ((mapWidth - 1.01) / 2.0);
+            double orthoVecX = ourArchonCentroid.x - ((mapWidth - 1.01) / 2.0); // use 1.01 to avoid issues with centroid coinciding with center
             double orthoVecY = ourArchonCentroid.y - ((mapHeight - 1.01) / 2.0);
             double orthoLen = Math.sqrt(orthoVecX*orthoVecX + orthoVecY*orthoVecY);
             orthoVecX /= orthoLen;
