@@ -1137,7 +1137,7 @@ public class Robot {
                                                         || (archonOneAlive && archonOneLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared)
                                                         || (archonTwoAlive && archonTwoLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared)
                                                         || (archonThreeAlive && archonThreeLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared));
-                                ignoreEnemyDamage = ignoreEnemyDamage || rc.getType() == RobotType.SAGE;
+                                ignoreEnemyDamage = ignoreEnemyDamage || enemy.type == RobotType.SAGE;
                             }
                             if (!ignoreEnemyDamage) {
                                 // They can hit me, full points off
