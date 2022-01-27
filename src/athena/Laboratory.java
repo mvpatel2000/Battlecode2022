@@ -9,10 +9,14 @@ public class Laboratory extends Robot {
     boolean requestingUpgrade = false;
     int transmutationRate = 0;
     int lastTeamLead = 0;
+    MapLocation lastRootedLocation = null;
+    int lastRootedRubble = 0;
 
     public Laboratory(RobotController rc) throws GameActionException {
         super(rc);
         transmutationRate = rc.getTransmutationRate();
+        lastRootedLocation = myLocation;
+        lastRootedRubble = rc.senseRubble(myLocation);
     }
 
     @Override
@@ -83,31 +87,39 @@ public class Laboratory extends Robot {
 
     public void considerMoving() throws GameActionException {
         int bestRubble = rc.senseRubble(myLocation);
-        if (bestRubble == 0) {
+        if (rc.getMode() == RobotMode.PORTABLE && rc.canTransform() && bestRubble == 0) {
+            rc.transform();
+            lastRootedRubble = 0;
+            lastRootedLocation = myLocation;
+            return;
+        }
+        if (lastRootedRubble == 0) {
+            return;
+        }
+        MapLocation bestDest = myLocation;
+        for (int[] dxdy : SENSE_SPIRAL_ORDER) {
+            MapLocation newLocation = new MapLocation(myLocation.x + dxdy[0], myLocation.y + dxdy[1]);
+            if (rc.canSenseLocation(newLocation) && !rc.isLocationOccupied(newLocation)) {
+                int rubbleAtLoc = rc.senseRubble(newLocation);
+                if (rubbleAtLoc < bestRubble && rubbleAtLoc <= lastRootedRubble - 5) {
+                    bestRubble = rubbleAtLoc;
+                    bestDest = newLocation;
+                }
+            }
+        }
+        pathing.updateDestination(bestDest);
+        // System.out.println("Best destination: " + pathing.destination);
+        if (pathing.destination == null || pathing.destination.distanceSquaredTo(myLocation) == 0) {
             if (rc.getMode() == RobotMode.PORTABLE && rc.canTransform()) {
                 rc.transform();
+                lastRootedRubble = rc.senseRubble(myLocation);
+                lastRootedLocation = myLocation;
             }
         } else {
-            for (int[] dxdy : SENSE_SPIRAL_ORDER) {
-                MapLocation newLocation = new MapLocation(myLocation.x + dxdy[0], myLocation.y + dxdy[1]);
-                if (rc.canSenseLocation(newLocation) && !rc.isLocationOccupied(newLocation)) {
-                    if (rc.senseRubble(newLocation) < bestRubble) {
-                        bestRubble = rc.senseRubble(newLocation);
-                        pathing.updateDestination(newLocation);
-                    }
-                }
+            if (rc.getMode() == RobotMode.TURRET && rc.canTransform()) {
+                rc.transform();
             }
-            // System.out.println("Best destination: " + pathing.destination);
-            if (pathing.destination == null || pathing.destination.distanceSquaredTo(myLocation) == 0) {
-                if (rc.getMode() == RobotMode.PORTABLE && rc.canTransform()) {
-                    rc.transform();
-                }
-            } else {
-                if (rc.getMode() != RobotMode.PORTABLE && rc.canTransform()) {
-                    rc.transform();
-                }
-                pathing.fuzzyMove(pathing.destination);
-            }
+            pathing.fuzzyMove(pathing.destination);
         }
     }
 }
