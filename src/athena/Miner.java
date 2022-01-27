@@ -13,6 +13,8 @@ public class Miner extends Robot {
     MapLocation[] nearbyActionGold;
 
     int claimedCluster;
+    int MINE_ROUND_THRESHOLD;
+    int REGEN_ROUND_THRESHOLD;
     
     public Miner(RobotController rc) throws GameActionException {
         super(rc);
@@ -20,6 +22,8 @@ public class Miner extends Robot {
         lastEnemyLocation = null;
         requiredLead = 2;
         claimedCluster = commsHandler.UNDEFINED_CLUSTER_INDEX;
+        MINE_ROUND_THRESHOLD = mapWidth <= 25 && mapHeight <= 25 ? 75 : 100;
+        REGEN_ROUND_THRESHOLD = mapWidth <= 25 && mapHeight <= 25 ? 30 : 50;
     }
 
     @Override
@@ -237,8 +241,8 @@ public class Miner extends Robot {
             MapLocation tile = leadTiles[i];
             int lead = rc.senseLead(tile);
             int dist = myLocation.distanceSquaredTo(tile);
-            // Ignore first regen of lead in first 100 turns
-            if (dist < optimalDistance && (dist <= 2 || lead > 7 || currentRound >= 50)) {
+            // Ignore first regen of lead in first REGEN_ROUND_THRESHOLD turns
+            if (dist < optimalDistance && (dist <= 2 || lead > 7 || currentRound >= REGEN_ROUND_THRESHOLD)) {
                 nearestResource = tile;
                 optimalDistance = dist;
             }
@@ -268,7 +272,7 @@ public class Miner extends Robot {
 
         // Navigate to nearest resources found. Ignore for first 100 rounds to encourage exploration. After,
         // only switch to mining if we've finished exploring
-        if (currentRound >= 100 && (!exploreMode || myLocation.distanceSquaredTo(pathing.destination) <= 8)) {
+        if (currentRound >= MINE_ROUND_THRESHOLD && (!exploreMode || myLocation.distanceSquaredTo(pathing.destination) <= 8)) {
             if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 MapLocation newDestination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
                                                                 clusterCentersY[nearestCluster / clusterWidthsLength]);
