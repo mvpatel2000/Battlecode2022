@@ -270,7 +270,8 @@ public class Robot {
 
         // Turrets only run on turns 2 and 3, labs dont run
         if ((rc.getMode() == RobotMode.TURRET && turnCount > 2)
-            || rc.getType() == RobotType.LABORATORY) {
+            || rc.getType() == RobotType.LABORATORY
+            || rc.getType() == RobotType.BUILDER && turnCount == 1) {
             return;
         }
         
