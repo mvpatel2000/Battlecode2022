@@ -67,6 +67,12 @@ SCHEMA = {
             'symmetry': 2,
         }
     },
+    'farmers_built': {
+        'slots': 1,
+        'bits': {
+            '': 14,
+        }
+    },
     'starting_archon_centroid': {
         'slots': 1,
         'bits': {
@@ -82,7 +88,7 @@ SCHEMA = {
         }
     },
     'combat_cluster': {
-        'slots': 10,
+        'slots': 8,
         'bits': {
             'index': 7,
         }
