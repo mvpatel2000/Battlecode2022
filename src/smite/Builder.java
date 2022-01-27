@@ -13,9 +13,11 @@ public class Builder extends Robot {
     boolean mainBuilder = false;
     int builderRequest = -1;
     boolean leadFarmSacrifice = false;
+    MapLocation lastLabBuilt;
 
     public Builder(RobotController rc) throws GameActionException {
         super(rc);
+        lastLabBuilt = baseLocation;
     }
 
     @Override
@@ -78,7 +80,8 @@ public class Builder extends Robot {
             return;
         }
 
-        boolean shouldMutate = rc.getTeamLeadAmount(allyTeam) >= 500;
+        int teamLeadAmount = rc.getTeamLeadAmount(allyTeam);
+        boolean shouldMutate = teamLeadAmount >= 500;
 
         // Look for nearby buildings to heal
         RobotInfo[] allies = rc.senseNearbyRobots(RobotType.BUILDER.actionRadiusSquared, allyTeam);
@@ -125,8 +128,9 @@ public class Builder extends Robot {
                         }
                     }
                 }
-                if (optimalDir != null && rc.getTeamLeadAmount(allyTeam) >= RobotType.LABORATORY.buildCostLead) {
+                if (optimalDir != null && teamLeadAmount >= RobotType.LABORATORY.buildCostLead) {
                     rc.buildRobot(RobotType.LABORATORY, optimalDir);
+                    lastLabBuilt = myLocation.add(optimalDir);
                     return;
                 }
             } else { // we've been requested to upgrade something
@@ -147,6 +151,20 @@ public class Builder extends Robot {
         else if (shouldMutate && mutateLocation != null && rc.canMutate(mutateLocation)) {
             rc.mutate(mutateLocation);
         }
+        // else if (teamLeadAmount >= 1000) {
+        //     // make a watchtower if possible
+        //     Direction optimalDir = null;
+        //     int optimalRubble = Integer.MAX_VALUE;
+        //     for (Direction dir : directionsWithoutCenter) {
+        //         if (rc.canBuildRobot(RobotType.WATCHTOWER, dir)) {
+        //             int rubble = rc.senseRubble(myLocation.add(dir));
+        //             if (rubble < optimalRubble) {
+        //                 optimalDir = dir;
+        //                 optimalRubble = rubble;
+        //             }
+        //         }
+        //     }
+        // }
     }
 
     public void move() throws GameActionException {
@@ -246,17 +264,41 @@ public class Builder extends Robot {
             double yVec = 0;
             RobotInfo[] nearbyAllies = rc.senseNearbyRobots(RobotType.BUILDER.visionRadiusSquared, allyTeam);
             for (RobotInfo ally : nearbyAllies) {
-                xVec += -5.0 / ((myLocation.x - ally.location.x) * (myLocation.x - ally.location.x));
-                yVec += -5.0 / ((myLocation.y - ally.location.y) * (myLocation.y - ally.location.y));
+                double repulsion = 20.0 / ally.location.distanceSquaredTo(myLocation);
+                xVec += repulsion * (ally.location.x - myLocation.x);
+                yVec += repulsion * (ally.location.y - myLocation.y);
             }
             int xDest = Math.max(Math.min((int) (myLocation.x + xVec), mapWidth - 1), 0);
             int yDest = Math.max(Math.min((int) (myLocation.y + yVec), mapHeight - 1), 0);
             pathing.updateDestination(new MapLocation(xDest, yDest));
         }
-
+        // Turn 1 use cheap pathing
         if (turnCount == 1) {
             pathing.cautiousGreedyMove(pathing.destination);
-        } else {
+        }
+        // If main builder waiting to build lab, stay on low rubble
+        else if (mainBuilder && builderRequest == CommsHandler.BuilderRequest.NONE) {
+            MapLocation middle = new MapLocation(mapWidth / 2, mapHeight / 2);
+            Direction optimalDir = Direction.CENTER;
+            double optimalCost = rc.senseRubble(myLocation) * 100000 - Math.sqrt(myLocation.distanceSquaredTo(middle)) - 2 * Math.sqrt(myLocation.distanceSquaredTo(lastLabBuilt));
+            // //System.out.println\(myLocation + " " + optimalCost);
+            for (Direction dir : directionsWithoutCenter) {
+                if (rc.canMove(dir)) {
+                    MapLocation moveLocation = myLocation.add(dir);
+                    double cost = rc.senseRubble(moveLocation) * 100000 - Math.sqrt(moveLocation.distanceSquaredTo(middle)) - 2 * Math.sqrt(moveLocation.distanceSquaredTo(lastLabBuilt));
+                    // //System.out.println\(myLocation + " " + dir + " " + cost);
+                    if (cost < optimalCost) {
+                        optimalCost = cost;
+                        optimalDir = dir;
+                    }
+                }
+            }
+            if (optimalDir != Direction.CENTER && rc.canMove(optimalDir)) {
+                pathing.move(optimalDir);
+            }
+        }
+        // Path to destination 
+        else {
             pathing.pathToDestination();
         }
     }

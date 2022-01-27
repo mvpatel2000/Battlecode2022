@@ -962,7 +962,7 @@ public class Robot {
                 if (isNotSageOrIsActionReady && (canAttack || canView)) {
                     // System.out.println("  Shoot: " + (RobotType.SOLDIER.damage * myRubbleFactor));
                     double viewOnlyMultiplier = canAttack ? 1.0 : GAMMA;
-                    score += RobotType.SOLDIER.damage * myRubbleFactor * viewOnlyMultiplier;
+                    score += rc.getType().damage * myRubbleFactor * viewOnlyMultiplier;
                     // System.out.println(myLocation + " " + oneVersusOne + " " + distToNearestEnemy);
                     score -= enemyHeal;
                 }
