@@ -263,7 +263,9 @@ public class Builder extends Robot {
             double xVec = 0;
             double yVec = 0;
             RobotInfo[] nearbyAllies = rc.senseNearbyRobots(RobotType.BUILDER.visionRadiusSquared, allyTeam);
-            for (RobotInfo ally : nearbyAllies) {
+            int nearbyAlliesLength = Math.min(nearbyAllies.length, 6);
+            for (int i = 0; i < nearbyAlliesLength; i++) {
+                RobotInfo ally = nearbyAllies[i];
                 double repulsion = 20.0 / ally.location.distanceSquaredTo(myLocation);
                 xVec += repulsion * (ally.location.x - myLocation.x);
                 yVec += repulsion * (ally.location.y - myLocation.y);
@@ -278,6 +280,12 @@ public class Builder extends Robot {
         }
         // If main builder waiting to build lab, stay on low rubble
         else if (mainBuilder && builderRequest == CommsHandler.BuilderRequest.NONE) {
+            // int nearestCombatCluster = getNearestCombatCluster();
+            // MapLocation middle = nearestCombatCluster != commsHandler.UNDEFINED_CLUSTER_INDEX 
+            //                         ? new MapLocation(
+            //                             clusterCentersX[nearestCombatCluster % clusterWidthsLength], 
+            //                             clusterCentersY[nearestCombatCluster / clusterWidthsLength]
+            //                         ) : new MapLocation(mapWidth / 2, mapHeight / 2); 
             MapLocation middle = new MapLocation(mapWidth / 2, mapHeight / 2);
             Direction optimalDir = Direction.CENTER;
             double optimalCost = rc.senseRubble(myLocation) * 100000 - Math.sqrt(myLocation.distanceSquaredTo(middle)) - 2 * Math.sqrt(myLocation.distanceSquaredTo(lastLabBuilt));
