@@ -21,6 +21,8 @@ public class Archon extends Robot {
     int sageCount = 0;
     int laboratoryCount = 0;
     int watchtowerCout = 0;
+    int turnsSinceLastLabBuilt = 0;
+    int lastLaboratoryCount = 0;
 
     int numArchonsBehindMe = 0;
     boolean lastArchon = false;
@@ -42,7 +44,7 @@ public class Archon extends Robot {
     int resourceRate = 0;
     double resourceRateEMA = 0;
     final double RESOURCE_ALPHA = 0.04;
-    boolean highEMA = false;
+    boolean waitForLab = false;
 
     // used to move around
     int turnsUntilLand = -1;
@@ -64,14 +66,14 @@ public class Archon extends Robot {
             lastArchon = true;
         }
 
-        setBestBuildLocations();
+        // setBestBuildLocations();
         commsHandler.writeOurArchonAcceptingPatients(myArchonNum, CommsHandler.ArchonStatus.ACCEPTING_PATIENTS);
         timeToRegen = new int[numClusters];
     }
 
     @Override
     public void runUnit() throws GameActionException {
-        // if (currentRound > 279) {
+        // if (currentRound > 205) {
         //     //rc.resign\();
         // }
 
@@ -84,6 +86,8 @@ public class Archon extends Robot {
         if (currentRound == 2) {
             setInitialExploreClusters();
         }
+
+        setBestBuildLocations();
 
         int nearestCluster = considerTransform();
         // Finished transforming back to turret from moving
@@ -178,7 +182,7 @@ public class Archon extends Robot {
             // Transform if we chose not to move or we're out of turns to find better land position
             if (rc.canTransform() && (rc.isMovementReady() || turnsUntilLand == 0)) {
                 rc.transform();
-                setBestBuildLocations();
+                // setBestBuildLocations();
                 turnsUntilLand = -1;
             }
         }
@@ -292,6 +296,7 @@ public class Archon extends Robot {
         Direction toEnemy = Direction.CENTER;
         nearestDistance = Integer.MAX_VALUE;
         RobotInfo[] nearbyArchons = rc.senseNearbyRobots(RobotType.ARCHON.visionRadiusSquared, enemyTeam);
+        int nearestCombatCluster = getNearestCombatCluster();
         // Spawn towards nearby enemy if there exists one
         if (nearbyArchons.length > 0) {
             for (int i = 0; i < nearbyArchons.length; i++) {
@@ -304,6 +309,14 @@ public class Archon extends Robot {
             }
             optimalCombatBuildLocation = myLocation.add(toEnemy);
             optimalShelteredBuildLocation = myLocation.add(toEnemy.opposite());
+        }
+        // Spawn towards enemy combat cluster
+        else if (nearestCombatCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+            MapLocation center = new MapLocation(clusterCentersX[nearestCombatCluster % clusterWidthsLength], 
+                                                    clusterCentersY[nearestCombatCluster / clusterWidthsLength]);
+            Direction toCenter = myLocation.directionTo(center);
+            optimalCombatBuildLocation = myLocation.add(toCenter);
+            optimalShelteredBuildLocation = myLocation.add(toCenter.opposite());
         }
         // Otherwise spawn towards middle of map
         else {
@@ -318,17 +331,11 @@ public class Archon extends Robot {
         resourceRate = commsHandler.readLeadDelta() - 16384;
         if (currentRound == 1) resourceRate = 0;
         resourceRateEMA = (resourceRateEMA * (1 - RESOURCE_ALPHA)) + (resourceRate * RESOURCE_ALPHA);
-        // Decide whether we are past the income threshold to add more labs
-        if (!highEMA && resourceRateEMA > 7) {
-            highEMA = true;
-        } else if (highEMA && resourceRateEMA < 5) {
-            highEMA = false;
-        }
         for (int i = (int) (resourceRate + 0.5); --i >= 0;) {
             //rc.setIndicatorDot(new MapLocation(mapWidth-1-2*myArchonNum, i), 255, 0, 255);
         }
         for (int i = (int) (resourceRateEMA + 0.5); --i >= 0;) {
-            //rc.setIndicatorDot(new MapLocation(mapWidth-2-2*myArchonNum, i), (highEMA ? 0 : 255), 255, 0);
+            //rc.setIndicatorDot(new MapLocation(mapWidth-2-2*myArchonNum, i), (waitForLab ? 0 : 255), 255, 0);
         }
         if (resourceRate < 0) {
             //rc.setIndicatorDot(new MapLocation(mapWidth-1-2*myArchonNum, 0), 255, 0, 0);
@@ -683,9 +690,23 @@ public class Archon extends Robot {
      * @throws GameActionException
      */
     public void build() throws GameActionException {
+        // update some magic numbers
         int initialMiners = Math.max(4, (mapHeight * mapWidth / 240) + 3); // 4-18
         int preBuilderMiners = Math.max(3, Math.min(2 * numOurArchons, initialMiners));
         int maxMiners = mapWidth * mapHeight / 36;
+        int totalFarmersBuilt = commsHandler.readFarmersBuilt();
+        if (laboratoryCount == lastLaboratoryCount) {
+            turnsSinceLastLabBuilt++;
+        } else {
+            turnsSinceLastLabBuilt = 0;
+            lastLaboratoryCount = laboratoryCount;
+        }
+        // Decide whether we are past the income threshold to add more labs
+        if (!waitForLab && resourceRateEMA > 4 && (laboratoryCount < 2 || turnsSinceLastLabBuilt > 40)) {
+            waitForLab = true;
+        } else if (waitForLab && resourceRateEMA < 3) {
+            waitForLab = false;
+        }
 
         // Starvation solution: randomized passing
 
@@ -745,7 +766,7 @@ public class Archon extends Robot {
             commsHandler.writeReservedResourcesGold(commsHandler.readReservedResourcesGold() - reservedGold);
             reservedGold = 0;
         }
-        boolean haltGoldProduction = minerCount < 4;
+        boolean haltGoldProduction = minerCount < Math.min(4, 2 + resourcesOnMap / 100);
 
         RobotType toBuild = null;
         //rc.setIndicatorString("Build phase: none");
@@ -785,13 +806,13 @@ public class Archon extends Robot {
             // //System.out.println\("Resources on map: " + resourcesOnMap);
             toBuild = RobotType.MINER;
             //rc.setIndicatorString("Build phase: additional miners");
-        } else if (highEMA && rc.getTeamLeadAmount(allyTeam) < 275) { // another pause till laboratory
+        } else if (waitForLab && rc.getTeamLeadAmount(allyTeam) < 275) { // another pause till laboratory
             toBuild = null;
             //rc.setIndicatorString("Build phase: wait for extra lab");
         } else if (numNearbyBuilders <= 5 && numSoldiersBuilt >= 2 && rng.nextDouble() < (mapHeight * mapWidth / 4000.0) + (currentRound / 500.0) && rc.getRoundNum() <= 1800) { // produce builders for farming
             toBuild = RobotType.BUILDER;
             //rc.setIndicatorString("Build phase: midgame farming");
-        } else if (sageCount <= 4) {
+        } else if (sageCount < 3) {
             toBuild = RobotType.SOLDIER;
             //rc.setIndicatorString("Build phase: soldiers");
         }
@@ -901,6 +922,9 @@ public class Archon extends Robot {
                 && rc.getTeamGoldAmount(allyTeam) >= toBuild.buildCostGold + totalGoldReserved * (reservedGold > 0 ? 0 : 1)
                 && rc.canBuildRobot(toBuild, optimalDir)) {
             buildRobot(toBuild, optimalDir);
+            if (toBuild == RobotType.BUILDER) {
+                commsHandler.writeFarmersBuilt(totalFarmersBuilt + 1);
+            }
             reservedLead = 0;
             reservedGold = 0;
         } else { // Can't build now, reserve resources for it
