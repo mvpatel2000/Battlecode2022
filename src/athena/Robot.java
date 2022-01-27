@@ -272,10 +272,10 @@ public class Robot {
     public void setClusterStates() throws GameActionException {
         // int bytecodeUsed = Clock.getBytecodeNum();
 
-        // Turrets only run on turns 2 and 3, labs dont run
-        if ((rc.getMode() == RobotMode.TURRET && turnCount > 2)
-            || rc.getType() == RobotType.LABORATORY
-            || rc.getType() == RobotType.BUILDER && turnCount == 1) {
+        // Archons only run on turns 1 and 2, labs dont run on turn 1
+        if ((rc.getType() == RobotType.ARCHON && turnCount > 2)
+            || (rc.getType() == RobotType.LABORATORY && turnCount == 1)
+            || (rc.getType() == RobotType.BUILDER && turnCount == 1)) {
             return;
         }
         
@@ -369,6 +369,11 @@ public class Robot {
             leadTilesLength = Math.min(leadTilesLength, 5);
             goldTiles = new MapLocation[0];
             goldTilesLength = 0;
+        }
+        else if (rc.getType() == RobotType.LABORATORY) {
+            leadTilesLength = Math.min(leadTilesLength, 10);
+            goldTiles = rc.senseNearbyLocationsWithGold(rc.getType().visionRadiusSquared);
+            goldTilesLength = goldTiles.length;
         }
         else {
             goldTiles = rc.senseNearbyLocationsWithGold(rc.getType().visionRadiusSquared);
