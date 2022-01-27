@@ -336,8 +336,7 @@ public class Robot {
             int clusterIdx = markedClustersBuffer[i];
             int oldClusterStatus = clusterControls[clusterIdx] & 7;
             int newClusterStatus = (clusterControls[clusterIdx] - oldClusterStatus) >>> 3;
-            if (oldClusterStatus != newClusterStatus 
-                    && newClusterStatus != commsHandler.readClusterControlStatus(clusterIdx)) {
+            if (newClusterStatus != commsHandler.readClusterControlStatus(clusterIdx)) {
                 commsHandler.writeClusterControlStatus(clusterIdx, newClusterStatus);
             }
             clusterControls[clusterIdx] = newClusterStatus;
