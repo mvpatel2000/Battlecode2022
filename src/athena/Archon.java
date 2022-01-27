@@ -694,28 +694,28 @@ public class Archon extends Robot {
         if (builderCount == 0 && minerCount >= Math.min(2 * numOurArchons, preBuilderMiners)) {
             int farthestArchon = -1;
             double farthestDistance = 1; // most negative distance wins
-            if (archonZeroAlive) {
+            if (archonZeroAlive && commsHandler.readOurArchonIsMoving(0) == CommsHandler.ArchonStatus.STATIONARY) {
                 double dist = distanceAcrossSymmetry(archonZeroLocation);
                 if (dist < farthestDistance) {
                     farthestDistance = dist;
                     farthestArchon = 0;
                 }
             }
-            if (archonOneAlive) {
+            if (archonOneAlive && commsHandler.readOurArchonIsMoving(1) == CommsHandler.ArchonStatus.STATIONARY) {
                 double dist = distanceAcrossSymmetry(archonOneLocation);
                 if (dist < farthestDistance) {
                     farthestDistance = dist;
                     farthestArchon = 1;
                 }
             }
-            if (archonTwoAlive) {
+            if (archonTwoAlive && commsHandler.readOurArchonIsMoving(2) == CommsHandler.ArchonStatus.STATIONARY) {
                 double dist = distanceAcrossSymmetry(archonTwoLocation);
                 if (dist < farthestDistance) {
                     farthestDistance = dist;
                     farthestArchon = 2;
                 }
             }
-            if (archonThreeAlive) {
+            if (archonThreeAlive && commsHandler.readOurArchonIsMoving(3) == CommsHandler.ArchonStatus.STATIONARY) {
                 double dist = distanceAcrossSymmetry(archonThreeLocation);
                 if (dist < farthestDistance) {
                     farthestDistance = dist;
@@ -807,10 +807,12 @@ public class Archon extends Robot {
         if (nearbyEnemies.length > 0) {
             for (RobotInfo enemy : nearbyEnemies) {
                 if (enemy.type == RobotType.SOLDIER || enemy.type == RobotType.ARCHON || enemy.type == RobotType.SAGE || enemy.type == RobotType.WATCHTOWER) {
-                    toBuild = RobotType.SOLDIER;
-                    reservedLead = RobotType.SOLDIER.buildCostLead / LEAD_RESERVE_SCALE; // priority build
-                    rc.setIndicatorString("Priority building soldier");
-                    haltGoldProduction = false; // we don't want to stop producing gold if we are making gold
+                    if (soldierCount < 4) {
+                        toBuild = RobotType.SOLDIER;
+                        reservedLead = RobotType.SOLDIER.buildCostLead / LEAD_RESERVE_SCALE; // priority build
+                        rc.setIndicatorString("Priority building soldier");
+                        haltGoldProduction = false; // we don't want to stop producing gold if we are making gold
+                    }
                 }
             }
         }
@@ -1108,10 +1110,11 @@ public class Archon extends Robot {
                 numArchonsBehindMe++;
             }
             firstArchon = numArchonsBehindMe == 0;
-            lastArchon = numArchonsBehindMe == numOurArchonsAlive - 1;
+            lastArchon = numArchonsBehindMe == rc.getArchonCount() - 1; // rc.getArchonCount has no delay, but numOurArchonsAlive is delayed by 1 round for the archons after me
             if (firstArchon) {
                 rc.setIndicatorDot(myLocation, 0, 0, 0);
-            } else if (lastArchon) {
+            }
+            if (lastArchon) {
                 rc.setIndicatorDot(myLocation, 255, 255, 255);
             }
         }
