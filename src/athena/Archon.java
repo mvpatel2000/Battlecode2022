@@ -64,7 +64,7 @@ public class Archon extends Robot {
             lastArchon = true;
         }
 
-        setBestBuildLocations();
+        // setBestBuildLocations();
         commsHandler.writeOurArchonAcceptingPatients(myArchonNum, CommsHandler.ArchonStatus.ACCEPTING_PATIENTS);
         timeToRegen = new int[numClusters];
     }
@@ -84,6 +84,8 @@ public class Archon extends Robot {
         if (currentRound == 2) {
             setInitialExploreClusters();
         }
+
+        setBestBuildLocations();
 
         int nearestCluster = considerTransform();
         // Finished transforming back to turret from moving
@@ -178,7 +180,7 @@ public class Archon extends Robot {
             // Transform if we chose not to move or we're out of turns to find better land position
             if (rc.canTransform() && (rc.isMovementReady() || turnsUntilLand == 0)) {
                 rc.transform();
-                setBestBuildLocations();
+                // setBestBuildLocations();
                 turnsUntilLand = -1;
             }
         }
@@ -292,6 +294,7 @@ public class Archon extends Robot {
         Direction toEnemy = Direction.CENTER;
         nearestDistance = Integer.MAX_VALUE;
         RobotInfo[] nearbyArchons = rc.senseNearbyRobots(RobotType.ARCHON.visionRadiusSquared, enemyTeam);
+        int nearestCombatCluster = getNearestCombatCluster();
         // Spawn towards nearby enemy if there exists one
         if (nearbyArchons.length > 0) {
             for (int i = 0; i < nearbyArchons.length; i++) {
@@ -304,6 +307,14 @@ public class Archon extends Robot {
             }
             optimalCombatBuildLocation = myLocation.add(toEnemy);
             optimalShelteredBuildLocation = myLocation.add(toEnemy.opposite());
+        }
+        // Spawn towards enemy combat cluster
+        else if (nearestCombatCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
+            MapLocation center = new MapLocation(clusterCentersX[nearestCombatCluster % clusterWidthsLength], 
+                                                    clusterCentersY[nearestCombatCluster / clusterWidthsLength]);
+            Direction toCenter = myLocation.directionTo(center);
+            optimalCombatBuildLocation = myLocation.add(toCenter);
+            optimalShelteredBuildLocation = myLocation.add(toCenter.opposite());
         }
         // Otherwise spawn towards middle of map
         else {
