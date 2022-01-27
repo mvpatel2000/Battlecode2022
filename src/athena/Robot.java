@@ -859,8 +859,8 @@ public class Robot {
                 isArchonVisible = true;
             }
         }
-        // boolean isPositionReinforced = rc.getHealth() > 30 && ((archonLocation != null) || (combatAllies - nearbyEnemies.length >= 2));
-        boolean isPositionReinforced = isArchonVisible && rc.getHealth() > 10;
+        // boolean guardArchon = rc.getHealth() > 30 && ((archonLocation != null) || (combatAllies - nearbyEnemies.length >= 2));
+        boolean guardArchon = isArchonVisible && rc.getHealth() > 10;
 
         int enemySoldiers = 0;
         for (RobotInfo enemy : nearbyEnemies) {
@@ -873,8 +873,8 @@ public class Robot {
 
         // Note that allies must be r^2 <= 5 to be counted here
         boolean oneVersusOne = allyCount == 0 && enemySoldiers == 1;
-        // if (rc.getID() == 11751) {
-        //     System.out.println(myLocation + " " + oneVersusOne + " " + allyCount + " " + enemySoldiers);
+        // if (rc.getID() == 11882) {
+        //     System.out.println(myLocation + " " + oneVersusOne + " " + rc.isMovementReady());
         // }
         int nearbyEnemiesLength = Math.min(nearbyEnemies.length, 6); // approx 100 bytecode per enemy per dir
         Direction optimalDirection = null;
@@ -963,16 +963,26 @@ public class Robot {
                             if (enemyDist < distToNearestEnemy) {
                                 distToNearestEnemy = enemyDist;
                             }
-                            if (!isPositionReinforced) {
+                            // // ignore enemy if guarding archon and enemy can hit the archon
+                            // boolean ignoreEnemyDamage = guardArchon &&
+                            //     ((archonZeroAlive && archonZeroLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared)
+                            //     || (archonOneAlive && archonOneLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared)
+                            //     || (archonTwoAlive && archonTwoLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared)
+                            //     || (archonThreeAlive && archonThreeLocation.distanceSquaredTo(enemy.location) <= enemy.type.actionRadiusSquared));
+                            if (!guardArchon) {
                                 // They can hit me, full points off
                                 if (enemyDist <= enemy.type.actionRadiusSquared) {
                                     score -= enemy.type.getDamage(enemy.level) * enemyRubbleFactor;
-                                    // System.out.println("  hit: " + (-enemy.type.getDamage(enemy.level) * enemyRubbleFactor));
+                                    // if (rc.getID() == 11882) {
+                                    //     System.out.println("  hit: " + (-enemy.type.getDamage(enemy.level) * enemyRubbleFactor));
+                                    // }
                                 }
                                 // They can see me. If they step in, I can start shooting but they can too, so normalize by rubble
                                 else if (enemyDist <= enemy.type.visionRadiusSquared) {
                                     score -= GAMMA * enemy.type.getDamage(enemy.level) * enemyRubbleFactor;
-                                    // System.out.println("  view: " + (-enemy.type.getDamage(enemy.level) * enemyRubbleFactor) + " " + enemy.location);
+                                    // if (rc.getID() == 11882) {
+                                    //     System.out.println("  view: " + (-enemy.type.getDamage(enemy.level) * enemyRubbleFactor) + " " + enemy.location);
+                                    // }
                                     canView = true;
                                 }
                             }
@@ -1004,7 +1014,7 @@ public class Robot {
                     double viewOnlyMultiplier = canAttack ? 1.0 : GAMMA;
                     score += rc.getType().damage * myRubbleFactor * viewOnlyMultiplier;
                     // System.out.println(myLocation + " " + oneVersusOne + " " + distToNearestEnemy);
-                    // if (rc.getID() == 11751) {
+                    // if (rc.getID() == 11882) {
                     //     System.out.println("  " + (rc.getType().damage * myRubbleFactor * viewOnlyMultiplier) + " " + viewOnlyMultiplier + " " + canAttack);
                     // }
                     score -= enemyHeal;
@@ -1020,9 +1030,9 @@ public class Robot {
                 }
                 // Add rubble movement factor, often serves as a tiebreak for flee
                 score += myRubbleFactor * 10;
-                // if (rc.getID() == 11751) {
-                //     System.out.println(myLocation + " " + dir + " " + score);
-                // }
+                if (rc.getID() == 11882) {
+                    System.out.println(myLocation + " " + dir + " " + score);
+                }
                 if (score > optimalScore) {
                     optimalDirection = dir;
                     optimalScore = score;

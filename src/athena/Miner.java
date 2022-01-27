@@ -72,10 +72,10 @@ public class Miner extends Robot {
         }
         
         // Don't mine if I can see a friendly archon
-        if (archonZeroAlive && myLocation.distanceSquaredTo(archonZeroLocation) <= RobotType.MINER.visionRadiusSquared
-            || archonOneAlive && myLocation.distanceSquaredTo(archonOneLocation) <= RobotType.MINER.visionRadiusSquared
-            || archonTwoAlive && myLocation.distanceSquaredTo(archonTwoLocation) <= RobotType.MINER.visionRadiusSquared
-            || archonThreeAlive && myLocation.distanceSquaredTo(archonThreeLocation) <= RobotType.MINER.visionRadiusSquared) {
+        if (archonZeroAlive && myLocation.distanceSquaredTo(archonZeroLocation) <= 49
+            || archonOneAlive && myLocation.distanceSquaredTo(archonOneLocation) <= 49
+            || archonTwoAlive && myLocation.distanceSquaredTo(archonTwoLocation) <= 49
+            || archonThreeAlive && myLocation.distanceSquaredTo(archonThreeLocation) <= 49) {
             requiredLead = 2;
         } 
     }

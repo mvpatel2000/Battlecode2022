@@ -15,6 +15,8 @@ public class Builder extends Robot {
     boolean leadFarmSacrifice = false;
     MapLocation lastLabBuilt;
 
+    boolean repairing = false;
+
     public Builder(RobotController rc) throws GameActionException {
         super(rc);
         lastLabBuilt = baseLocation;
@@ -143,8 +145,10 @@ public class Builder extends Robot {
             }
         }
 
+        repairing = false;
         // heal a nearby building if we can
         if (repairLocation != null && rc.canRepair(repairLocation)) {
+            repairing = true;
             rc.repair(repairLocation);
         }
         // mutate if we have lots of resources and we can mutate level 1 to level 2
@@ -171,8 +175,7 @@ public class Builder extends Robot {
         // if (!rc.isMovementReady()) {
         //     return;
         // }
-        // Flee back to archon to heal
-        if (baseRetreat()) {
+        if (repairing) {
             return;
         }
         
