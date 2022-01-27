@@ -684,7 +684,7 @@ public class Archon extends Robot {
      */
     public void build() throws GameActionException {
         int initialMiners = Math.max(4, (mapHeight * mapWidth / 240) + 3); // 4-18
-        int preBuilderMiners = Math.min(2 * numOurArchons, initialMiners);
+        int preBuilderMiners = Math.max(3, Math.min(2 * numOurArchons, initialMiners));
         int maxMiners = mapWidth * mapHeight / 36;
 
         // Starvation solution: randomized passing
