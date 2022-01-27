@@ -37,9 +37,9 @@ public class Laboratory extends Robot {
     }
 
     public void transmute() throws GameActionException {
-        if (commsHandler.readProductionControlGold() == CommsHandler.ProductionControl.HALT) {
-            System.out.println("Halt gold production");
-        }
+        // if (commsHandler.readProductionControlGold() == CommsHandler.ProductionControl.HALT) {
+        //     System.out.println("Halt gold production");
+        // }
         int currentTeamLead = rc.getTeamLeadAmount(allyTeam);
         rc.setIndicatorString("Rate: " + transmutationRate + ", requesting upgrade: " + requestingUpgrade);
         if (rc.canTransmute() && ((!(requestingUpgrade && rc.getLevel() == 1) && commsHandler.readProductionControlGold() == CommsHandler.ProductionControl.CONTINUE) || currentTeamLead >= 600)) {

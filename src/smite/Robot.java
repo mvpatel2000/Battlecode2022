@@ -226,8 +226,8 @@ public class Robot {
                 // check some rubble points to see if we can eliminate the symmetry axis
                 MapLocation test1 = new MapLocation(mapWidth/2 - 1, myLocation.y);
                 MapLocation test2 = new MapLocation(mapWidth - mapWidth/2, myLocation.y);
-                //rc.setIndicatorDot(test1, 0, 255, 0);
-                //rc.setIndicatorDot(test2, 0, 255, 0);
+                //rc.setIndicatorDot(test1, 211, 211, 211);
+                //rc.setIndicatorDot(test2, 211, 211, 211);
                 if (rc.canSenseLocation(test1)) {
                     if (rc.canSenseLocation(test2)) {
                         if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
@@ -336,8 +336,7 @@ public class Robot {
             int clusterIdx = markedClustersBuffer[i];
             int oldClusterStatus = clusterControls[clusterIdx] & 7;
             int newClusterStatus = (clusterControls[clusterIdx] - oldClusterStatus) >>> 3;
-            if (oldClusterStatus != newClusterStatus 
-                    && newClusterStatus != commsHandler.readClusterControlStatus(clusterIdx)) {
+            if (newClusterStatus != commsHandler.readClusterControlStatus(clusterIdx)) {
                 commsHandler.writeClusterControlStatus(clusterIdx, newClusterStatus);
             }
             clusterControls[clusterIdx] = newClusterStatus;
@@ -591,6 +590,41 @@ public class Robot {
             //System.out.println\("Unknown map symmetry: " + symmetry);
             throw new IllegalStateException("Unknown symmetry");
         }
+    }
+
+    /**
+     * Returns the distance to the best known line of symmetry. This number is negative on our side
+     * and positive on the enemy's side.
+     * 
+     * @param loc MapLocation to check
+     * @return distance to symmetry line (negative on our side, positive on enemy's side)
+     * @throws GameActionException
+     */
+    public double distanceAcrossSymmetry(MapLocation loc) throws GameActionException {
+        if (currentRound == 1) return myLocation.distanceSquaredTo(new MapLocation((mapWidth-1)/2, (mapHeight-1)/2));
+        if (numOurArchonsAlive == 0) {
+            //System.out.println\("No archons alive, we lost :(");
+            return 0.0;
+        }
+        int symmetry = commsHandler.readMapSymmetry();
+        
+        if (symmetry == CommsHandler.MapSymmetry.UNKNOWN || symmetry == CommsHandler.MapSymmetry.ROTATIONAL) {
+            double orthoVecX = ourArchonCentroid.x - ((mapWidth - 1) / 2.0);
+            double orthoVecY = ourArchonCentroid.y - ((mapHeight - 1) / 2.0);
+            double orthoLen = Math.sqrt(orthoVecX*orthoVecX + orthoVecY*orthoVecY);
+            orthoVecX /= orthoLen;
+            orthoVecY /= orthoLen;
+            double myVecX = loc.x - ((mapWidth - 1) / 2.0);
+            double myVecY = loc.y - ((mapHeight - 1) / 2.0);
+            double dotProd = myVecX * orthoVecX + myVecY * orthoVecY;
+            double distToSym = Math.sqrt(myVecX*myVecX + myVecY*myVecY - dotProd);
+            return dotProd > 0 ? -distToSym : distToSym;
+        } else if (symmetry == CommsHandler.MapSymmetry.HORIZONTAL) {
+            return ourArchonCentroid.y <= ((mapHeight - 1) / 2.0) ? loc.y - ((mapHeight - 1) / 2.0) : ((mapHeight - 1) / 2.0) - loc.y;
+        } else if (symmetry == CommsHandler.MapSymmetry.VERTICAL) {
+            return ourArchonCentroid.x <= ((mapWidth - 1) / 2.0) ? loc.x - ((mapWidth - 1) / 2.0) : ((mapWidth - 1) / 2.0) - loc.x;
+        }
+        throw new IllegalStateException("Unknown symmetry");
     }
 
     /**
@@ -963,7 +997,7 @@ public class Robot {
                 if (isNotSageOrIsActionReady && (canAttack || canView)) {
                     // //System.out.println\("  Shoot: " + (RobotType.SOLDIER.damage * myRubbleFactor));
                     double viewOnlyMultiplier = canAttack ? 1.0 : GAMMA;
-                    score += RobotType.SOLDIER.damage * myRubbleFactor * viewOnlyMultiplier;
+                    score += rc.getType().damage * myRubbleFactor * viewOnlyMultiplier;
                     // //System.out.println\(myLocation + " " + oneVersusOne + " " + distToNearestEnemy);
                     score -= enemyHeal;
                 }

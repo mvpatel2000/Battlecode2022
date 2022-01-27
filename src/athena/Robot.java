@@ -336,8 +336,7 @@ public class Robot {
             int clusterIdx = markedClustersBuffer[i];
             int oldClusterStatus = clusterControls[clusterIdx] & 7;
             int newClusterStatus = (clusterControls[clusterIdx] - oldClusterStatus) >>> 3;
-            if (oldClusterStatus != newClusterStatus 
-                    && newClusterStatus != commsHandler.readClusterControlStatus(clusterIdx)) {
+            if (newClusterStatus != commsHandler.readClusterControlStatus(clusterIdx)) {
                 commsHandler.writeClusterControlStatus(clusterIdx, newClusterStatus);
             }
             clusterControls[clusterIdx] = newClusterStatus;
@@ -998,7 +997,7 @@ public class Robot {
                 if (isNotSageOrIsActionReady && (canAttack || canView)) {
                     // System.out.println("  Shoot: " + (RobotType.SOLDIER.damage * myRubbleFactor));
                     double viewOnlyMultiplier = canAttack ? 1.0 : GAMMA;
-                    score += RobotType.SOLDIER.damage * myRubbleFactor * viewOnlyMultiplier;
+                    score += rc.getType().damage * myRubbleFactor * viewOnlyMultiplier;
                     // System.out.println(myLocation + " " + oneVersusOne + " " + distToNearestEnemy);
                     score -= enemyHeal;
                 }
