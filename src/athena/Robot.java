@@ -562,17 +562,17 @@ public class Robot {
         int symmetry = commsHandler.readMapSymmetry();
 
         if (symmetry == CommsHandler.MapSymmetry.UNKNOWN || symmetry == CommsHandler.MapSymmetry.ROTATIONAL) {
-            double orthoVecX = startingArchonCentroid.x - ((mapWidth - 1) / 2.0);
-            double orthoVecY = startingArchonCentroid.y - ((mapHeight - 1) / 2.0);
+            double orthoVecX = startingArchonCentroid.x - ((mapWidth - 1.01) / 2.0);
+            double orthoVecY = startingArchonCentroid.y - ((mapHeight - 1.01) / 2.0);
             double orthoLen = Math.sqrt(orthoVecX*orthoVecX + orthoVecY*orthoVecY);
             orthoVecX /= orthoLen;
             orthoVecY /= orthoLen;
-            double myVecX = loc.x - ((mapWidth - 1) / 2.0);
-            double myVecY = loc.y - ((mapHeight - 1) / 2.0);
+            double myVecX = loc.x - ((mapWidth - 1.01) / 2.0);
+            double myVecY = loc.y - ((mapHeight - 1.01) / 2.0);
             double dotProd = myVecX * orthoVecX + myVecY * orthoVecY;
             double distToSym = Math.sqrt(myVecX*myVecX + myVecY*myVecY - dotProd);
-            double currArchonVecX = ourArchonCentroid.x - ((mapWidth - 1) / 2.0);
-            double currArchonVecY = ourArchonCentroid.y - ((mapHeight - 1) / 2.0);
+            double currArchonVecX = ourArchonCentroid.x - ((mapWidth - 1.01) / 2.0);
+            double currArchonVecY = ourArchonCentroid.y - ((mapHeight - 1.01) / 2.0);
             double currArchonDotProd = currArchonVecX * orthoVecX + currArchonVecY * orthoVecY;
             double currentArchonDistToSym = Math.sqrt(myVecX*myVecX + myVecY*myVecY - currArchonDotProd);
             return dotProd > 0 || currentArchonDistToSym > distToSym;
@@ -611,13 +611,13 @@ public class Robot {
         int symmetry = commsHandler.readMapSymmetry();
         
         if (symmetry == CommsHandler.MapSymmetry.UNKNOWN || symmetry == CommsHandler.MapSymmetry.ROTATIONAL) {
-            double orthoVecX = ourArchonCentroid.x - ((mapWidth - 1) / 2.0);
-            double orthoVecY = ourArchonCentroid.y - ((mapHeight - 1) / 2.0);
+            double orthoVecX = ourArchonCentroid.x - ((mapWidth - 1.01) / 2.0);
+            double orthoVecY = ourArchonCentroid.y - ((mapHeight - 1.01) / 2.0);
             double orthoLen = Math.sqrt(orthoVecX*orthoVecX + orthoVecY*orthoVecY);
             orthoVecX /= orthoLen;
             orthoVecY /= orthoLen;
-            double myVecX = loc.x - ((mapWidth - 1) / 2.0);
-            double myVecY = loc.y - ((mapHeight - 1) / 2.0);
+            double myVecX = loc.x - ((mapWidth - 1.01) / 2.0);
+            double myVecY = loc.y - ((mapHeight - 1.01) / 2.0);
             double dotProd = myVecX * orthoVecX + myVecY * orthoVecY;
             double distToSym = Math.sqrt(myVecX*myVecX + myVecY*myVecY - dotProd);
             return dotProd > 0 ? -distToSym : distToSym;

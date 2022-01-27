@@ -37,15 +37,15 @@ public class Laboratory extends Robot {
     }
 
     public void transmute() throws GameActionException {
-        // if (commsHandler.readProductionControlGold() == CommsHandler.ProductionControl.HALT) {
-        //     //System.out.println\("Halt gold production");
-        // }
+        boolean haltGoldProduction = commsHandler.readProductionControlGold() == CommsHandler.ProductionControl.HALT;
         int currentTeamLead = rc.getTeamLeadAmount(allyTeam);
         //rc.setIndicatorString("Rate: " + transmutationRate + ", requesting upgrade: " + requestingUpgrade);
-        if (rc.canTransmute() && ((!(requestingUpgrade && rc.getLevel() == 1) && commsHandler.readProductionControlGold() == CommsHandler.ProductionControl.CONTINUE) || currentTeamLead >= 600)) {
+        if (rc.canTransmute() && ((!(requestingUpgrade && rc.getLevel() == 1) && !haltGoldProduction) || currentTeamLead >= 600)) {
             //rc.setIndicatorDot(myLocation, 255, 215, 0);
             rc.transmute();
             commsHandler.writeLeadDelta(Math.max(commsHandler.readLeadDelta() - transmutationRate, 0));
+        } else if (haltGoldProduction) {
+            //rc.setIndicatorDot(myLocation, 0, 0, 0);
         } else {
             //rc.setIndicatorDot(myLocation, 118, 136, 143);
         }

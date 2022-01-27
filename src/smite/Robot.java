@@ -172,7 +172,8 @@ public class Robot {
         onOurSide = onOurSide(myLocation);
         // Flee to archon if dying
         int myHealth = rc.getHealth();
-        if (myHealth == rc.getType().getMaxHealth(rc.getLevel())) {
+        if (myHealth == rc.getType().getMaxHealth(rc.getLevel()) 
+            || (myHealth >= 91 && rc.getType() == RobotType.SAGE)) {
             isDying = false;
         }
         else if (myHealth <= FLEE_HEALTH || (rc.getType() == RobotType.SAGE && myHealth <= SAGE_FLEE_HEALTH)) {
@@ -226,8 +227,8 @@ public class Robot {
                 // check some rubble points to see if we can eliminate the symmetry axis
                 MapLocation test1 = new MapLocation(mapWidth/2 - 1, myLocation.y);
                 MapLocation test2 = new MapLocation(mapWidth - mapWidth/2, myLocation.y);
-                //rc.setIndicatorDot(test1, 211, 211, 211);
-                //rc.setIndicatorDot(test2, 211, 211, 211);
+                // //rc.setIndicatorDot(test1, 211, 211, 211);
+                // //rc.setIndicatorDot(test2, 211, 211, 211);
                 if (rc.canSenseLocation(test1)) {
                     if (rc.canSenseLocation(test2)) {
                         if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
@@ -270,7 +271,8 @@ public class Robot {
 
         // Turrets only run on turns 2 and 3, labs dont run
         if ((rc.getMode() == RobotMode.TURRET && turnCount > 2)
-            || rc.getType() == RobotType.LABORATORY) {
+            || rc.getType() == RobotType.LABORATORY
+            || rc.getType() == RobotType.BUILDER && turnCount == 1) {
             return;
         }
         
@@ -800,7 +802,8 @@ public class Robot {
                 exploreMode = false;
             }
             // Explore map. Get new cluster if not in explore mode or close to destination. Don't make sages explore
-            else if (rc.getType() != RobotType.SAGE && (!exploreMode || myLocation.distanceSquaredTo(pathing.destination) <= 8)) {
+            else if ((rc.getType() != RobotType.SAGE || currentRound >= 200)
+                        && (!exploreMode || myLocation.distanceSquaredTo(pathing.destination) <= 8)) {
                 nearestCluster = getNearestExploreCluster();
                 if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
                     newDestination = new MapLocation(clusterCentersX[nearestCluster % clusterWidthsLength], 
@@ -870,7 +873,9 @@ public class Robot {
 
         // Note that allies must be r^2 <= 5 to be counted here
         boolean oneVersusOne = allyCount == 0 && enemySoldiers == 1;
-        // //System.out.println\(myLocation + " " + oneVersusOne + " " + allyCount + " " + enemySoldiers);
+        // if (rc.getID() == 11751) {
+        //     //System.out.println\(myLocation + " " + oneVersusOne + " " + allyCount + " " + enemySoldiers);
+        // }
         int nearbyEnemiesLength = Math.min(nearbyEnemies.length, 6); // approx 100 bytecode per enemy per dir
         Direction optimalDirection = null;
         double optimalScore = -999.0;
@@ -981,7 +986,7 @@ public class Robot {
                     }
 
                     // See if you can attack anyone
-                    if (!canAttack && moveLocation.distanceSquaredTo(enemy.location) <= RobotType.SOLDIER.actionRadiusSquared) {
+                    if (!canAttack && moveLocation.distanceSquaredTo(enemy.location) <= rc.getType().actionRadiusSquared) {
                         canAttack = true;
                     }
                     // TODO: Stop moving around archon?
@@ -999,6 +1004,9 @@ public class Robot {
                     double viewOnlyMultiplier = canAttack ? 1.0 : GAMMA;
                     score += rc.getType().damage * myRubbleFactor * viewOnlyMultiplier;
                     // //System.out.println\(myLocation + " " + oneVersusOne + " " + distToNearestEnemy);
+                    // if (rc.getID() == 11751) {
+                    //     //System.out.println\("  " + (rc.getType().damage * myRubbleFactor * viewOnlyMultiplier) + " " + viewOnlyMultiplier + " " + canAttack);
+                    // }
                     score -= enemyHeal;
                 }
                 // 1v1: Pursue if higher health, otherwise flee. Tiebreak in favor of aggression since striking first wins
@@ -1010,11 +1018,11 @@ public class Robot {
                 if (dir == Direction.CENTER) {
                     score += 0.000000001;
                 }
-                // if (rc.getType() == RobotType.SAGE) {
-                //     //System.out.println\(myLocation + " " + dir + " " + score);
-                // }
                 // Add rubble movement factor, often serves as a tiebreak for flee
                 score += myRubbleFactor * 10;
+                // if (rc.getID() == 11751) {
+                //     //System.out.println\(myLocation + " " + dir + " " + score);
+                // }
                 if (score > optimalScore) {
                     optimalDirection = dir;
                     optimalScore = score;

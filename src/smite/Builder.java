@@ -236,9 +236,9 @@ public class Builder extends Robot {
             }
         }
 
-        int nearestCluster = getNearestCombatCluster();
         // Main builder moves away from combat if it has no upgrades pending
         if (mainBuilder && builderRequest == CommsHandler.BuilderRequest.NONE) {
+            int nearestCluster = getNearestCombatCluster();
             resetControlStatus(pathing.destination);
             if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
                 pathing.updateDestination(new MapLocation(20 * ourArchonCentroid.x - 19 * clusterCentersX[nearestCluster % clusterWidthsLength],
@@ -248,7 +248,6 @@ public class Builder extends Robot {
                                                 20 * myLocation.y - 19 * ((mapHeight - 1)/2)));
             }
         }
-        
         else if (leadFarmSacrifice) {
             // Farmer moves towards combat or towards center
             // if (nearestCluster != commsHandler.UNDEFINED_CLUSTER_INDEX) {
@@ -264,7 +263,7 @@ public class Builder extends Robot {
             double yVec = 0;
             RobotInfo[] nearbyAllies = rc.senseNearbyRobots(10, allyTeam);
             for (RobotInfo ally : nearbyAllies) {
-                double repulsion = (ally.type == RobotType.BUILDER ? 20.0 : 10.0) / ally.location.distanceSquaredTo(myLocation);
+                double repulsion = (ally.type == RobotType.BUILDER ? -20.0 : -10.0) / ally.location.distanceSquaredTo(myLocation);
                 xVec += repulsion * (ally.location.x - myLocation.x);
                 yVec += repulsion * (ally.location.y - myLocation.y);
             }
@@ -284,12 +283,14 @@ public class Builder extends Robot {
             //                             clusterCentersX[nearestCombatCluster % clusterWidthsLength], 
             //                             clusterCentersY[nearestCombatCluster / clusterWidthsLength]
             //                         ) : new MapLocation(mapWidth / 2, mapHeight / 2); 
+            boolean canMove = false;
             MapLocation middle = new MapLocation(mapWidth / 2, mapHeight / 2);
             Direction optimalDir = Direction.CENTER;
             double optimalCost = rc.senseRubble(myLocation) * 100000 - Math.sqrt(myLocation.distanceSquaredTo(middle)) - 2 * Math.sqrt(myLocation.distanceSquaredTo(lastLabBuilt));
             // //System.out.println\(myLocation + " " + optimalCost);
             for (Direction dir : directionsWithoutCenter) {
                 if (rc.canMove(dir)) {
+                    canMove = true;
                     MapLocation moveLocation = myLocation.add(dir);
                     double cost = rc.senseRubble(moveLocation) * 100000 - Math.sqrt(moveLocation.distanceSquaredTo(middle)) - 2 * Math.sqrt(moveLocation.distanceSquaredTo(lastLabBuilt));
                     // //System.out.println\(myLocation + " " + dir + " " + cost);
@@ -301,6 +302,10 @@ public class Builder extends Robot {
             }
             if (optimalDir != Direction.CENTER && rc.canMove(optimalDir)) {
                 pathing.move(optimalDir);
+            }
+            // Self-destruct if you can move but you're blocked off, eg labs surround you
+            if (rc.isMovementReady() && !canMove) {
+                rc.disintegrate();
             }
         }
         // Path to destination 

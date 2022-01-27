@@ -71,9 +71,9 @@ public class Archon extends Robot {
 
     @Override
     public void runUnit() throws GameActionException {
-        if (currentRound > 300) {
-            //rc.resign\();
-        }
+        // if (currentRound > 279) {
+        //     //rc.resign\();
+        // }
 
         readUnitUpdates();
         updateResourceRate();
@@ -684,7 +684,7 @@ public class Archon extends Robot {
      */
     public void build() throws GameActionException {
         int initialMiners = Math.max(4, (mapHeight * mapWidth / 240) + 3); // 4-18
-        int preBuilderMiners = Math.min(2 * numOurArchons, initialMiners);
+        int preBuilderMiners = Math.max(3, Math.min(2 * numOurArchons, initialMiners));
         int maxMiners = mapWidth * mapHeight / 36;
 
         // Starvation solution: randomized passing
@@ -790,7 +790,7 @@ public class Archon extends Robot {
             //rc.setIndicatorString("Build phase: wait for extra lab");
         } else if (numNearbyBuilders <= 5 && numSoldiersBuilt >= 2 && rng.nextDouble() < (mapHeight * mapWidth / 4000.0) + (currentRound / 500.0) && rc.getRoundNum() <= 1800) { // produce builders for farming
             toBuild = RobotType.BUILDER;
-            //rc.setIndicatorString("Build phase: builders for farming");
+            //rc.setIndicatorString("Build phase: midgame farming");
         } else if (sageCount <= 4) {
             toBuild = RobotType.SOLDIER;
             //rc.setIndicatorString("Build phase: soldiers");
@@ -803,18 +803,49 @@ public class Archon extends Robot {
             //rc.setIndicatorString("Priority building builder for healing");
         }
 
-        // Override: if there is a visible enemy archon/soldier/sage/watchtower, priority build a soldier
+        
+        /*
+         * Override: priority build a soldier
+         * We should be priority building soldiers if any of the following holds:
+         *  - we see an enemy soldier
+         *  - we see an enemy archon
+         *  - we see an enemy watchtower
+         * 
+         * Except in any of the following scenarios:
+         *  - we see an enemy sage
+         *  - we have a laboratory
+         *  - we have 5 sages out
+         *  - we already have 4 soldiers out
+         */
+        boolean nearbyEnemySoldier = false;
+        boolean nearbyEnemySage = false;
+        boolean nearbyEnemyArchon = false;
+        boolean nearbyEnemyWatchtower = false;
         if (nearbyEnemies.length > 0) {
             for (RobotInfo enemy : nearbyEnemies) {
-                if (enemy.type == RobotType.SOLDIER || enemy.type == RobotType.ARCHON || enemy.type == RobotType.SAGE || enemy.type == RobotType.WATCHTOWER) {
-                    if (soldierCount < 4) {
-                        toBuild = RobotType.SOLDIER;
-                        reservedLead = RobotType.SOLDIER.buildCostLead / LEAD_RESERVE_SCALE; // priority build
-                        //rc.setIndicatorString("Priority building soldier");
-                        haltGoldProduction = false; // we don't want to stop producing gold if we are making gold
-                    }
+                switch (enemy.type) {
+                    case SOLDIER:
+                        nearbyEnemySoldier = true;
+                        break;
+                    case SAGE:
+                        nearbyEnemySage = true;
+                        break;
+                    case ARCHON:
+                        nearbyEnemyArchon = true;
+                        break;
+                    case WATCHTOWER:
+                        nearbyEnemyWatchtower = true;
+                        break;
+                    default:
+                        break;
                 }
             }
+        }
+        if ((nearbyEnemySoldier || nearbyEnemyArchon || nearbyEnemyWatchtower) && !nearbyEnemySage && laboratoryCount == 0 && sageCount < 5 && soldierCount < 4) {
+            toBuild = RobotType.SOLDIER;
+            reservedLead = RobotType.SOLDIER.buildCostLead / LEAD_RESERVE_SCALE; // priority build
+            //rc.setIndicatorString("Priority building soldier");
+            haltGoldProduction = false; // we don't want to stop producing gold if we are making gold
         }
 
         // Final override: if we have gold, just make a sage, unless it's lategame and we want to make miners
@@ -940,8 +971,9 @@ public class Archon extends Robot {
             if (amountToRepairForAlly > 0) {
                 amountToRepair += amountToRepairForAlly;
                 // Prioritize healing soldiers/sages unless a miner is about to die
+                // Don't prioritize over >90 hp sages because they can absorb 2 shots
                 boolean allyPriority = (ally.type == RobotType.SOLDIER 
-                                        || ally.type == RobotType.SAGE 
+                                        || (ally.type == RobotType.SAGE && ally.health <= 90)
                                         || (ally.type == RobotType.MINER && ally.health <= 9));
                 // If ally is priority and existing optimal is not higher priority, automatically take it
                 boolean isHigherPriority = allyPriority && !optimalPriority;
