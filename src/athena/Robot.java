@@ -50,6 +50,7 @@ public class Robot {
     int[] clusterPermutation;
 
     boolean isDying;
+    boolean hospitalsAllFull;
     final int FLEE_HEALTH = 8;
     final int SAGE_FLEE_HEALTH = 10;
     final double GAMMA = 0.9;
@@ -124,6 +125,7 @@ public class Robot {
         commsHandler = new CommsHandler(rc);
         numOurArchons = rc.getArchonCount();
         isDying = false;
+        hospitalsAllFull = false;
         pathing = new Pathing(this);
         pathing.destination = null;
 
@@ -175,6 +177,7 @@ public class Robot {
         if (myHealth == rc.getType().getMaxHealth(rc.getLevel()) 
             || (myHealth >= 91 && rc.getType() == RobotType.SAGE)) {
             isDying = false;
+            hospitalsAllFull = false;
         }
         else if (myHealth <= FLEE_HEALTH || (rc.getType() == RobotType.SAGE && myHealth <= SAGE_FLEE_HEALTH)) {
             isDying = true;
@@ -489,9 +492,13 @@ public class Robot {
                     pathing.updateDestination(nearestArchonLocation);
                     pathing.pathToDestination();
                 }
+                hospitalsAllFull = false;
                 return true;
             }
-            return false;
+            else {
+                hospitalsAllFull = true;
+                return false;
+            }
         }
         return false;
     }
@@ -791,7 +798,7 @@ public class Robot {
             }
         }
         // Go to enemy or explore if you're not dying
-        else if (!isDying) {
+        else if (!isDying || hospitalsAllFull) {
             MapLocation newDestination = pathing.destination;
             // Navigate to nearest found enemy
             int nearestCluster = getNearestCombatCluster();
