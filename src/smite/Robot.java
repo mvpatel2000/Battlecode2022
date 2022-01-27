@@ -168,7 +168,7 @@ public class Robot {
         nearbyEnemies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, enemyTeam);
         setClusterStates();
         archonStatusCheck();
-        if (startingArchonCentroid == null && currentRound >= 2) {
+        if (startingArchonCentroid == null && currentRound >= 3) {
             startingArchonCentroid = new MapLocation(commsHandler.readStartingArchonCentroidXCoord(), commsHandler.readStartingArchonCentroidYCoord());
         }
         onOurSide = onOurSide(myLocation);
@@ -189,10 +189,8 @@ public class Robot {
         // //rc.setIndicatorString("SymDist " + distanceToSymmetryLine);
 
         // After unit runs
-        if (rc.getRoundNum() < 150 && Clock.getBytecodesLeft() > 1000) {
-            // //System.out.println\("Bytecodes left before symmetry: " + Clock.getBytecodesLeft());
+        if (rc.getRoundNum() < 150 && Clock.getBytecodesLeft() > (rc.getType() == RobotType.ARCHON ? 1000 : 500)) {
             updateSymmetry();
-            // //System.out.println\("Bytecodes left after symmetry: " + Clock.getBytecodesLeft());
         }
 
         checkTLE();
@@ -224,18 +222,96 @@ public class Robot {
     public void updateSymmetry() throws GameActionException {
         int currentSymmetry = commsHandler.readMapSymmetry();
         
+        int thresh = 5;
+        if (rc.getType() == RobotType.ARCHON) {
+            thresh = 9;
+        }
         // if I can see the vertical midline
         if ((currentSymmetry & CommsHandler.MapSymmetry.HORIZONTAL) == 0) { // if we have not yet ruled out vertical symmetry
-            if (myLocation.x * 2 < mapWidth + 5 && myLocation.x * 2 > mapWidth - 5) { // if we are near the vertical midline
+            if (myLocation.x * 2 <= mapWidth + thresh && myLocation.x * 2 >= mapWidth - thresh) { // if we are near the vertical midline
                 // check some rubble points to see if we can eliminate the symmetry axis
                 MapLocation test1 = new MapLocation(mapWidth/2 - 1, myLocation.y);
                 MapLocation test2 = new MapLocation(mapWidth - mapWidth/2, myLocation.y);
-                // //rc.setIndicatorDot(test1, 211, 211, 211);
-                // //rc.setIndicatorDot(test2, 211, 211, 211);
+                //rc.setIndicatorDot(test1, 211, 211, 211);
+                //rc.setIndicatorDot(test2, 211, 211, 211);
                 if (rc.canSenseLocation(test1)) {
                     if (rc.canSenseLocation(test2)) {
                         if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
                             commsHandler.writeMapSymmetry(currentSymmetry | CommsHandler.MapSymmetry.HORIZONTAL); // eliminate vertical symmetry
+                        }
+                    }
+                }
+                // check some rubble points to see if we can eliminate the symmetry axis
+                test1 = new MapLocation(mapWidth/2 - 1, myLocation.y-2);
+                test2 = new MapLocation(mapWidth - mapWidth/2, myLocation.y-2);
+                //rc.setIndicatorDot(test1, 211, 211, 211);
+                //rc.setIndicatorDot(test2, 211, 211, 211);
+                if (rc.canSenseLocation(test1)) {
+                    if (rc.canSenseLocation(test2)) {
+                        if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
+                            commsHandler.writeMapSymmetry(currentSymmetry | CommsHandler.MapSymmetry.HORIZONTAL); // eliminate vertical symmetry
+                        }
+                    }
+                }
+                // check some rubble points to see if we can eliminate the symmetry axis
+                test1 = new MapLocation(mapWidth/2 - 1, myLocation.y+2);
+                test2 = new MapLocation(mapWidth - mapWidth/2, myLocation.y+2);
+                //rc.setIndicatorDot(test1, 211, 211, 211);
+                //rc.setIndicatorDot(test2, 211, 211, 211);
+                if (rc.canSenseLocation(test1)) {
+                    if (rc.canSenseLocation(test2)) {
+                        if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
+                            commsHandler.writeMapSymmetry(currentSymmetry | CommsHandler.MapSymmetry.HORIZONTAL); // eliminate vertical symmetry
+                        }
+                    }
+                }
+                if (rc.getType() == RobotType.ARCHON) {
+                    // check some rubble points to see if we can eliminate the symmetry axis
+                    test1 = new MapLocation(mapWidth/2 - 1, myLocation.y-4);
+                    test2 = new MapLocation(mapWidth - mapWidth/2, myLocation.y-4);
+                    //rc.setIndicatorDot(test1, 211, 211, 211);
+                    //rc.setIndicatorDot(test2, 211, 211, 211);
+                    if (rc.canSenseLocation(test1)) {
+                        if (rc.canSenseLocation(test2)) {
+                            if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
+                                commsHandler.writeMapSymmetry(currentSymmetry | CommsHandler.MapSymmetry.HORIZONTAL); // eliminate vertical symmetry
+                            }
+                        }
+                    }
+                    // check some rubble points to see if we can eliminate the symmetry axis
+                    test1 = new MapLocation(mapWidth/2 - 1, myLocation.y+4);
+                    test2 = new MapLocation(mapWidth - mapWidth/2, myLocation.y+4);
+                    //rc.setIndicatorDot(test1, 211, 211, 211);
+                    //rc.setIndicatorDot(test2, 211, 211, 211);
+                    if (rc.canSenseLocation(test1)) {
+                        if (rc.canSenseLocation(test2)) {
+                            if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
+                                commsHandler.writeMapSymmetry(currentSymmetry | CommsHandler.MapSymmetry.HORIZONTAL); // eliminate vertical symmetry
+                            }
+                        }
+                    }
+                    // check some rubble points to see if we can eliminate the symmetry axis
+                    test1 = new MapLocation(mapWidth/2 - 2, myLocation.y-2);
+                    test2 = new MapLocation(mapWidth + 1 - mapWidth/2, myLocation.y-2);
+                    //rc.setIndicatorDot(test1, 211, 211, 211);
+                    //rc.setIndicatorDot(test2, 211, 211, 211);
+                    if (rc.canSenseLocation(test1)) {
+                        if (rc.canSenseLocation(test2)) {
+                            if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
+                                commsHandler.writeMapSymmetry(currentSymmetry | CommsHandler.MapSymmetry.HORIZONTAL); // eliminate vertical symmetry
+                            }
+                        }
+                    }
+                    // check some rubble points to see if we can eliminate the symmetry axis
+                    test1 = new MapLocation(mapWidth/2 - 2, myLocation.y+2);
+                    test2 = new MapLocation(mapWidth + 1 - mapWidth/2, myLocation.y+2);
+                    //rc.setIndicatorDot(test1, 211, 211, 211);
+                    //rc.setIndicatorDot(test2, 211, 211, 211);
+                    if (rc.canSenseLocation(test1)) {
+                        if (rc.canSenseLocation(test2)) {
+                            if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
+                                commsHandler.writeMapSymmetry(currentSymmetry | CommsHandler.MapSymmetry.HORIZONTAL); // eliminate vertical symmetry
+                            }
                         }
                     }
                 }
@@ -244,15 +320,83 @@ public class Robot {
 
         // same for horizontal
         if ((currentSymmetry & CommsHandler.MapSymmetry.VERTICAL) == 0) { // if we have not yet ruled out horizontal symmetry
-            if (myLocation.y * 2 < mapHeight + 5 && myLocation.y * 2 > mapHeight - 5) {
+            if (myLocation.y * 2 <= mapHeight + thresh && myLocation.y * 2 >= mapHeight - thresh) {
                 MapLocation test1 = new MapLocation(myLocation.x, mapHeight/2 - 1);
                 MapLocation test2 = new MapLocation(myLocation.x, mapHeight - mapHeight/2);
-                //rc.setIndicatorDot(test1, 0, 255, 0);
-                //rc.setIndicatorDot(test2, 0, 255, 0);
+                //rc.setIndicatorDot(test1, 211, 211, 211);
+                //rc.setIndicatorDot(test2, 211, 211, 211);
                 if (rc.canSenseLocation(test1)) {
                     if (rc.canSenseLocation(test2)) {
                         if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
                             commsHandler.writeMapSymmetry(currentSymmetry | CommsHandler.MapSymmetry.VERTICAL); // eliminate horizontal symmetry
+                        }
+                    }
+                }
+                test1 = new MapLocation(myLocation.x-2, mapHeight/2 - 1);
+                test2 = new MapLocation(myLocation.x-2, mapHeight - mapHeight/2);
+                //rc.setIndicatorDot(test1, 211, 211, 211);
+                //rc.setIndicatorDot(test2, 211, 211, 211);
+                if (rc.canSenseLocation(test1)) {
+                    if (rc.canSenseLocation(test2)) {
+                        if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
+                            commsHandler.writeMapSymmetry(currentSymmetry | CommsHandler.MapSymmetry.VERTICAL); // eliminate horizontal symmetry
+                        }
+                    }
+                }
+                test1 = new MapLocation(myLocation.x+2, mapHeight/2 - 1);
+                test2 = new MapLocation(myLocation.x+2, mapHeight - mapHeight/2);
+                //rc.setIndicatorDot(test1, 211, 211, 211);
+                //rc.setIndicatorDot(test2, 211, 211, 211);
+                if (rc.canSenseLocation(test1)) {
+                    if (rc.canSenseLocation(test2)) {
+                        if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
+                            commsHandler.writeMapSymmetry(currentSymmetry | CommsHandler.MapSymmetry.VERTICAL); // eliminate horizontal symmetry
+                        }
+                    }
+                }
+                if (rc.getType() == RobotType.ARCHON) {
+                    test1 = new MapLocation(myLocation.x+4, mapHeight/2 - 1);
+                    test2 = new MapLocation(myLocation.x+4, mapHeight - mapHeight/2);
+                    //rc.setIndicatorDot(test1, 211, 211, 211);
+                    //rc.setIndicatorDot(test2, 211, 211, 211);
+                    if (rc.canSenseLocation(test1)) {
+                        if (rc.canSenseLocation(test2)) {
+                            if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
+                                commsHandler.writeMapSymmetry(currentSymmetry | CommsHandler.MapSymmetry.VERTICAL); // eliminate horizontal symmetry
+                            }
+                        }
+                    }
+                    test1 = new MapLocation(myLocation.x-4, mapHeight/2 - 1);
+                    test2 = new MapLocation(myLocation.x-4, mapHeight - mapHeight/2);
+                    //rc.setIndicatorDot(test1, 211, 211, 211);
+                    //rc.setIndicatorDot(test2, 211, 211, 211);
+                    if (rc.canSenseLocation(test1)) {
+                        if (rc.canSenseLocation(test2)) {
+                            if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
+                                commsHandler.writeMapSymmetry(currentSymmetry | CommsHandler.MapSymmetry.VERTICAL); // eliminate horizontal symmetry
+                            }
+                        }
+                    }
+                    test1 = new MapLocation(myLocation.x-2, mapHeight/2 - 2);
+                    test2 = new MapLocation(myLocation.x-2, mapHeight + 1 - mapHeight/2);
+                    //rc.setIndicatorDot(test1, 211, 211, 211);
+                    //rc.setIndicatorDot(test2, 211, 211, 211);
+                    if (rc.canSenseLocation(test1)) {
+                        if (rc.canSenseLocation(test2)) {
+                            if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
+                                commsHandler.writeMapSymmetry(currentSymmetry | CommsHandler.MapSymmetry.VERTICAL); // eliminate horizontal symmetry
+                            }
+                        }
+                    }
+                    test1 = new MapLocation(myLocation.x+2, mapHeight/2 - 2);
+                    test2 = new MapLocation(myLocation.x+2, mapHeight + 1 - mapHeight/2);
+                    //rc.setIndicatorDot(test1, 211, 211, 211);
+                    //rc.setIndicatorDot(test2, 211, 211, 211);
+                    if (rc.canSenseLocation(test1)) {
+                        if (rc.canSenseLocation(test2)) {
+                            if (rc.senseRubble(test1) != rc.senseRubble(test2)) {
+                                commsHandler.writeMapSymmetry(currentSymmetry | CommsHandler.MapSymmetry.VERTICAL); // eliminate horizontal symmetry
+                            }
                         }
                     }
                 }
@@ -566,12 +710,14 @@ public class Robot {
      * @throws GameActionException
      */
     public boolean onOurSide(MapLocation loc) throws GameActionException {
-        if (currentRound == 1) return true;
+        if (currentRound <= 2) return true;
         if (numOurArchonsAlive == 0) {
             //System.out.println\("No archons alive, we lost :(");
             return false;
         }
         int symmetry = commsHandler.readMapSymmetry();
+        //rc.setIndicatorDot(ourArchonCentroid, 0, 255, 255);
+        //rc.setIndicatorDot(startingArchonCentroid, 0, 0, 0);
 
         if (symmetry == CommsHandler.MapSymmetry.UNKNOWN || symmetry == CommsHandler.MapSymmetry.ROTATIONAL) {
             double orthoVecX = startingArchonCentroid.x - ((mapWidth - 1.01) / 2.0); // use 1.01 to avoid issues with centroid coinciding with center
@@ -587,14 +733,22 @@ public class Robot {
             double currArchonVecY = ourArchonCentroid.y - ((mapHeight - 1.01) / 2.0);
             double currArchonDotProd = currArchonVecX * orthoVecX + currArchonVecY * orthoVecY;
             double currentArchonDistToSym = Math.sqrt(myVecX*myVecX + myVecY*myVecY - currArchonDotProd);
+            // Uncomment below to visualize symmetry line
+            // double symX = -orthoVecY;
+            // double symY = orthoVecX;
+            // //rc.setIndicatorLine(new MapLocation((int) (((mapWidth - 1.01) / 2.0) - symX * 100), (int) (((mapHeight - 1.01) / 2.0) - symY * 100)),
+            //                     new MapLocation((int) (((mapWidth - 1.01) / 2.0) + symX * 100), (int) (((mapHeight - 1.01) / 2.0) + symY * 100)),
+            //                     255, 255, 255);
             return dotProd > 0 || currentArchonDistToSym > distToSym;
         } else if (symmetry == CommsHandler.MapSymmetry.HORIZONTAL) {
+            //rc.setIndicatorLine(new MapLocation(-1, (mapHeight-1)/2), new MapLocation(mapWidth, (mapHeight-1)/2), 255, 255, 255);
             if (startingArchonCentroid.y <= ((mapHeight - 1) / 2.0)) {
                 return loc.y <= ((mapHeight - 1) / 2.0) || loc.y <= ourArchonCentroid.y;
             } else {
                 return loc.y > ((mapHeight - 1) / 2.0) || loc.y >= ourArchonCentroid.y;
             }
         } else if (symmetry == CommsHandler.MapSymmetry.VERTICAL) {
+            //rc.setIndicatorLine(new MapLocation((mapWidth-1)/2, -1), new MapLocation((mapWidth-1)/2, mapHeight), 255, 255, 255);
             if (startingArchonCentroid.x <= ((mapWidth - 1) / 2.0)) {
                 return loc.x <= ((mapWidth - 1) / 2.0) || loc.x <= ourArchonCentroid.x;
             } else {
@@ -849,7 +1003,7 @@ public class Robot {
         boolean isNotSageOrIsActionReady = rc.getType() != RobotType.SAGE || rc.isActionReady();
         boolean atMaxHealth = rc.getHealth() == rc.getType().getMaxHealth(rc.getLevel());
 
-        double combatAllyHealth = 0.0;
+        // double combatAllyHealth = 0.0;
         int allyCount = 0;
         boolean isArchonVisible = false;
         // MapLocation archonLocation = null;
@@ -859,7 +1013,7 @@ public class Robot {
         for (int i = 0; i < alliesLength; i++) {
             RobotInfo ally = allies[i];
             if (ally.type == RobotType.WATCHTOWER || (ally.type == RobotType.SOLDIER && ally.health > FLEE_HEALTH)) { // && ally.health > FLEE_HEALTH
-                combatAllyHealth += ally.health;
+                // combatAllyHealth += ally.health;
                 if (myLocation.distanceSquaredTo(ally.location) <= 5) {
                     allyCount++;
                 }
