@@ -155,20 +155,20 @@ public class Builder extends Robot {
         else if (shouldMutate && mutateLocation != null && rc.canMutate(mutateLocation)) {
             rc.mutate(mutateLocation);
         }
-        // else if (teamLeadAmount >= 1000) {
-        //     // make a watchtower if possible
-        //     Direction optimalDir = null;
-        //     int optimalRubble = Integer.MAX_VALUE;
-        //     for (Direction dir : directionsWithoutCenter) {
-        //         if (rc.canBuildRobot(RobotType.WATCHTOWER, dir)) {
-        //             int rubble = rc.senseRubble(myLocation.add(dir));
-        //             if (rubble < optimalRubble) {
-        //                 optimalDir = dir;
-        //                 optimalRubble = rubble;
-        //             }
-        //         }
-        //     }
-        // }
+        else if (teamLeadAmount >= 1000) {
+            // make a watchtower if possible
+            Direction optimalDir = null;
+            int optimalRubble = Integer.MAX_VALUE;
+            for (Direction dir : directionsWithoutCenter) {
+                if (rc.canBuildRobot(RobotType.WATCHTOWER, dir)) {
+                    int rubble = rc.senseRubble(myLocation.add(dir));
+                    if (rubble < optimalRubble) {
+                        optimalDir = dir;
+                        optimalRubble = rubble;
+                    }
+                }
+            }
+        }
     }
 
     public void move() throws GameActionException {
