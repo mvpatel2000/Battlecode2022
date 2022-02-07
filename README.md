@@ -1,14 +1,14 @@
 # Smite Battlecode 2022
 
 bots order:
-- hermes (sprint 1)
-- zeus
-- ares (sprint 2)
-- artemis
-- hephaestus
-- demeter (quals)
-- athena (finals)
-- dionysus
+- hermes: zoom zoom (sprint 1 submission)
+- zeus: clusters
+- ares: soldier micro (sprint 2 submission)
+- artemis: bugfixes + archon pushes
+- hephaestus: builders + labs + sages
+- demeter: farming + improved build order (quals submission)
+- athena: tighten everything up, much more intelligent build order (finals submission)
+- dionysus: last-minute half-trolly experimentation to see if watchtowers were viable
 
 Things we did for each tournament:
 - sprint 1
@@ -26,6 +26,7 @@ Things we did for each tournament:
   - TLE fixes
   - improved early game exploration code
 - finals
+  - improved lab placement
   - refined build order
   - refined farming w.r.t. lead bursts
   - solution to the miner vs sage problem
