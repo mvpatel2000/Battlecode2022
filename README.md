@@ -45,8 +45,6 @@ General retrospectives / advice from N years of Battlecode:
 - replay analysis is key
 - start simple and iterate
 
-TODO: should we release our codegen scripts or keep them private?
-
 ### Previous Years
 
 - [Battlecode 2021](https://github.com/mvpatel2000/Battlecode2021)
