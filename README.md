@@ -1,4 +1,4 @@
-# Smite Battlecode 2022
+# Smite Battlecode 2022 (Write-up Coming Soon!)
 
 bots order:
 - hermes: zoom zoom (sprint 1 submission)
